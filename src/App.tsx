@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Heart } from 'lucide-react';
+import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Heart, ListTodo } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine } from './types';
@@ -11,6 +11,7 @@ import { ChatView } from './components/ChatView';
 import { MailboxModal } from './components/MailboxModal';
 import { DailySummaryWidget } from './components/DailySummaryWidget';
 import { HealthSyncModal } from './components/HealthSyncModal';
+import { GoogleTasksModal } from './components/GoogleTasksModal';
 import { extractMedicineData } from './services/geminiService';
 import { 
   auth, db, storage, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
@@ -37,6 +38,7 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHealthSyncOpen, setIsHealthSyncOpen] = useState(false);
+  const [isGoogleTasksOpen, setIsGoogleTasksOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMailboxOpen, setIsMailboxOpen] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
@@ -209,7 +211,7 @@ export default function App() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const medsData = snapshot.docs.map(doc => ({ ...doc.data() } as Medicine));
+      const medsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
       // Deduplicate by ID to prevent React "duplicate key" warnings during sync lag or accidental duplicates
       const uniqueMeds = Array.from(new Map(medsData.map(m => [m.id, m])).values());
       setRawMedicines(uniqueMeds);
@@ -1457,6 +1459,13 @@ export default function App() {
                 <Heart size={16} className="sm:w-[18px] sm:h-[18px] text-rose-400" />
               </button>
               <button 
+                onClick={() => setIsGoogleTasksOpen(true)}
+                className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                title="Google Tasks Medication Alarm Sync"
+              >
+                <ListTodo size={16} className="sm:w-[18px] sm:h-[18px] text-indigo-400" />
+              </button>
+              <button 
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-1.5 sm:p-2 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all"
               >
@@ -1756,6 +1765,14 @@ export default function App() {
         {isHealthSyncOpen && (
           <HealthSyncModal 
             onClose={() => setIsHealthSyncOpen(false)}
+            medicines={medicines}
+            accentColor={accentColor}
+          />
+        )}
+
+        {isGoogleTasksOpen && (
+          <GoogleTasksModal 
+            onClose={() => setIsGoogleTasksOpen(false)}
             medicines={medicines}
             accentColor={accentColor}
           />

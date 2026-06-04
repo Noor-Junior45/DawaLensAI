@@ -83,7 +83,7 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const historyData = snapshot.docs.map(doc => doc.data() as MedicineHistory);
+      const historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MedicineHistory));
       setHistory(historyData);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, `medicines/${medicine.id}/history`);
