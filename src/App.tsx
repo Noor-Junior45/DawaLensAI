@@ -1096,7 +1096,7 @@ export default function App() {
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#e3e2e0] border-t-[#3c40c6] rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-[#e3e2e0] border-t-[#0f9d58] rounded-full animate-spin" />
       </div>
     );
   }
@@ -1111,9 +1111,9 @@ export default function App() {
             className="space-y-4"
           >
             <div className="w-24 h-24 bg-white border border-[#e3e2e0] rounded-[32px] mx-auto flex items-center justify-center shadow-md">
-              <Camera className="text-[#3c40c6]" size={42} />
+              <Camera className="text-[#0f9d58]" size={42} />
             </div>
-            <h1 className="text-5xl font-black tracking-tight text-[#3c40c6]">
+            <h1 className="text-5xl font-black tracking-tight text-[#0f9d58]">
               DawaLens AI
             </h1>
             <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">
@@ -1139,7 +1139,7 @@ export default function App() {
                   setIsEmailLoginOpen(!isEmailLoginOpen);
                   setIsSignUp(false);
                 }}
-                className="text-slate-500 text-xs hover:text-[#3c40c6] transition-colors underline underline-offset-4 font-bold"
+                className="text-slate-500 text-xs hover:text-[#0f9d58] transition-colors underline underline-offset-4 font-bold"
               >
                 {isEmailLoginOpen ? 'Hide Email Login' : 'Sign in with Email & Password'}
               </button>
@@ -1153,13 +1153,13 @@ export default function App() {
                   <div className="flex gap-2 p-1 bg-[#faf8f5] border border-[#e3e2e0]/60 rounded-2xl mb-2">
                     <button 
                       onClick={() => setIsSignUp(false)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${!isSignUp ? 'bg-[#3c40c6] text-white shadow-xs' : 'text-slate-500 hover:text-[#3c40c6]'}`}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${!isSignUp ? 'bg-[#0f9d58] text-white shadow-xs' : 'text-slate-500 hover:text-[#0f9d58]'}`}
                     >
                       Login
                     </button>
                     <button 
                       onClick={() => setIsSignUp(true)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${isSignUp ? 'bg-[#3c40c6] text-white shadow-xs' : 'text-slate-500 hover:text-[#3c40c6]'}`}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${isSignUp ? 'bg-[#0f9d58] text-white shadow-xs' : 'text-slate-500 hover:text-[#0f9d58]'}`}
                     >
                       Sign Up
                     </button>
@@ -1173,7 +1173,7 @@ export default function App() {
                       placeholder="Email address"
                       value={email || ''}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#3c40c6] focus:ring-2 focus:ring-[#3c40c6]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
+                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#0f9d58] focus:ring-2 focus:ring-[#0f9d58]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
                       required
                     />
                     <input 
@@ -1183,13 +1183,13 @@ export default function App() {
                       placeholder="Password (min. 6 chars)"
                       value={password || ''}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#3c40c6] focus:ring-2 focus:ring-[#3c40c6]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
+                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#0f9d58] focus:ring-2 focus:ring-[#0f9d58]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
                       required
                     />
                     <button 
                       id="auth-submit-btn"
                       type="submit"
-                      className="w-full py-3.5 bg-[#3c40c6] hover:bg-[#3c40c6]/90 text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-98"
+                      className="w-full py-3.5 bg-[#0f9d58] hover:bg-[#0f9d58]/90 text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-98"
                     >
                       {isSignUp ? 'Create Account' : 'Sign In'}
                     </button>
@@ -1211,13 +1211,13 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#faf8f5] text-[#1f1f1f] font-sans selection:bg-[#3c40c6] selection:text-white">
+      <div className="min-h-screen bg-[#faf8f5] text-[#1f1f1f] font-sans selection:bg-[#0f9d58] selection:text-white">
       {/* Glossy Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-[#e3e2e0]/80 px-3 py-3 sm:px-4 sm:py-4 shadow-sm">
         <div className="max-w-2xl mx-auto space-y-3 sm:space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#3c40c6]">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0f9d58]">
                 DawaLens AI
               </h1>
               <p className="text-[#5f6368] text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5 sm:mt-1">
@@ -1227,7 +1227,7 @@ export default function App() {
             <div className="flex gap-2 items-center">
               <button 
                 onClick={() => setIsSettingsOpen(true)}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#e3e2e0] hover:border-[#3c40c6] transition-all flex items-center justify-center bg-[#faf8f5] shadow-xs relative group shrink-0"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#e3e2e0] hover:border-[#0f9d58] transition-all flex items-center justify-center bg-[#faf8f5] shadow-xs relative group shrink-0"
                 title={`Google Account: ${user?.email || ''}`}
               >
                 <img 
@@ -1243,7 +1243,7 @@ export default function App() {
           
           {/* Search Bar moved to Navbar */}
           <div className="relative group">
-            <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#3c40c6] transition-colors">
+            <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#0f9d58] transition-colors">
               <Search size={16} className="sm:w-[18px] sm:h-[18px]" />
             </div>
             <input 
@@ -1251,7 +1251,7 @@ export default function App() {
               placeholder="Search medications..."
               value={searchQuery || ''}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-[#e3e2e0] text-[#1f1f1f] placeholder-slate-400 focus:outline-none focus:border-[#3c40c6] focus:ring-2 focus:ring-[#3c40c6]/10 transition-all rounded-2xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-10 sm:pr-12 text-xs sm:text-sm shadow-xs"
+              className="w-full bg-white border border-[#e3e2e0] text-[#1f1f1f] placeholder-slate-400 focus:outline-none focus:border-[#0f9d58] focus:ring-2 focus:ring-[#0f9d58]/10 transition-all rounded-2xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-10 sm:pr-12 text-xs sm:text-sm shadow-xs"
             />
             {searchQuery && (
               <button 
@@ -1311,7 +1311,7 @@ export default function App() {
         <div className="px-4 mb-6 flex flex-wrap gap-2">
           <button 
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${filter === 'all' ? 'bg-[#3c40c6] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${filter === 'all' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             All
           </button>
@@ -1334,7 +1334,7 @@ export default function App() {
               setSortOrder(nextOrder);
               handleUpdateConfig({ sortOrder: nextOrder });
             }}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${sortOrder !== 'default' ? 'bg-[#3c40c6] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${sortOrder !== 'default' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             {sortOrder === 'desc' ? 'Z-A' : 'A-Z'}
           </button>
@@ -1503,8 +1503,8 @@ export default function App() {
             <div className="w-full max-w-lg bg-[#faf8f5] border border-[#e3e2e0] rounded-[32px] p-8 shadow-2xl my-auto">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center">
-                    <ShieldAlert className="text-[#3c40c6]" size={20} />
+                  <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center">
+                    <ShieldAlert className="text-[#0f9d58]" size={20} />
                   </div>
                   <h3 className="text-xl font-bold text-[#1f1f1f] tracking-tight">Safety Analysis</h3>
                 </div>
@@ -1562,7 +1562,7 @@ export default function App() {
 
               <button 
                 onClick={() => setIsInteractionModalOpen(false)}
-                className="w-full mt-8 py-4 bg-[#3c40c6] text-white rounded-full font-bold hover:bg-[#3c40c6]/95 transition-all shadow-sm"
+                className="w-full mt-8 py-4 bg-[#0f9d58] text-white rounded-full font-bold hover:bg-[#0f9d58]/95 transition-all shadow-sm"
               >
                 Close Analysis
               </button>
@@ -1578,14 +1578,14 @@ export default function App() {
             className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
           >
             <div className="w-full max-w-sm bg-[#faf8f5] border border-[#e3e2e0] rounded-[32px] p-6 text-center shadow-2xl">
-              <div className="w-16 h-16 bg-[#3c40c6]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Info className="text-[#3c40c6]" size={32} />
+              <div className="w-16 h-16 bg-[#0f9d58]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Info className="text-[#0f9d58]" size={32} />
               </div>
               <h3 className="text-xl font-bold text-[#1f1f1f] mb-2">Notice</h3>
               <p className="text-slate-600 text-sm mb-6">{alertMessage}</p>
               <button 
                 onClick={() => setAlertMessage(null)}
-                className="w-full py-3 bg-[#3c40c6] text-white rounded-xl font-bold hover:bg-[#3c40c6]/95 transition-all shadow-sm"
+                className="w-full py-3 bg-[#0f9d58] text-white rounded-xl font-bold hover:bg-[#0f9d58]/95 transition-all shadow-sm"
               >
                 OK
               </button>

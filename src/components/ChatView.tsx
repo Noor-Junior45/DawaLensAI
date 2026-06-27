@@ -260,12 +260,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           md:top-auto md:bottom-6 md:right-6 md:left-auto md:w-[460px] md:h-[680px] md:max-h-[82vh] md:rounded-[30px]"
       >
         {/* Drag handle for mobile to represent bottom sheet */}
-        <div className="md:hidden flex justify-center py-2 shrink-0 bg-[#3c40c6]">
+        <div className="md:hidden flex justify-center py-2 shrink-0 bg-[#0f9d58]">
           <div className="w-12 h-1.5 rounded-full bg-white/30" />
         </div>
 
         {/* Main Bar / Header */}
-        <header className="flex items-center justify-between px-4 py-3 bg-[#3c40c6] shrink-0 text-white relative z-30 shadow-xs">
+        <header className="flex items-center justify-between px-4 py-3 bg-[#0f9d58] shrink-0 text-white relative z-30 shadow-xs">
           <div className="flex items-center gap-2">
             <button onClick={onClose} className="p-1.5 text-white/90 hover:text-white transition-colors hover:bg-white/10 rounded-full" title="Back">
               <ChevronLeft size={24} />
@@ -275,7 +275,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
               {/* Keep only that person[svg] */}
               <div className="relative shrink-0 flex items-center justify-center">
                 <DoctorLogo className="w-10 h-10 text-white" />
-                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-[#3c40c6] rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
+                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-[#0f9d58] rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
               </div>
               
               <div className="flex flex-col">
@@ -289,10 +289,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Red delete button with circular glassmorphism background */}
+            {/* Red delete button with NO circular background */}
             <button
               onClick={handleClearChat}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/15 backdrop-blur-md text-red-100 hover:bg-red-500/30 hover:text-white active:scale-95 rounded-full transition-all border border-red-500/20 shadow-xs"
+              className="flex items-center justify-center text-red-500 hover:text-red-400 active:scale-95 transition-all p-2 bg-transparent border-none"
               title="Clear Entire Chat"
             >
               <Trash2 size={18} className="stroke-[2.5]" />
@@ -308,21 +308,16 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           </div>
         </header>
 
-        {/* Main Messages area with warm dot-grid background */}
+        {/* Main Messages area with simple soft cream white background */}
         <main 
-          className="flex-1 flex flex-col relative overflow-hidden"
-          style={{
-            backgroundColor: '#fbf9f4',
-            backgroundImage: 'radial-gradient(#e4dfd5 1.1px, transparent 1.1px)',
-            backgroundSize: '24px 24px'
-          }}
+          className="flex-1 flex flex-col relative overflow-hidden bg-[#faf8f5]"
         >
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-5 scrollbar-hide relative z-10 w-full max-w-4xl mx-auto custom-scrollbar">
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-70 py-20">
-                <div className="w-16 h-16 rounded-full bg-[#3c40c6]/10 flex items-center justify-center text-[#3c40c6] mb-3 border border-[#3c40c6]/20">
-                  <DoctorLogo className="w-12 h-12 text-[#3c40c6]" />
+                <div className="w-16 h-16 rounded-full bg-[#0f9d58]/10 flex items-center justify-center text-[#0f9d58] mb-3 border border-[#0f9d58]/20">
+                  <DoctorLogo className="w-12 h-12 text-[#0f9d58]" />
                 </div>
                 <p className="text-sm font-bold text-slate-700">How can I help you today?</p>
                 <p className="text-xs text-slate-500 mt-1 max-w-[260px] mx-auto">Ask me anything about interactions, dosages, or side effects of your medicines.</p>
@@ -341,11 +336,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                   <React.Fragment key={`chat-msg-${msg.id || ''}-${idx}`}>
                     {showDate && (
                       <div className="flex flex-col items-center gap-1.5 my-5 select-none">
-                        <span className="bg-[#3c40c6]/10 text-[#2f329f] text-[10px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs border border-[#3c40c6]/10">
+                        <span className="bg-[#0f9d58]/10 text-[#065f46] text-[10px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-2xs border border-[#0f9d58]/10">
                           {exactDateStr}
                         </span>
                         {isTodayStr && (
-                          <span className="bg-[#3c40c6]/15 text-[#2f329f] text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-3xs">
+                          <span className="bg-[#0f9d58]/15 text-[#065f46] text-[10px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider shadow-3xs">
                             TODAY
                           </span>
                         )}
@@ -367,7 +362,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                           )}
                         </div>
                       ) : (
-                        <DoctorLogo className="w-9 h-9 text-[#3c40c6] shrink-0" />
+                        <DoctorLogo className="w-9 h-9 text-[#0f9d58] shrink-0" />
                       )}
 
                       {/* Flex column for Chat Bubble and action buttons below */}
@@ -411,7 +406,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                           <div className="flex items-center gap-3 mt-1.5 px-2">
                             <button 
                               onClick={() => handleSpeakText(msg.content)} 
-                              className="text-[10px] text-[#3c40c6] font-black hover:text-[#2f329f] transition-colors flex items-center gap-1 select-none cursor-pointer"
+                              className="text-[10px] text-[#0f9d58] font-black hover:text-[#065f46] transition-colors flex items-center gap-1 select-none cursor-pointer"
                             >
                               <span>🔊 Speak</span>
                             </button>
@@ -431,12 +426,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
               {isLoading && (
                 <div className="flex justify-start items-start gap-2.5">
-                  <DoctorLogo className="w-9 h-9 text-[#3c40c6] shrink-0" />
+                  <DoctorLogo className="w-9 h-9 text-[#0f9d58] shrink-0" />
                   <div className="bg-white px-4 py-3 rounded-[18px] rounded-tl-none shadow-3xs border border-slate-100">
                     <div className="flex gap-1.5 py-1">
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-2 h-2 bg-[#3c40c6] rounded-full" />
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-2 h-2 bg-[#3c40c6] rounded-full" />
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-2 h-2 bg-[#3c40c6] rounded-full" />
+                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
                     </div>
                   </div>
                 </div>
@@ -445,43 +440,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
             </div>
           </div>
 
-          {/* Input Bar & Suggestions Section */}
+          {/* Input Bar Section */}
           <div className="bg-[#f0f2f5] border-t border-slate-200/80 shrink-0 safe-bottom z-20 pb-4">
             <div className="w-full">
-              {/* Quick Suggestions Panel */}
-              {showSuggestions && (
-                <div className="p-3 bg-[#eef1f4] border-b border-slate-200">
-                  <div className="flex items-center justify-between px-1 mb-2">
-                    <span className="text-[9px] font-extrabold text-slate-500 tracking-wider uppercase flex items-center gap-1 select-none">
-                      💡 SUGGESTIONS
-                    </span>
-                    <button onClick={() => setShowSuggestions(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                      <X size={14} />
-                    </button>
-                  </div>
-                  
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar scrollbar-hide">
-                    {SUGGESTED_PROMPTS.map((item, idx) => {
-                      const isActiveStyle = idx === 0;
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => handleSendMessage(item.prompt)}
-                          className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap active:scale-95 shadow-3xs ${
-                            isActiveStyle 
-                              ? 'border-2 border-black bg-white text-black font-black' 
-                              : 'border border-slate-300 bg-white text-slate-700 hover:border-slate-400'
-                          }`}
-                        >
-                          {item.icon}
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Input Row */}
               <div className="px-4 pt-3 flex items-center gap-3">
                 {/* Main Input Pill */}
@@ -493,7 +454,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Type a message..."
-                    className="w-full bg-white border border-slate-200 rounded-full py-3.5 px-5 text-[14px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#3c40c6]/30 placeholder:text-slate-400 shadow-inner"
+                    className="w-full bg-white border border-slate-200 rounded-full py-3.5 px-5 text-[14px] text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0f9d58]/30 placeholder:text-slate-400 shadow-inner"
                   />
                 </div>
 

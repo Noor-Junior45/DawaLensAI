@@ -178,7 +178,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* POWER INTEGRATIONS & TOOLS */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Power Integrations & Tools</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Power Integrations & Tools</h4>
             <div className="grid grid-cols-1 gap-1">
               {/* In-App Mailbox */}
               <button 
@@ -227,7 +227,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* ALERTS & RECURRING REMINDERS */}
           <div className="space-y-4 pt-4 border-t border-[#e3e2e0]/60">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Alerts & Reminders</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Alerts & Reminders</h4>
             
             {/* Email Switch */}
             <div className="flex items-center justify-between px-1">
@@ -237,7 +237,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               <button 
                 onClick={() => setEmailNotificationsEnabled(!emailNotificationsEnabled)}
-                className={`w-10 h-5.5 rounded-full transition-all relative ${emailNotificationsEnabled ? 'bg-[#3c40c6]' : 'bg-[#e3e2e0]'}`}
+                className={`w-10 h-5.5 rounded-full transition-all relative ${emailNotificationsEnabled ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${emailNotificationsEnabled ? 'left-5' : 'left-0.5'}`} 
@@ -253,7 +253,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               <button 
                 onClick={() => setBrowserNotificationsEnabled(!browserNotificationsEnabled)}
-                className={`w-10 h-5.5 rounded-full transition-all relative ${browserNotificationsEnabled ? 'bg-[#3c40c6]' : 'bg-[#e3e2e0]'}`}
+                className={`w-10 h-5.5 rounded-full transition-all relative ${browserNotificationsEnabled ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${browserNotificationsEnabled ? 'left-5' : 'left-0.5'}`} 
@@ -271,7 +271,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => setAlertThreshold(days)}
                     className={`py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                       alertThreshold === days 
-                        ? 'bg-[#3c40c6] text-white border-[#3c40c6]' 
+                        ? 'bg-[#0f9d58] text-white border-[#0f9d58]' 
                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
@@ -292,14 +292,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 min="0"
                 value={lowQuantityThreshold ?? 0}
                 onChange={(e) => setLowQuantityThreshold(parseInt(e.target.value, 10) || 0)}
-                className="w-14 bg-white border border-[#e3e2e0] rounded-lg px-1.5 py-1 text-slate-800 focus:outline-none focus:border-[#3c40c6] transition-all text-center text-xs font-semibold shadow-xs"
+                className="w-14 bg-white border border-[#e3e2e0] rounded-lg px-1.5 py-1 text-slate-800 focus:outline-none focus:border-[#0f9d58] transition-all text-center text-xs font-semibold shadow-xs"
               />
             </div>
           </div>
 
           {/* AESTHETICS & THEMES */}
           <div className="space-y-3 pt-4 border-t border-[#e3e2e0]/60">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Aesthetics & Themes</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Aesthetics & Themes</h4>
             
             {/* Accent color */}
             <div className="space-y-1.5 px-1">
@@ -310,7 +310,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     key={color.value}
                     onClick={() => setAccentColor(color.value)}
                     className={`w-6 h-6 rounded-full border transition-all flex items-center justify-center shadow-xs ${
-                      accentColor === color.value ? 'border-slate-800 scale-110 ring-2 ring-[#3c40c6]/10' : 'border-transparent opacity-75 hover:opacity-100'
+                      accentColor === color.value ? 'border-slate-800 scale-110 ring-2 ring-[#0f9d58]/10' : 'border-transparent opacity-75 hover:opacity-100'
                     }`}
                     style={{ backgroundColor: color.value }}
                   >
@@ -325,7 +325,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* VAULT SECURITY */}
           <div className="space-y-4 pt-4 border-t border-[#e3e2e0]/60">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Vault Security</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Vault Security</h4>
 
             {/* Cookie Consent */}
             <div className="flex items-center justify-between px-1">
@@ -343,7 +343,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     console.warn(e);
                   }
                 }}
-                className={`w-10 h-5.5 rounded-full transition-all relative ${cookieConsent ? 'bg-[#3c40c6]' : 'bg-[#e3e2e0]'}`}
+                className={`w-10 h-5.5 rounded-full transition-all relative ${cookieConsent ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${cookieConsent ? 'left-5' : 'left-0.5'}`} 
@@ -354,7 +354,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* GUIDES */}
           <div className="space-y-3 pt-4 border-t border-[#e3e2e0]/60">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Guides</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Guides</h4>
             
             {/* Collapsible item: User Guide */}
             <div className="border border-[#e3e2e0] rounded-xl overflow-hidden bg-white">
@@ -396,7 +396,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* RECENTLY DELETED */}
           <div className="space-y-2 pt-4 border-t border-[#e3e2e0]/60">
-            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c40c6] px-1">Recently Deleted (15 Days Vault)</h4>
+            <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Recently Deleted (15 Days Vault)</h4>
             <div className="bg-[#faf8f5] border border-[#e3e2e0] rounded-xl p-2.5 space-y-2">
               {deletedMedicines.length === 0 ? (
                 <p className="text-[11px] text-slate-400 italic text-center py-1">No recently deleted items.</p>

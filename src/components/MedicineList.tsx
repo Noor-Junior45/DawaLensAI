@@ -184,7 +184,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({ medicines, onEdit, o
         className={`w-full text-left group relative overflow-hidden border-2 rounded-3xl p-5 transition-all ${
           isSelectionMode ? 'cursor-pointer' : ''
         } ${
-          isSelected ? 'bg-white border-[#3c40c6] shadow-[0_12px_40px_rgba(60,64,198,0.06)]' :
+          isSelected ? 'bg-white border-[#0f9d58] shadow-[0_12px_40px_rgba(15,157,88,0.06)]' :
           med.taken ? 'bg-[#faf8f5] border-slate-300 opacity-60' :
           isExpired ? 'bg-white border-red-500 hover:border-red-600 hover:bg-red-50 shadow-sm' :
           isExpiringSoon ? 'bg-white border-orange-500 hover:border-orange-600 hover:bg-orange-50 shadow-sm' :
@@ -208,11 +208,11 @@ export const MedicineList: React.FC<MedicineListProps> = ({ medicines, onEdit, o
           <div className="flex items-start gap-2.5 flex-1 overflow-hidden">
             {isSelectionMode && (
               <div className="mt-1 text-slate-400 shrink-0">
-                {isSelected ? <CheckSquare size={18} className="text-[#3c40c6]" /> : <Square size={18} />}
+                {isSelected ? <CheckSquare size={18} className="text-[#0f9d58]" /> : <Square size={18} />}
               </div>
             )}
             <div className={`flex-1 min-w-0 ${med.taken && !isSelectionMode ? 'cursor-default' : 'cursor-pointer'}`}>
-              <h3 className={`font-bold text-base sm:text-lg tracking-tight transition-colors flex items-center gap-1.5 ${med.taken ? 'text-slate-400 line-through' : 'text-[#1f1f1f] group-hover:text-[#3c40c6]'}`}>
+              <h3 className={`font-bold text-base sm:text-lg tracking-tight transition-colors flex items-center gap-1.5 ${med.taken ? 'text-slate-400 line-through' : 'text-[#1f1f1f] group-hover:text-[#0f9d58]'}`}>
                 <span className="truncate">{med.name}</span>
                 <span className="shrink-0 scale-90 sm:scale-100">{med.form && MEDICINE_FORM_ICONS[med.form]}</span>
               </h3>
@@ -348,7 +348,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({ medicines, onEdit, o
                 onClick={toggleSelectAll}
                 className="text-sm text-slate-500 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5"
               >
-                {selectedIds.size === medicines.length ? <CheckSquare size={16} className="text-[#3c40c6]" /> : <Square size={16} />}
+                {selectedIds.size === medicines.length ? <CheckSquare size={16} className="text-[#0f9d58]" /> : <Square size={16} />}
                 All
               </button>
               {selectedIds.size > 0 && (

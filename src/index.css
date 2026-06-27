@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-accent: var(--accent-color, #3c40c6);
+  --color-accent: var(--accent-color, #0f9d58);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --accent-color: #3c40c6;
+  --accent-color: #0f9d58;
 }
 
 body {
