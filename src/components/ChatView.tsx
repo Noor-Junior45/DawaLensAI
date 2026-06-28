@@ -186,19 +186,31 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
       setIsOnline(false);
       
       const errorMessage = error.message || String(error);
-      const isLimitReached = errorMessage.includes("limit of 10 chats") || errorMessage.includes("429");
+      const errLower = errorMessage.toLowerCase();
+      const isSpendCapExceeded = 
+        errLower.includes("spending cap") || 
+        errLower.includes("resource_exhausted") || 
+        errLower.includes("monthly spending cap") ||
+        errLower.includes("quota") ||
+        errLower.includes("billing");
+      const isLimitReached = (errorMessage.includes("limit of 10 chats") || errorMessage.includes("429")) && !isSpendCapExceeded;
       
       if (isLimitReached) {
         setChatCount(10);
+      }
+
+      let content = `I encountered an issue connecting. Please try again. (${errorMessage})`;
+      if (isSpendCapExceeded) {
+        content = `⚠️ **Gemini API Monthly Spend Cap Exceeded**\n\nThe project has exceeded its monthly spending cap in Google AI Studio. Please visit [Google AI Studio Billing](https://ai.studio/spend) to manage your spending cap or check back later.`;
+      } else if (isLimitReached) {
+        content = `⚠️ **Daily Consultation Limit Reached**\n\nYou have reached your daily limit of 10 consultations today. To keep your healthcare safe and well-monitored, Dr. DawaLens is limited to 10 chats per day. Please return tomorrow, and I will be delighted to assist you further!`;
       }
 
       const aiMsgId = crypto.randomUUID();
       const aiMsg: ChatMessage = {
         id: aiMsgId,
         role: 'assistant',
-        content: isLimitReached 
-          ? `⚠️ **Daily Consultation Limit Reached**\n\nYou have reached your daily limit of 10 consultations today. To keep your healthcare safe and well-monitored, Dr. DawaLens is limited to 10 chats per day. Please return tomorrow, and I will be delighted to assist you further!` 
-          : `I encountered an issue connecting. Please try again. (${errorMessage})`,
+        content,
         timestamp: Date.now(),
         provider: activeProvider
       };

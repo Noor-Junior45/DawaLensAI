@@ -211,11 +211,15 @@ async function startServer() {
             error: "You have reached your daily limit of 10 chats. Please come back tomorrow to continue your consultation with Dr. DawaLens!" 
           });
         }
-        
-        await incrementChatCount(userId, today);
       }
       
       const responseText = await chatWithGeminiServer(messages);
+      
+      if (userId) {
+        const today = new Date().toISOString().split('T')[0];
+        await incrementChatCount(userId, today);
+      }
+      
       res.json({ responseText });
     } catch (error: any) {
       res.status(500).json({ error: error.message || String(error) });
