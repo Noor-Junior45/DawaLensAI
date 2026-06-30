@@ -6,14 +6,12 @@ const interactionCache = new Map<string, any>();
 // Initialize Gemini safely with telemetry header
 const getAvailableKeys = () => {
   const rawKeys = [
-    { name: 'GEMINI_API_KEY', value: process.env.GEMINI_API_KEY },
-    { name: 'GEMINI_API_KEY_2', value: process.env.GEMINI_API_KEY_2 },
-    { name: 'GEMINI_API_KEY_3', value: process.env.GEMINI_API_KEY_3 }
+    { name: 'GEMINI_API_KEY', value: process.env.GEMINI_API_KEY }
   ];
   
   const keys: string[] = [];
   rawKeys.forEach((k) => {
-    if (k.value && k.value.trim() !== '' && !k.value.includes('MY_GEMINI_API_KEY') && k.value.trim() !== 'MY_GEMINI_API_KEY_2' && k.value.trim() !== 'MY_GEMINI_API_KEY_3') {
+    if (k.value && k.value.trim() !== '' && !k.value.includes('MY_GEMINI_API_KEY')) {
       const val = k.value.trim();
       keys.push(val);
       const masked = val.length > 10 ? val.substring(0, 6) + '...' + val.slice(-4) : '***';
@@ -78,7 +76,9 @@ const getDetailedError = (error: any, context: 'chat' | 'extraction' | 'interact
     }
     return `Gemini Request Error (400). The AI had trouble processing your request. Please check your inputs or try again.`;
   }
-  if (msg.includes('403')) return "Gemini Access Denied (403). Ensure your GEMINI_API_KEY is correct and configured properly.";
+  if (msg.includes('403') || msgLower.includes('denied') || msgLower.includes('permission_denied')) {
+    return "Your Google AI Studio Project has been restricted or denied access (403 PERMISSION_DENIED). Please verify that your active GEMINI_API_KEY is correct, enabled, and linked to a project in good standing with active billing/quota in Google AI Studio. If you recently configured Cloudflare, ensure API headers and payloads are not being modified or intercepted.";
+  }
   if (msg.includes('404')) return "Gemini Model Not Found (404). Please ensure the requested model is valid.";
   if (msg.includes('429')) return "Gemini Quota Exceeded (429). You are on the free tier. Please wait a minute before trying again.";
   return msg;

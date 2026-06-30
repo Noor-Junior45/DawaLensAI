@@ -41,6 +41,7 @@ function getTransporter() {
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
   const PORT = 3000;
 
   // API routes
@@ -156,10 +157,10 @@ async function startServer() {
         return res.status(400).json({ error: "Missing required fields 'to' or 'subject'" });
       }
 
-      const transporter = getTransporter();
+      const pass = process.env.GMAIL_APP_PASSWORD;
       const fromEmail = process.env.GMAIL_USER || "noorpos.alerts@gmail.com";
 
-      if (!transporter) {
+      if (!pass || pass.trim() === "" || pass === "YOUR_GMAIL_APP_PASSWORD") {
         console.warn(`[EMAIL NODEMAILER FALLBACK] Simulated sending email to ${to} since GMAIL_APP_PASSWORD is not set.`);
         return res.json({ 
           success: true, 
@@ -176,8 +177,48 @@ async function startServer() {
         html
       };
 
-      await transporter.sendMail(mailOptions);
-      console.log(`[EMAIL SEND SUCCESS] Email sent to ${to}`);
+      // Try sending up to 3 times with fallback SMTP ports to bypass firewall or connection blocks
+      let lastError: any = null;
+      let sentSuccessfully = false;
+
+      const configs = [
+        { port: 465, secure: true },
+        { port: 587, secure: false },
+        { port: 465, secure: true }
+      ];
+
+      for (let attempt = 0; attempt < configs.length; attempt++) {
+        const config = configs[attempt];
+        try {
+          console.log(`[EMAIL SEND] Attempt ${attempt + 1}: trying smtp.gmail.com:${config.port} (secure: ${config.secure})...`);
+          const transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: config.port,
+            secure: config.secure,
+            auth: {
+              user: fromEmail,
+              pass: pass
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
+          });
+
+          await transporter.sendMail(mailOptions);
+          console.log(`[EMAIL SEND SUCCESS] Email sent to ${to} on attempt ${attempt + 1}`);
+          sentSuccessfully = true;
+          break;
+        } catch (error: any) {
+          console.warn(`[EMAIL SEND WARN] Attempt ${attempt + 1} failed: ${error.message || String(error)}`);
+          lastError = error;
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      if (!sentSuccessfully) {
+        throw lastError || new Error("Failed to send email after multiple attempts.");
+      }
+
       res.json({ success: true, message: "Email sent successfully" });
     } catch (error: any) {
       console.error("[EMAIL SEND ERROR]", error);

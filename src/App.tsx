@@ -24,7 +24,7 @@ import { DoctorLogo } from './components/DoctorLogo';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
-import { sendEmailAlert } from './services/emailService';
+import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML } from './services/emailService';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -261,36 +261,9 @@ export default function App() {
           if (!localStorage.getItem(storageKey)) {
             try {
               const formattedExpiry = formatExpiryMonthYear(m.expirationDate);
-              const subject = `⚠️ Expiration Alert: ${m.name} is Expiring Soon`;
-              const text = `DawaLens AI alert: Your medicine ${m.name} (${m.dosage || ''}) is expiring in ${formattedExpiry}.`;
-              const html = `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #f0ece3; border-radius: 24px; background-color: #faf8f5; color: #2d2a26;">
-                  <div style="text-align: center; margin-bottom: 28px;">
-                    <div style="background-color: #fff2f0; color: #ea4335; font-size: 36px; width: 72px; height: 72px; line-height: 72px; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 16px; border: 1px solid #ffd4cf;">⚠️</div>
-                    <h2 style="color: #2d2a26; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Medicine Expiry Alert</h2>
-                    <p style="color: #8c857b; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin: 6px 0 0 0;">DawaLens AI Automated Alerts</p>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f0ece3; margin-bottom: 28px;" />
-                  <div style="background-color: #ffffff; border: 1px solid #eaddca; border-radius: 20px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(210,195,170,0.15);">
-                    <p style="margin: 0 0 8px 0; color: #8c857b; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1.5px;">Medication Details</p>
-                    <h3 style="margin: 0; color: #2d2a26; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">${m.name} ${m.dosage ? `(${m.dosage})` : ''}</h3>
-                    <div style="margin: 16px 0 0 0; padding: 12px 16px; background-color: #fff5f5; border-radius: 12px; border-left: 4px solid #ea4335; color: #b71c1c; font-size: 15px; font-weight: bold;">
-                      📅 Expiration: ${formattedExpiry}
-                    </div>
-                    <p style="margin: 12px 0 0 0; color: #8c857b; font-size: 12px; font-weight: 500;">Full Date: ${m.expirationDate}</p>
-                  </div>
-                  <p style="color: #4a453f; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0; text-align: center;">
-                    This is an automated safety alert from your DawaLens AI vault. We detected that <strong>${m.name}</strong> is entering its warning expiration threshold. Please check the medicine container's condition before use.
-                  </p>
-                  <div style="text-align: center; margin-bottom: 28px;">
-                    <a href="https://dawalens.vercel.app" target="_blank" style="background-color: #0f9d58; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block; transition: all 0.2s ease-in-out; box-shadow: 0 4px 10px rgba(15,157,88,0.25);">Manage My Vault</a>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f0ece3; margin-bottom: 20px;" />
-                  <p style="color: #a39c91; font-size: 11px; line-height: 1.5; text-align: center; margin: 0; max-width: 480px; margin: 0 auto;">
-                    This notification was generated because you checked the 'Email Notifications Enabled' option in your app configuration. To stop receiving these alerts, toggle email alerts off in your Settings panel.
-                  </p>
-                </div>
-              `;
+              const subject = `Expiry Alert: ${m.name} is Expiring Soon`;
+              const text = `DawaLens AI alert: Your medicine ${m.name} is expiring soon.`;
+              const html = getExpiryEmailHTML(m.name, m.quantity || "N/A", m.expirationDate);
 
               await sendEmailAlert({
                 to: user.email,
@@ -310,35 +283,9 @@ export default function App() {
           const storageKey = `dawalens_ai_email_qty_${m.id}_${todayStr}`;
           if (!localStorage.getItem(storageKey)) {
             try {
-              const subject = `💊 Low Stock Alert: Refill ${m.name}`;
+              const subject = `Refill Required: ${m.name} is Low on Stock`;
               const text = `DawaLens AI alert: Your medicine ${m.name} quantity is down to ${m.quantity}. Please replenish your stocks soon.`;
-              const html = `
-                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #f0ece3; border-radius: 24px; background-color: #faf8f5; color: #2d2a26;">
-                  <div style="text-align: center; margin-bottom: 28px;">
-                    <div style="background-color: #f0f7ff; color: #0070f3; font-size: 36px; width: 72px; height: 72px; line-height: 72px; border-radius: 50%; display: inline-block; text-align: center; margin-bottom: 16px; border: 1px solid #c2e0ff;">💊</div>
-                    <h2 style="color: #2d2a26; margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Low Stock Warning</h2>
-                    <p style="color: #8c857b; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin: 6px 0 0 0;">DawaLens AI Replenishment Engine</p>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f0ece3; margin-bottom: 28px;" />
-                  <div style="background-color: #ffffff; border: 1px solid #eaddca; border-radius: 20px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(210,195,170,0.15);">
-                    <p style="margin: 0 0 8px 0; color: #8c857b; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1.5px;">Current Quantities</p>
-                    <h3 style="margin: 0; color: #2d2a26; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">${m.name}</h3>
-                    <div style="margin: 16px 0 0 0; padding: 12px 16px; background-color: #f0f7ff; border-radius: 12px; border-left: 4px solid #0070f3; color: #0056b3; font-size: 15px; font-weight: bold;">
-                      ⚠️ Remaining Balance: ${m.quantity || 3} unit(s) left
-                    </div>
-                  </div>
-                  <p style="color: #4a453f; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0; text-align: center;">
-                    Your remaining count has dropped below your app's designated low-quantity limit of ${lowQuantityThreshold} units. To preserve treatment consistency and avoid missing required dosages, we recommend scheduling a refill order soon.
-                  </p>
-                  <div style="text-align: center; margin-bottom: 28px;">
-                    <a href="https://dawalens.vercel.app" target="_blank" style="background-color: #0f9d58; color: #ffffff; text-decoration: none; padding: 16px 36px; border-radius: 50px; font-weight: bold; font-size: 14px; display: inline-block; transition: all 0.2s ease-in-out; box-shadow: 0 4px 10px rgba(15,157,88,0.25);">Go to App Dashboard</a>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f0ece3; margin-bottom: 20px;" />
-                  <p style="color: #a39c91; font-size: 11px; line-height: 1.5; text-align: center; margin: 0; max-width: 480px; margin: 0 auto;">
-                    This is an automated replenishing alert from DawaLens AI. To adjust notification configurations, toggle settings in your <a href="https://dawalens.vercel.app" style="color: #0f9d58; text-decoration: underline; font-weight: bold;">DawaLens Vault</a>.
-                  </p>
-                </div>
-              `;
+              const html = getLowStockEmailHTML(m.name, m.quantity, lowQuantityThreshold);
 
               await sendEmailAlert({
                 to: user.email,
