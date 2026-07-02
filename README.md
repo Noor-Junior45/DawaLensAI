@@ -147,3 +147,7 @@ Configured for [Vercel](https://vercel.com/) deployment (see `vercel.json`). Set
 ## 📄 License
 
 This project currently has no explicit open-source license. All rights reserved unless stated otherwise.
+
+--- 
+
+**Built by [Noor-Junior45](https://github.com/Noor-Junior45)**
