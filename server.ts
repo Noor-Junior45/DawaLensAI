@@ -202,7 +202,7 @@ app.post("/api/ai/extract", async (req, res) => {
     const result = await extractMedicineDataServer(base64Image, ocrText, hints);
     res.json(result);
   } catch (error: any) {
-    res.status(500).json({ success: false, errorMessage: error.message || String(error) });
+    res.json({ success: false, errorMessage: error.message || "Failed to extract medicine data from image." });
   }
 });
 

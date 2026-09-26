@@ -344,11 +344,6 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
     
     if (!response.ok) {
       const errText = await response.text();
-      if (errText.trim().startsWith('<') || response.status === 404) {
-        console.warn("Server API returned HTML or 404. Falling back to client-side extraction...");
-        return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
-      }
-      
       let serverErrorMessage = "Failed to extract medicine data from image.";
       try {
         const errData = JSON.parse(errText);
@@ -358,14 +353,15 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
           serverErrorMessage = errText.trim();
         }
       }
-      throw new Error(serverErrorMessage);
+      return { success: false, errorMessage: serverErrorMessage };
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data;
   } catch (error: any) {
     console.warn("Extraction server error, trying client fallback:", error);
     if (!getClientApiKey()) {
-      return { success: false, errorMessage: error.message || String(error) };
+      return { success: false, errorMessage: error.message || "Failed to extract medicine details. Please try again." };
     }
     try {
       return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);

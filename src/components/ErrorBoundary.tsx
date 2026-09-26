@@ -29,9 +29,28 @@ export class ErrorBoundary extends React.Component<Props, State> {
     window.location.reload();
   };
 
+  handleHardReset = () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          for (let reg of registrations) reg.unregister();
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(keys => {
+          keys.forEach(k => caches.delete(k));
+        });
+      }
+    } catch (e) {}
+    setTimeout(() => {
+      window.location.href = window.location.origin + '/?reset=' + Date.now();
+    }, 200);
+  };
+
   render() {
     if (this.state.hasError) {
       let errorMessage = "Something went wrong. Please try again.";
+      let technicalDetails = this.state.error?.message || "";
       
       try {
         if (this.state.error?.message) {
@@ -43,24 +62,37 @@ export class ErrorBoundary extends React.Component<Props, State> {
       } catch (e) {}
 
       return (
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 text-white font-sans">
-          <div className="max-w-md w-full bg-[#1a1a1a] border border-white/10 rounded-[40px] p-10 text-center space-y-6 shadow-2xl">
-            <div className="w-20 h-20 bg-red-500/10 rounded-full mx-auto flex items-center justify-center">
-              <AlertTriangle className="text-red-500" size={40} />
+        <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center p-6 text-[#1f1f1f] font-sans">
+          <div className="max-w-md w-full bg-white border border-[#e3e2e0] rounded-3xl p-8 text-center space-y-6 shadow-xl">
+            <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center">
+              <AlertTriangle className="text-red-600" size={32} />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold tracking-tight">Application Error</h2>
-              <p className="text-white/60 text-sm leading-relaxed">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">Application Error</h2>
+              <p className="text-slate-600 text-sm leading-relaxed">
                 {errorMessage}
               </p>
+              {technicalDetails && (
+                <p className="text-xs text-red-500 font-mono bg-red-50 p-2.5 rounded-xl border border-red-100 break-all text-left max-h-28 overflow-y-auto">
+                  {technicalDetails}
+                </p>
+              )}
             </div>
-            <button
-              onClick={this.handleReset}
-              className="w-full py-4 bg-white text-black rounded-full font-bold flex items-center justify-center gap-2 hover:bg-white/90 transition-all"
-            >
-              <RefreshCw size={20} />
-              Reload Application
-            </button>
+            <div className="space-y-3 pt-2">
+              <button
+                onClick={this.handleReset}
+                className="w-full py-3.5 bg-[#0f9d58] text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#0b7a44] transition-all cursor-pointer"
+              >
+                <RefreshCw size={18} />
+                Reload Application
+              </button>
+              <button
+                onClick={this.handleHardReset}
+                className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-semibold text-xs transition-all cursor-pointer"
+              >
+                Clear Stale Cache & Refresh
+              </button>
+            </div>
           </div>
         </div>
       );

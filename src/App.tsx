@@ -167,20 +167,24 @@ export default function App() {
         if (data.theme) setTheme(data.theme);
       } else {
         // Initialize default config
-        setDoc(configRef, {
-          userId: user.uid,
-          email: user.email,
-          emailNotificationsEnabled: false,
-          browserNotificationsEnabled: false,
-          alertThreshold: 90,
-          lowQuantityThreshold: 5,
-          accentColor: '#f97316',
-          sortOrder: 'default',
-          theme: 'system'
-        }).catch(err => handleFirestoreError(err, OperationType.WRITE, 'userConfigs'));
+        if (user.email) {
+          setDoc(configRef, {
+            userId: user.uid,
+            email: user.email,
+            emailNotificationsEnabled: false,
+            browserNotificationsEnabled: false,
+            alertThreshold: 90,
+            lowQuantityThreshold: 5,
+            accentColor: '#f97316',
+            sortOrder: 'default',
+            theme: 'system'
+          }).catch(err => {
+            console.warn('Initial userConfig creation sync deferred:', err);
+          });
+        }
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'userConfigs');
+      console.warn('userConfigs snapshot notice (offline/reconnecting):', error);
     });
 
     return () => unsubscribe();
@@ -205,7 +209,7 @@ export default function App() {
       const uniqueMeds = Array.from(new Map(medsData.map(m => [m.id, m])).values());
       setMedicines(uniqueMeds);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'medicines');
+      console.warn('medicines snapshot notice (offline/reconnecting):', error);
     });
 
     return () => unsubscribe();
@@ -252,13 +256,31 @@ export default function App() {
           if (lastNotifiedDate !== todayStr) {
             const medNames = expiringMeds.map(m => m.name).join(', ');
             try {
-              new Notification('DawaLens AI Alert', {
-                body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
-                icon: '/favicon.ico'
-              });
+              if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+                navigator.serviceWorker.ready.then(reg => {
+                  reg.showNotification('DawaLens AI Alert', {
+                    body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
+                    icon: '/favicon.ico'
+                  });
+                }).catch(() => {
+                  try {
+                    new Notification('DawaLens AI Alert', {
+                      body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
+                      icon: '/favicon.ico'
+                    });
+                  } catch (e) {
+                    // Mobile chrome ignores new Notification()
+                  }
+                });
+              } else {
+                new Notification('DawaLens AI Alert', {
+                  body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
+                  icon: '/favicon.ico'
+                });
+              }
               localStorage.setItem('dawalens_ai_last_notified', todayStr);
             } catch (e) {
-              console.error('Failed to trigger notification:', e);
+              console.warn('Failed to trigger notification:', e);
             }
           }
         }
@@ -413,9 +435,16 @@ export default function App() {
   useEffect(() => {
     if (user) {
       const hasNotification = typeof window !== 'undefined' && 'Notification' in window && typeof Notification !== 'undefined';
-      // Request notification permission
+      // Request notification permission safely (handles browsers where requestPermission returns undefined or requires user gesture)
       if (hasNotification && Notification.permission === 'default') {
-        Notification.requestPermission();
+        try {
+          const permResult = Notification.requestPermission();
+          if (permResult && typeof permResult.catch === 'function') {
+            permResult.catch(() => {});
+          }
+        } catch (e) {
+          // Some mobile browsers throw TypeError if called without user gesture
+        }
       }
 
       // Check for expiring medicines and notify
@@ -435,10 +464,30 @@ export default function App() {
           
           if (diffDays >= 0 && diffDays <= 7) {
             if (hasNotification && Notification.permission === 'granted') {
-              new window.Notification('Medicine Expiring Soon', {
-                body: `${med.name} expires in ${diffDays} days.`,
-                icon: '/favicon.ico'
-              });
+              try {
+                if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+                  navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification('Medicine Expiring Soon', {
+                      body: `${med.name} expires in ${diffDays} days.`,
+                      icon: '/favicon.ico'
+                    });
+                  }).catch(() => {
+                    try {
+                      new window.Notification('Medicine Expiring Soon', {
+                        body: `${med.name} expires in ${diffDays} days.`,
+                        icon: '/favicon.ico'
+                      });
+                    } catch (e) {}
+                  });
+                } else {
+                  new window.Notification('Medicine Expiring Soon', {
+                    body: `${med.name} expires in ${diffDays} days.`,
+                    icon: '/favicon.ico'
+                  });
+                }
+              } catch (e) {
+                console.warn('Notification not supported:', e);
+              }
             }
           }
         });
