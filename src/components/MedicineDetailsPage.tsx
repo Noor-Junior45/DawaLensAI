@@ -1,0 +1,370 @@
+import React from 'react';
+import { Medicine } from '../types';
+import { 
+  ArrowLeft, History, Pencil, Package, Clock, Calendar, 
+  AlertTriangle, CheckCircle2, XCircle, Bell, BellOff, Mail
+} from 'lucide-react';
+import { motion } from 'motion/react';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
+import { LocalImage } from './LocalImage';
+
+interface MedicineDetailsPageProps {
+  medicine: Medicine;
+  allMedicines: Medicine[];
+  globalLowQuantityThreshold: number;
+  alertThreshold: number;
+  onBack: () => void;
+  onGoToHistory: () => void;
+  onGoToEdit: () => void;
+}
+
+export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
+  medicine,
+  allMedicines,
+  globalLowQuantityThreshold,
+  alertThreshold,
+  onBack,
+  onGoToHistory,
+  onGoToEdit,
+}) => {
+  // Format dates cleanly like "27 Feb 2027"
+  const formatDateFormal = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      const d = new Date(year, month - 1, day);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const getDiffDays = (dateStr?: string): number => {
+    if (!dateStr) return 9999;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const expiry = new Date();
+    if (year && month && day && !isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      expiry.setFullYear(year, month - 1, day);
+    } else {
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        parsed.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return Math.round((parsed.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      }
+      return 9999;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
+    return Math.round((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  // Find all batches for this medicine (same normalized name)
+  const normalizedName = medicine.name.trim().toLowerCase();
+  const relatedBatches = React.useMemo(() => {
+    const list = allMedicines.filter(
+      m => !m.isDeleted && m.name.trim().toLowerCase() === normalizedName
+    );
+    return list.sort((a, b) => {
+      if (a.id === medicine.id) return -1;
+      if (b.id === medicine.id) return 1;
+      return getDiffDays(a.expirationDate) - getDiffDays(b.expirationDate);
+    });
+  }, [allMedicines, normalizedName, medicine.id]);
+
+  const batchesToShow = relatedBatches.length > 0 ? relatedBatches : [medicine];
+  const totalStock = batchesToShow.reduce((acc, b) => acc + (b.quantity || 0), 0);
+  const activeBatches = batchesToShow.filter(b => !b.taken && getDiffDays(b.expirationDate) >= 0);
+  const nearestActive = activeBatches.length > 0 ? activeBatches[0] : batchesToShow[0];
+  const nearestDiffDays = getDiffDays(nearestActive?.expirationDate);
+
+  // Low stock settings
+  const isAlertEnabled = medicine.enableLowStockAlert !== false;
+  const alertQty = medicine.lowStockThreshold ?? globalLowQuantityThreshold;
+  const isLowStock = isAlertEnabled && totalStock <= alertQty;
+
+  // Notice calculation
+  const isExpired = nearestDiffDays < 0;
+  const isExpiringToday = nearestDiffDays === 0;
+  const isExpiringSoon = nearestDiffDays > 0 && nearestDiffDays <= 10;
+  const effectiveThreshold = alertThreshold === 90 ? 92 : alertThreshold;
+  const isExpiringAlert = nearestDiffDays > 10 && nearestDiffDays <= effectiveThreshold;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -24 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="fixed inset-0 z-50 bg-[#faf8f5] overflow-y-auto flex flex-col text-[#1f1f1f]"
+    >
+      {/* Top Header */}
+      <header className="sticky top-0 z-20 bg-[#faf8f5]/95 backdrop-blur-md border-b border-[#e3e2e0] px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="p-2 -ml-2 rounded-full text-slate-800 hover:text-black hover:bg-black/5 active:scale-95 transition-all"
+            title="Back to medicines"
+            aria-label="Back"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">
+            Medicine Details
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* History Button: Red Color Logo Only */}
+          <button
+            type="button"
+            onClick={onGoToHistory}
+            className="p-2.5 rounded-full text-rose-600 bg-rose-50 border border-rose-200/80 hover:bg-rose-100 hover:text-rose-700 active:scale-90 transition-all shadow-xs"
+            title="View History"
+            aria-label="History"
+          >
+            <History size={18} />
+          </button>
+
+          {/* Edit Button: Grey/Black Pencil Logo Only */}
+          <button
+            type="button"
+            onClick={onGoToEdit}
+            className="p-2.5 rounded-full text-slate-800 bg-white border border-[#e3e2e0] hover:bg-slate-100 hover:text-black active:scale-90 transition-all shadow-xs"
+            title="Edit Medicine"
+            aria-label="Edit"
+          >
+            <Pencil size={18} />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Page Content */}
+      <main className="flex-1 w-full max-w-2xl mx-auto px-5 sm:px-8 py-6 space-y-6 pb-20">
+        
+        {/* 1. Medicine Name & Form / Dosage */}
+        <section className="space-y-2">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight leading-tight">
+              {medicine.name}
+            </h2>
+            {medicine.imageUrl && (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border border-[#e3e2e0] bg-white shrink-0 shadow-sm">
+                {medicine.imageUrl === 'local' ? (
+                  <LocalImage medicineId={medicine.id} className="w-full h-full object-cover" />
+                ) : (
+                  <img src={medicine.imageUrl} alt={medicine.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap text-slate-800 text-sm sm:text-base font-semibold">
+            <span className="flex items-center gap-1.5">
+              {medicine.form && MEDICINE_FORM_ICONS[medicine.form]}
+              <span className="text-slate-900">
+                {medicine.form ? MEDICINE_FORM_LABELS[medicine.form] : 'Other'}
+              </span>
+            </span>
+            <span className="text-slate-400">•</span>
+            <span className="flex items-center gap-1.5 text-slate-900">
+              <Package size={15} className="text-slate-600" />
+              <span>{medicine.dosage || 'N/A'}</span>
+            </span>
+          </div>
+        </section>
+
+        <hr className="border-t border-[#e3e2e0]" />
+
+        {/* 2. Medication Schedule */}
+        <section className="space-y-1.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Medication Schedule
+          </div>
+          <div className="flex items-center gap-2 text-base text-slate-900 font-medium">
+            <Clock size={16} className="text-slate-700 shrink-0" />
+            <span>
+              {medicine.schedule && medicine.schedule.trim() ? medicine.schedule : 'None'}
+            </span>
+          </div>
+        </section>
+
+        <hr className="border-t border-[#e3e2e0]" />
+
+        {/* 3. Usage Instructions (Card Design as requested) */}
+        <section className="space-y-2">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Usage Instructions
+          </div>
+          <div className="bg-white border border-[#e3e2e0] rounded-2xl p-4 sm:p-5 shadow-xs">
+            <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+              {medicine.usageInstructions && medicine.usageInstructions.trim() 
+                ? medicine.usageInstructions 
+                : 'No instructions recorded.'}
+            </p>
+          </div>
+        </section>
+
+        <hr className="border-t border-[#e3e2e0]" />
+
+        {/* 4. Stocks & Expiry Date (Pure direct details) */}
+        <section className="space-y-2.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Stocks & Expiry Date
+          </div>
+          
+          <div className="space-y-2">
+            {batchesToShow.map((batch, index) => {
+              const diff = getDiffDays(batch.expirationDate);
+              const isBatchExpired = diff < 0;
+              const formattedDate = formatDateFormal(batch.expirationDate);
+              const qty = batch.quantity !== undefined ? batch.quantity : 0;
+
+              return (
+                <div 
+                  key={batch.id || index}
+                  className="flex items-center justify-between text-base py-1"
+                >
+                  <div className="font-semibold text-slate-900">
+                    <span>Qty: <strong className="text-black">{qty}</strong></span>
+                    <span className="mx-2 text-slate-400">•</span>
+                    <span>Expiry Date: <strong className={isBatchExpired ? 'text-rose-600' : 'text-slate-900'}>{formattedDate}</strong></span>
+                  </div>
+                  {isBatchExpired && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">
+                      Expired
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
+            {batchesToShow.length > 1 && (
+              <div className="pt-1.5 text-sm font-bold text-slate-900">
+                Total Stock: <span className="text-black font-extrabold">{totalStock} units</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <hr className="border-t border-[#e3e2e0]" />
+
+        {/* 5. Settings Section (Direct values, no verbose explanations) */}
+        <section className="space-y-2">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
+            Settings
+          </div>
+          <div className="space-y-1.5 text-sm sm:text-base text-slate-900 font-medium">
+            <div className="flex items-center gap-2">
+              {isAlertEnabled ? (
+                <Bell size={16} className="text-slate-700 shrink-0" />
+              ) : (
+                <BellOff size={16} className="text-slate-400 shrink-0" />
+              )}
+              <span>
+                Low Stock Alert: <strong className="text-black">{isAlertEnabled ? `${alertQty} units` : 'Disabled'}</strong>
+              </span>
+            </div>
+
+            {/* Email alerts status */}
+            <div className="flex items-center gap-2 text-slate-700">
+              <Mail size={16} className="text-slate-700 shrink-0" />
+              <span>
+                Email Alerts: Expiry ({medicine.enableEmailExpiryAlert !== false ? 'On' : 'Off'}) • Low Stock ({medicine.enableEmailLowStockAlert !== false ? 'On' : 'Off'})
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <hr className="border-t border-[#e3e2e0]" />
+
+        {/* 6. Notice Area (Highlight Focus Box) */}
+        <section className="pt-1">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">
+            Notice
+          </div>
+
+          {isExpired ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 flex items-start gap-3 shadow-xs">
+              <XCircle className="text-rose-600 shrink-0 mt-0.5" size={22} />
+              <div>
+                <div className="font-bold text-base text-rose-950">
+                  Expired Medication Notice
+                </div>
+                <p className="text-sm text-rose-900 leading-snug mt-0.5">
+                  {medicine.quantity ?? 0} units expired <strong>{Math.abs(nearestDiffDays)} days ago</strong> on {formatDateFormal(nearestActive?.expirationDate)}.
+                </p>
+              </div>
+            </div>
+          ) : isExpiringToday ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 flex items-start gap-3 shadow-xs">
+              <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" size={22} />
+              <div>
+                <div className="font-bold text-base text-amber-950">
+                  Expiring Today Notice
+                </div>
+                <p className="text-sm text-amber-900 leading-snug mt-0.5">
+                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> expire today ({formatDateFormal(nearestActive?.expirationDate)}).
+                </p>
+              </div>
+            </div>
+          ) : isExpiringSoon ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-orange-50 border-2 border-orange-300 text-orange-950 flex items-start gap-3 shadow-xs">
+              <AlertTriangle className="text-orange-600 shrink-0 mt-0.5" size={22} />
+              <div>
+                <div className="font-bold text-base text-orange-950">
+                  Expiring Soon Notice
+                </div>
+                <p className="text-sm text-orange-900 leading-snug mt-0.5">
+                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> have <strong>{nearestDiffDays} day(s) left</strong> to expire on {formatDateFormal(nearestActive?.expirationDate)}.
+                </p>
+              </div>
+            </div>
+          ) : isExpiringAlert ? (
+            <div className="p-4 sm:p-5 rounded-2xl bg-purple-50 border-2 border-purple-200 text-purple-950 flex items-start gap-3 shadow-xs">
+              <Clock className="text-purple-600 shrink-0 mt-0.5" size={22} />
+              <div>
+                <div className="font-bold text-base text-purple-950">
+                  Upcoming Expiration Notice
+                </div>
+                <p className="text-sm text-purple-900 leading-snug mt-0.5">
+                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(nearestActive?.expirationDate)}.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 flex items-start gap-3 shadow-xs">
+              <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={22} />
+              <div>
+                <div className="font-bold text-base text-emerald-950">
+                  Active Stock Notice
+                </div>
+                <p className="text-sm text-emerald-900 leading-snug mt-0.5">
+                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> available with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(nearestActive?.expirationDate)}.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Low Stock Warning if triggered */}
+          {isLowStock && !isExpired && (
+            <div className="mt-3 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex items-center gap-2.5 text-sm font-medium">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+              <span>
+                Low stock: Remaining stock ({totalStock} units) has reached or fallen below {alertQty} units.
+              </span>
+            </div>
+          )}
+        </section>
+
+      </main>
+    </motion.div>
+  );
+};

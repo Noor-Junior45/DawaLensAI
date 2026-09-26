@@ -177,7 +177,7 @@ export async function extractMedicineDataServer(base64Image: string) {
   try {
     return await runWithRotation('extraction', async (ai) => {
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
           { 
@@ -228,7 +228,7 @@ export async function checkDrugInteractionsServer(medicines: { name: string; dos
       Return JSON: { hasInteractions: boolean, interactions: [{ medications: string[], severity: "low"|"moderate"|"high", description: string, recommendation: string }], generalAdvice: string }`;
       
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: prompt,
         config: { 
           responseMimeType: "application/json",
@@ -299,7 +299,7 @@ export async function chatWithGeminiServer(messages: any[], userId?: string, med
       }));
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: [
           ...history,
           { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }

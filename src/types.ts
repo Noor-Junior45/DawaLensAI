@@ -28,6 +28,8 @@ export interface Medicine {
   liked?: boolean;
   enableLowStockAlert?: boolean; // toggle low stock alert per individual medicine
   lowStockThreshold?: number; // custom threshold per medicine if specified
+  enableEmailExpiryAlert?: boolean; // toggle email alert when expiring
+  enableEmailLowStockAlert?: boolean; // toggle email alert on low stock
   // Dynamic Cryptographic E2EE fields
   isEncrypted?: boolean;
   ivMap?: { [key: string]: string };

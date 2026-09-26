@@ -87,7 +87,7 @@ export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<str
   }));
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-3.8-flash",
     contents: [
       ...history,
       { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }
@@ -108,7 +108,7 @@ export async function extractMedicineDataClient(base64Image: string): Promise<Ex
 
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-3.8-flash",
     contents: [
       { inlineData: { mimeType: "image/jpeg", data: base64Image } },
       { 
@@ -158,7 +158,7 @@ export async function checkDrugInteractionsClient(medicines: { name: string; dos
   Return JSON: { hasInteractions: boolean, interactions: [{ medications: string[], severity: "low"|"moderate"|"high", description: string, recommendation: string }], generalAdvice: string }`;
   
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-3.8-flash",
     contents: prompt,
     config: { 
       responseMimeType: "application/json",

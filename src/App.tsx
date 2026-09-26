@@ -19,8 +19,10 @@ import {
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { checkDrugInteractions, InteractionResult } from './services/geminiService';
 
-import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { DoctorLogo } from './components/DoctorLogo';
+import { MedicineDetailsPage } from './components/MedicineDetailsPage';
+import { MedicineHistoryPage } from './components/MedicineHistoryPage';
+import { MedicineEditPage } from './components/MedicineEditPage';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
@@ -55,6 +57,12 @@ export default function App() {
   const [passwordResetEmailSent, setPasswordResetEmailSent] = useState<string | null>(null);
   const [activeFooterModal, setActiveFooterModal] = useState<'guide' | 'privacy' | 'terms' | null>(null);
   const [openedFromSettings, setOpenedFromSettings] = useState<boolean>(false);
+  const [selectedDetailsMedicine, setSelectedDetailsMedicine] = useState<Medicine | null>(null);
+  const [activeSystemPage, setActiveSystemPage] = useState<'details' | 'history' | 'edit' | null>(null);
+
+  const currentDetailsMedicine = selectedDetailsMedicine
+    ? medicines.find(m => m.id === selectedDetailsMedicine.id) || selectedDetailsMedicine
+    : null;
 
   // Google Site Verification Dynamic Header Injection
   useEffect(() => {
@@ -209,6 +217,7 @@ export default function App() {
         // A. Filter medicines for expiration alerts
         const expiringMeds = medicines.filter(m => {
           if (m.isDeleted) return false;
+          if (m.enableEmailExpiryAlert === false) return false;
           const [year, month, day] = m.expirationDate.split('-').map(Number);
           const expiry = new Date();
           if (year && month && day) {
@@ -228,8 +237,9 @@ export default function App() {
         // B. Filter medicines for low quantity alerts (respecting individual low-stock alert settings)
         const lowQuantityMeds = medicines.filter(m => {
           if (m.isDeleted || m.taken) return false;
-          // Skip if low-stock alert is explicitly disabled for this individual medicine (e.g. syrups)
+          // Skip if low-stock alert or email alert is explicitly disabled for this individual medicine
           if (m.enableLowStockAlert === false) return false;
+          if (m.enableEmailLowStockAlert === false) return false;
           const individualThreshold = m.lowStockThreshold !== undefined ? m.lowStockThreshold : lowQuantityThreshold;
           return m.quantity !== undefined && m.quantity <= individualThreshold;
         });
@@ -491,10 +501,79 @@ export default function App() {
     setIsFormOpen(true);
   };
 
+  const handleOpenDetails = (medicine: Medicine) => {
+    setSelectedDetailsMedicine(medicine);
+    setActiveSystemPage('details');
+  };
+
+  const handleSaveFromEditPage = async (data: Partial<Medicine>) => {
+    if (!user || isSaving || !currentDetailsMedicine) return;
+    setIsSaving(true);
+
+    try {
+      const { capturedImage, ...firestoreData } = data;
+      let imageUrl = data.imageUrl;
+      let localImageToSave: string | null = null;
+
+      if (capturedImage && capturedImage.startsWith('data:image')) {
+        imageUrl = 'local';
+        localImageToSave = capturedImage;
+      }
+
+      const medRef = doc(db, 'medicines', currentDetailsMedicine.id);
+      const updateData: any = { 
+        ...currentDetailsMedicine, 
+        ...firestoreData, 
+        userId: user.uid,
+        imageUrl: imageUrl || currentDetailsMedicine.imageUrl || null,
+        updatedAt: serverTimestamp()
+      };
+
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          updateData[key] = deleteField();
+        }
+      });
+
+      const batch = writeBatch(db);
+      batch.set(medRef, updateData, { merge: true });
+
+      const changes: string[] = [];
+      if (currentDetailsMedicine.quantity !== data.quantity) changes.push(`Qty: ${data.quantity}`);
+      if (currentDetailsMedicine.expirationDate !== data.expirationDate) changes.push(`Exp: ${data.expirationDate}`);
+      if (currentDetailsMedicine.dosage !== data.dosage) changes.push(`Dosage: ${data.dosage}`);
+      if (currentDetailsMedicine.form !== data.form) changes.push(`Form: ${data.form}`);
+      
+      const historyId = crypto.randomUUID();
+      batch.set(doc(db, `medicines/${currentDetailsMedicine.id}/history`, historyId), {
+        id: historyId,
+        medicineId: currentDetailsMedicine.id,
+        userId: user.uid,
+        timestamp: Date.now(),
+        actionType: 'EDIT',
+        details: `Updated: ${changes.join(', ') || 'Medication details modified'}`
+      });
+
+      await batch.commit();
+
+      if (localImageToSave) {
+        await localImageStorage.saveImage(currentDetailsMedicine.id, localImageToSave);
+      }
+
+      triggerSuccessHaptic();
+      
+      setSelectedDetailsMedicine(prev => prev ? ({ ...prev, ...firestoreData, imageUrl: imageUrl || prev.imageUrl }) : null);
+      setActiveSystemPage('details');
+    } catch (error: any) {
+      console.error('Save from edit page error:', error);
+      setAlertMessage("Failed to save changes. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleEdit = async (medicine: Medicine) => {
-    setExtractionWarning(null);
-    setEditingMedicine(medicine);
-    setIsFormOpen(true);
+    handleOpenDetails(medicine);
   };
 
   const base64ToBlob = (base64: string, mimeType: string) => {
@@ -1541,9 +1620,41 @@ export default function App() {
         </div>
       </div>
 
-      {/* Modals */}
-      <CookieConsentBanner />
+      {/* Modals & Three-Page System */}
       <AnimatePresence>
+        {activeSystemPage === 'details' && currentDetailsMedicine && (
+          <MedicineDetailsPage
+            medicine={currentDetailsMedicine}
+            allMedicines={medicines}
+            globalLowQuantityThreshold={lowQuantityThreshold}
+            alertThreshold={alertThreshold}
+            onBack={() => {
+              setActiveSystemPage(null);
+              setSelectedDetailsMedicine(null);
+            }}
+            onGoToHistory={() => setActiveSystemPage('history')}
+            onGoToEdit={() => setActiveSystemPage('edit')}
+          />
+        )}
+
+        {activeSystemPage === 'history' && currentDetailsMedicine && (
+          <MedicineHistoryPage
+            medicine={currentDetailsMedicine}
+            onBack={() => setActiveSystemPage('details')}
+          />
+        )}
+
+        {activeSystemPage === 'edit' && currentDetailsMedicine && (
+          <MedicineEditPage
+            medicine={currentDetailsMedicine}
+            allMedicines={medicines}
+            globalLowQuantityThreshold={lowQuantityThreshold}
+            isSaving={isSaving}
+            onSave={handleSaveFromEditPage}
+            onBack={() => setActiveSystemPage('details')}
+          />
+        )}
+
         {isCameraOpen && (
           <CameraCapture 
             onCapture={handleCapture}
