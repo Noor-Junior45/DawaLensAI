@@ -1,5 +1,6 @@
 import { MedicineForm, ChatMessage } from "../types";
 import { GoogleGenAI } from "@google/genai";
+import { performOnDeviceOcr, OcrPreExtractionHints } from "./ocrService";
 
 export const isProviderKeyMissing = (provider: 'gemini' = 'gemini') => {
   return !getClientApiKey();
@@ -20,6 +21,7 @@ export interface ExtractionResult {
   errorMessage?: string;
   warningMessage?: string;
   medicine?: ExtractedMedicine;
+  ocrAssisted?: boolean;
 }
 
 export interface Interaction {
@@ -74,6 +76,53 @@ function getClientApiKey(): string {
   return '';
 }
 
+// Resilient model fallback list for client calls
+const RESILIENT_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+
+async function generateContentWithModelFallbackClient(
+  ai: GoogleGenAI,
+  params: {
+    contents: any;
+    config?: any;
+    preferredModel?: string;
+  }
+) {
+  const modelsToTry = params.preferredModel 
+    ? [params.preferredModel, ...RESILIENT_MODELS.filter(m => m !== params.preferredModel)]
+    : RESILIENT_MODELS;
+
+  let lastError: any = null;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const model = modelsToTry[i];
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config
+      });
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const msg = err.message || String(err);
+      const is503 = msg.includes('503') || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('unavailable');
+      const is429 = msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted');
+
+      if (is503 || is429) {
+        console.warn(`[CLIENT GEMINI MODEL FALLBACK] Model "${model}" hit ${is503 ? '503 High Demand' : '429 Rate Limit'}. Switching to alternate model "${modelsToTry[i + 1] || 'none'}"...`);
+        await new Promise(r => setTimeout(r, 350));
+        continue;
+      }
+      
+      if (msg.includes('400')) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<string> {
   const apiKey = getClientApiKey();
   if (!apiKey) {
@@ -86,8 +135,8 @@ export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<str
     parts: [{ text: m.content }]
   }));
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const response = await generateContentWithModelFallbackClient(ai, {
+    preferredModel: "gemini-3.8-flash",
     contents: [
       ...history,
       { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }
@@ -100,27 +149,92 @@ export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<str
   return response.text || "I'm sorry, I couldn't generate a response.";
 }
 
-export async function extractMedicineDataClient(base64Image: string): Promise<ExtractionResult> {
+export async function extractMedicineDataClient(
+  base64Image: string,
+  ocrText?: string,
+  hints?: OcrPreExtractionHints
+): Promise<ExtractionResult> {
   const apiKey = getClientApiKey();
   if (!apiKey) {
     throw new Error("Gemini API Key is missing. Please configure it in your environment or local storage.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const hasMeaningfulOcr = ocrText && ocrText.trim().length > 10;
+
+  // 1. Text-Only Mode (Low token consumption)
+  if (hasMeaningfulOcr) {
+    const textPrompt = `You are an expert clinical pharmacist and data validator.
+Analyze this raw OCR text extracted directly from a medicine packaging/strip:
+"""
+${ocrText.trim()}
+"""
+${hints?.potentialExpiry ? `Local candidate expiry date: ${hints.potentialExpiry}` : ''}
+${hints?.potentialDosage ? `Local candidate dosage/strength: ${hints.potentialDosage}` : ''}
+${hints?.potentialQuantity ? `Local candidate strip/pack quantity: ${hints.potentialQuantity}` : ''}
+
+CRITICAL RULES:
+1. Fix any OCR typographical errors (e.g. Paracetam0l -> Paracetamol, Am0xicillin -> Amoxicillin).
+2. Extract exact medicine details:
+   - Name: Medicine brand name & composition.
+   - Dosage: Strength (e.g. 500mg, 625mg, 10ml).
+   - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month).
+   - Usage Instructions: Daily frequency/instructions/storage warnings.
+   - Form: tablet, capsule, syrup, ampule, powder, tape, liquid, or other.
+   - Quantity: Number of units in the strip or pack.`;
+
+    const response = await generateContentWithModelFallbackClient(ai, {
+      preferredModel: "gemini-3.8-flash",
+      contents: textPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: 'OBJECT' as any,
+          properties: {
+            name: { type: 'STRING' as any },
+            dosage: { type: 'STRING' as any },
+            expirationDate: { type: 'STRING' as any },
+            usageInstructions: { type: 'STRING' as any },
+            form: { type: 'STRING' as any, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
+            quantity: { type: 'NUMBER' as any }
+          },
+          required: ["name", "dosage", "expirationDate", "form"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("AI returned empty response");
+    const result = JSON.parse(text);
+
+    if ((!result.expirationDate || result.expirationDate.includes('undefined')) && hints?.potentialExpiry) {
+      result.expirationDate = hints.potentialExpiry;
+    }
+    if ((!result.dosage || result.dosage === 'N/A') && hints?.potentialDosage) {
+      result.dosage = hints.potentialDosage;
+    }
+    if ((!result.quantity || result.quantity === 0) && hints?.potentialQuantity) {
+      result.quantity = hints.potentialQuantity;
+    }
+
+    return { success: true, medicine: result, ocrAssisted: true };
+  }
+
+  // 2. Multimodal Vision Fallback
+  const response = await generateContentWithModelFallbackClient(ai, {
+    preferredModel: "gemini-3.8-flash",
     contents: [
       { inlineData: { mimeType: "image/jpeg", data: base64Image } },
       { 
         text: `You are a medical data extraction expert. 
         Perform exhaustive OCR to extract all visible text from the packaging.
         Then, identify:
-        - Name: Medicine name.
+        - Name: Medicine name and composition.
         - Dosage: Strength.
         - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month, e.g. 2026-05-01 if May 2026 is given).
         - Usage Instructions: Daily frequency/instructions.
         - Form: tablet, capsule, syrup, ampule, powder, liquid, or other.
-        - Quantity: Number of units.` 
+        - Quantity: Number of units in the strip or pack.` 
       }
     ],
     config: {
@@ -144,7 +258,7 @@ export async function extractMedicineDataClient(base64Image: string): Promise<Ex
   if (!text) throw new Error("AI returned empty response");
   
   const result = JSON.parse(text);
-  return { success: true, medicine: result };
+  return { success: true, medicine: result, ocrAssisted: false };
 }
 
 export async function checkDrugInteractionsClient(medicines: { name: string; dosage: string }[]): Promise<InteractionResult> {
@@ -157,8 +271,8 @@ export async function checkDrugInteractionsClient(medicines: { name: string; dos
   const prompt = `Act as a medical expert. Check for drug-drug interactions between these medications: ${medicines.map(m => `${m.name} (${m.dosage})`).join(', ')}. 
   Return JSON: { hasInteractions: boolean, interactions: [{ medications: string[], severity: "low"|"moderate"|"high", description: string, recommendation: string }], generalAdvice: string }`;
   
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
+  const response = await generateContentWithModelFallbackClient(ai, {
+    preferredModel: "gemini-3.8-flash",
     contents: prompt,
     config: { 
       responseMimeType: "application/json",
@@ -192,18 +306,36 @@ export async function checkDrugInteractionsClient(medicines: { name: string; dos
 }
 
 export async function extractMedicineData(base64Image: string): Promise<ExtractionResult> {
+  let ocrResult: OcrPreExtractionHints | null = null;
+  try {
+    // 1. Perform On-Device OCR directly in browser / native bridge
+    ocrResult = await performOnDeviceOcr(base64Image);
+  } catch (ocrErr) {
+    console.warn("Client OCR step caught an error, proceeding with image fallback:", ocrErr);
+  }
+
+  const ocrText = ocrResult?.cleanedText || ocrResult?.rawText || '';
+
   try {
     const response = await fetch('/api/ai/extract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64Image })
+      body: JSON.stringify({ 
+        base64Image,
+        ocrText,
+        hints: ocrResult ? {
+          potentialExpiry: ocrResult.potentialExpiry,
+          potentialDosage: ocrResult.potentialDosage,
+          potentialQuantity: ocrResult.potentialQuantity
+        } : undefined
+      })
     });
     
     if (!response.ok) {
       const errText = await response.text();
       if (errText.trim().startsWith('<') || response.status === 404) {
         console.warn("Server API returned HTML or 404. Falling back to client-side extraction...");
-        return await extractMedicineDataClient(base64Image);
+        return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
       }
       
       let errData;
@@ -222,7 +354,7 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
       return { success: false, errorMessage: error.message || String(error) };
     }
     try {
-      return await extractMedicineDataClient(base64Image);
+      return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
     } catch (fallbackError: any) {
       console.error("Client fallback extraction error:", fallbackError);
       return { success: false, errorMessage: fallbackError.message || String(fallbackError) };

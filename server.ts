@@ -197,8 +197,8 @@ app.post("/api/ai/interactions-save-cache", async (req, res) => {
 // Actual Gemini API Proxies
 app.post("/api/ai/extract", async (req, res) => {
   try {
-    const { base64Image } = req.body;
-    const result = await extractMedicineDataServer(base64Image);
+    const { base64Image, ocrText, hints } = req.body;
+    const result = await extractMedicineDataServer(base64Image, ocrText, hints);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ success: false, errorMessage: error.message || String(error) });

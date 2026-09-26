@@ -62,6 +62,59 @@ async function runWithRotation<T>(
   throw new Error(getDetailedError(lastError, context));
 }
 
+// Models to try in priority order when experiencing 503 high demand or temporary unavailability
+const RESILIENT_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+
+/**
+ * Executes a Gemini model call with automatic fallback across models if one is experiencing
+ * 503 high demand, 429 rate limit, or temporary unavailability.
+ */
+async function generateContentWithModelFallback(
+  ai: GoogleGenAI,
+  params: {
+    contents: any;
+    config?: any;
+    preferredModel?: string;
+  }
+) {
+  const modelsToTry = params.preferredModel 
+    ? [params.preferredModel, ...RESILIENT_MODELS.filter(m => m !== params.preferredModel)]
+    : RESILIENT_MODELS;
+
+  let lastError: any = null;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const model = modelsToTry[i];
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config
+      });
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const msg = err.message || String(err);
+      const is503 = msg.includes('503') || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('unavailable');
+      const is429 = msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('resource_exhausted');
+
+      if (is503 || is429) {
+        console.warn(`[GEMINI MODEL FALLBACK] Model "${model}" hit ${is503 ? '503 High Demand' : '429 Rate Limit'}. Switching to alternate model "${modelsToTry[i + 1] || 'none'}"...`);
+        // Short pause before switching to relieve burst pressure
+        await new Promise(r => setTimeout(r, 350));
+        continue;
+      }
+      
+      // If it's a fatal validation error (like 400 bad image), don't keep cycling models pointlessly
+      if (msg.includes('400')) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // Error formatter
 const getDetailedError = (error: any, context: 'chat' | 'extraction' | 'interaction') => {
   const msg = error.message || String(error);
@@ -69,12 +122,14 @@ const getDetailedError = (error: any, context: 'chat' | 'extraction' | 'interact
   if (
     msgLower.includes('exceeded its monthly spending cap') || 
     msgLower.includes('spending cap') || 
-    msgLower.includes('resource_exhausted') || 
     msgLower.includes('quota') || 
     msgLower.includes('billing') || 
     msgLower.includes('limit exceeded')
   ) {
     return "Your project has exceeded its monthly spending cap or quota in Google AI Studio.";
+  }
+  if (msg.includes('503') || msgLower.includes('high demand') || msgLower.includes('unavailable')) {
+    return "Gemini models are experiencing high demand right now. We attempted automatic retries across multiple backup models. Please tap scan once again in a few moments.";
   }
   if (msg.includes('400')) {
     if (context === 'extraction') {
@@ -83,10 +138,10 @@ const getDetailedError = (error: any, context: 'chat' | 'extraction' | 'interact
     return `Gemini Request Error (400). The AI had trouble processing your request. Please check your inputs or try again.`;
   }
   if (msg.includes('403') || msgLower.includes('denied') || msgLower.includes('permission_denied')) {
-    return "Your Google AI Studio Project has been restricted or denied access (403 PERMISSION_DENIED). Please verify that your active GEMINI_API_KEY is correct, enabled, and linked to a project in good standing with active billing/quota in Google AI Studio. If you recently configured Cloudflare, ensure API headers and payloads are not being modified or intercepted.";
+    return "Your Google AI Studio Project has been restricted or denied access (403 PERMISSION_DENIED). Please verify that your active GEMINI_API_KEY is correct, enabled, and linked to a project in good standing with active billing/quota in Google AI Studio.";
   }
   if (msg.includes('404')) return "Gemini Model Not Found (404). Please ensure the requested model is valid.";
-  if (msg.includes('429')) return "Gemini Quota Exceeded (429). You are on the free tier. Please wait a minute before trying again.";
+  if (msg.includes('429')) return "Gemini Quota Exceeded (429). The system automatically retried; please wait a moment and try again.";
   return msg;
 };
 
@@ -172,24 +227,96 @@ export async function saveInteractionCache(key: string, data: any) {
   interactionCache.set(key, data);
 }
 
-// Actual Gemini API logic on Server
-export async function extractMedicineDataServer(base64Image: string) {
+// Actual Gemini API logic on Server with Ultra-Low Cost Hybrid OCR
+export async function extractMedicineDataServer(
+  base64Image?: string,
+  ocrText?: string,
+  hints?: { potentialExpiry?: string; potentialDosage?: string; potentialQuantity?: number }
+) {
   try {
     return await runWithRotation('extraction', async (ai) => {
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const hasMeaningfulOcr = ocrText && ocrText.trim().length > 10;
+
+      // 1. LOW-COST PATH: Pure text extraction when OCR succeeded (~150 tokens vs 1000+ image tokens)
+      if (hasMeaningfulOcr) {
+        console.log(`[GEMINI EXTRACT] Using Ultra-Low Cost Text Mode with On-Device OCR (${ocrText.length} chars)`);
+        const textPrompt = `You are an expert clinical pharmacist and data validator. 
+Analyze this raw OCR text extracted directly from a medicine packaging/strip:
+"""
+${ocrText.trim()}
+"""
+${hints?.potentialExpiry ? `Local candidate expiry date: ${hints.potentialExpiry}` : ''}
+${hints?.potentialDosage ? `Local candidate dosage/strength: ${hints.potentialDosage}` : ''}
+${hints?.potentialQuantity ? `Local candidate strip/pack quantity: ${hints.potentialQuantity}` : ''}
+
+CRITICAL RULES:
+1. Fix any OCR typographical errors (e.g., "Paracetam0l" -> "Paracetamol", "Am0xicillin" -> "Amoxicillin", "Metf0rmin" -> "Metformin").
+2. Extract exact medicine details:
+   - name: Brand name and generic composition (e.g., "Augmentin 625 Duo (Amoxicillin & Potassium Clavulanate)").
+   - dosage: Strength/dosage (e.g., "625mg", "500mg", "10mg/5ml").
+   - expirationDate: Expiry date in YYYY-MM-01 format (use the 1st of the month).
+   - usageInstructions: Directions for use, storage precautions, or daily schedule.
+   - form: tablet, capsule, syrup, ampule, powder, tape, liquid, or other.
+   - quantity: Number of units in the strip or pack (e.g. 10, 15).`;
+
+        const response = await generateContentWithModelFallback(ai, {
+          preferredModel: "gemini-3.8-flash",
+          contents: textPrompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                dosage: { type: Type.STRING },
+                expirationDate: { type: Type.STRING },
+                usageInstructions: { type: Type.STRING },
+                form: { type: Type.STRING, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
+                quantity: { type: Type.NUMBER }
+              },
+              required: ["name", "dosage", "expirationDate", "form"]
+            }
+          }
+        });
+
+        const text = response.text;
+        if (!text) throw new Error("AI returned empty response");
+        const result = JSON.parse(text);
+
+        // Merge local hints if AI missed them
+        if ((!result.expirationDate || result.expirationDate.includes('undefined')) && hints?.potentialExpiry) {
+          result.expirationDate = hints.potentialExpiry;
+        }
+        if ((!result.dosage || result.dosage === 'N/A') && hints?.potentialDosage) {
+          result.dosage = hints.potentialDosage;
+        }
+        if ((!result.quantity || result.quantity === 0) && hints?.potentialQuantity) {
+          result.quantity = hints.potentialQuantity;
+        }
+
+        return { success: true, medicine: result, ocrAssisted: true };
+      }
+
+      // 2. FALLBACK PATH: Multimodal Vision if OCR had insufficient text (< 10 chars)
+      if (!base64Image) {
+        throw new Error("Neither OCR text nor image was provided for extraction.");
+      }
+
+      console.log("[GEMINI EXTRACT] Low-light or unreadable OCR, falling back to Gemini Vision");
+      const response = await generateContentWithModelFallback(ai, {
+        preferredModel: "gemini-3.8-flash",
         contents: [
           { inlineData: { mimeType: "image/jpeg", data: base64Image } },
           { 
             text: `You are a medical data extraction expert. 
             Perform exhaustive OCR to extract all visible text from the packaging.
             Then, identify:
-            - Name: Medicine name.
+            - Name: Medicine name and composition.
             - Dosage: Strength.
             - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month, e.g. 2026-05-01 if May 2026 is given).
             - Usage Instructions: Daily frequency/instructions.
             - Form: tablet, capsule, syrup, ampule, powder, liquid, or other.
-            - Quantity: Number of units.` 
+            - Quantity: Number of units in the strip or pack.` 
           }
         ],
         config: {
@@ -213,7 +340,7 @@ export async function extractMedicineDataServer(base64Image: string) {
       if (!text) throw new Error("AI returned empty response");
       
       const result = JSON.parse(text);
-      return { success: true, medicine: result };
+      return { success: true, medicine: result, ocrAssisted: false };
     });
   } catch (error: any) {
     console.error("Server extraction error:", error);
@@ -227,8 +354,8 @@ export async function checkDrugInteractionsServer(medicines: { name: string; dos
       const prompt = `Act as a medical expert. Check for drug-drug interactions between these medications: ${medicines.map(m => `${m.name} (${m.dosage})`).join(', ')}. 
       Return JSON: { hasInteractions: boolean, interactions: [{ medications: string[], severity: "low"|"moderate"|"high", description: string, recommendation: string }], generalAdvice: string }`;
       
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithModelFallback(ai, {
+        preferredModel: "gemini-3.8-flash",
         contents: prompt,
         config: { 
           responseMimeType: "application/json",
@@ -298,8 +425,8 @@ export async function chatWithGeminiServer(messages: any[], userId?: string, med
         parts: [{ text: m.content }]
       }));
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+      const response = await generateContentWithModelFallback(ai, {
+        preferredModel: "gemini-3.8-flash",
         contents: [
           ...history,
           { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }

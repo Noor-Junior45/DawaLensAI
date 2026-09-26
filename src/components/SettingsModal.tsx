@@ -447,52 +447,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button 
                 type="button"
                 onClick={() => { onClose(); onOpenGuide(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
+                className="w-full flex items-center px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
-                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
-                  <BookOpen size={14} className="text-[#0f9d58]" />
+                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2.5">
+                  <BookOpen size={15} className="text-[#0f9d58]" />
                   User Guide & Manual
                 </span>
-                <span className="text-[9px] text-[#0f9d58] font-extrabold bg-[#0f9d58]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">Manual</span>
               </button>
 
               {/* 2. Privacy Policy */}
               <button 
                 type="button"
                 onClick={() => { onClose(); onOpenPrivacy(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
+                className="w-full flex items-center px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
-                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
-                  <Shield size={14} className="text-[#0f9d58]" />
+                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2.5">
+                  <Shield size={15} className="text-[#0f9d58]" />
                   Privacy Policy
                 </span>
-                <span className="text-[9px] text-[#0f9d58] font-bold uppercase bg-[#0f9d58]/5 px-2 py-0.5 rounded-full">Policy</span>
               </button>
 
               {/* 3. Terms of Service */}
               <button 
                 type="button"
                 onClick={() => { onClose(); onOpenTerms(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
+                className="w-full flex items-center px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
-                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
-                  <Scale size={14} className="text-[#0f9d58]" />
+                <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2.5">
+                  <Scale size={15} className="text-[#0f9d58]" />
                   Terms of Service
                 </span>
-                <span className="text-[9px] text-[#0f9d58] font-bold uppercase bg-[#0f9d58]/5 px-2 py-0.5 rounded-full">Terms</span>
               </button>
 
               {/* 4. Delete Account & Data (Google Play Policy Compliant) */}
               <button 
                 type="button"
                 onClick={() => { onClose(); onOpenDeleteAccount(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#fdf2f2] hover:bg-[#fde8e8] border border-[#fecaca] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
+                className="w-full flex items-center px-4 py-3 bg-[#fdf2f2] hover:bg-[#fde8e8] border border-[#fecaca] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
-                <span className="text-[12px] font-bold text-[#991b1b] flex items-center gap-2">
-                  <Trash2 size={14} className="text-rose-600" />
+                <span className="text-[12px] font-bold text-[#991b1b] flex items-center gap-2.5">
+                  <Trash2 size={15} className="text-rose-600" />
                   Delete Account & Data
                 </span>
-                <span className="text-[9px] text-rose-700 font-bold uppercase bg-rose-100/70 px-2.5 py-0.5 rounded-full">Delete</span>
               </button>
             </div>
           </div>
