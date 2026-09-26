@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
-  ArrowLeft, Save, Plus, Minus, Calendar, Package, Clock, 
-  Sparkles, Bell, BellOff, Mail, Check
+  ArrowLeft, Plus, Minus, Calendar, Package, Clock, 
+  Sparkles, Mail, AlertTriangle, Image as ImageIcon
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
-import { localImageStorage } from '../services/localImageStorage';
 
-interface MedicineEditPageProps {
-  medicine: Medicine;
+interface MedicineAddPageProps {
+  initialData?: Partial<Medicine> | null;
+  extractionWarning?: string | null;
   allMedicines: Medicine[];
   globalLowQuantityThreshold: number;
   isSaving?: boolean;
-  onSave: (updatedMedicine: Partial<Medicine>) => Promise<void> | void;
+  onSave: (data: Partial<Medicine>) => Promise<void> | void;
   onBack: () => void;
 }
 
@@ -32,8 +32,9 @@ const SCHEDULE_PRESETS = [
   'Before Meals'
 ];
 
-export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
-  medicine,
+export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
+  initialData,
+  extractionWarning,
   allMedicines,
   globalLowQuantityThreshold,
   isSaving = false,
@@ -41,19 +42,19 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   onBack
 }) => {
   const [formData, setFormData] = useState<Partial<Medicine>>({
-    name: medicine.name || '',
-    dosage: medicine.dosage || '',
-    form: medicine.form || 'tablet',
-    quantity: medicine.quantity ?? 1,
-    expirationDate: medicine.expirationDate || '',
-    schedule: medicine.schedule || '',
-    usageInstructions: medicine.usageInstructions || '',
-    enableLowStockAlert: medicine.enableLowStockAlert !== false,
-    lowStockThreshold: medicine.lowStockThreshold ?? globalLowQuantityThreshold,
-    enableEmailExpiryAlert: medicine.enableEmailExpiryAlert !== false,
-    enableEmailLowStockAlert: medicine.enableEmailLowStockAlert !== false,
-    imageUrl: medicine.imageUrl || '',
-    capturedImage: medicine.capturedImage || ''
+    name: initialData?.name || '',
+    dosage: initialData?.dosage || '',
+    form: initialData?.form || 'tablet',
+    quantity: initialData?.quantity ?? 1,
+    expirationDate: initialData?.expirationDate || '',
+    schedule: initialData?.schedule || '',
+    usageInstructions: initialData?.usageInstructions || '',
+    enableLowStockAlert: initialData?.enableLowStockAlert !== false,
+    lowStockThreshold: initialData?.lowStockThreshold ?? globalLowQuantityThreshold,
+    enableEmailExpiryAlert: initialData?.enableEmailExpiryAlert !== false,
+    enableEmailLowStockAlert: initialData?.enableEmailLowStockAlert !== false,
+    imageUrl: initialData?.imageUrl || '',
+    capturedImage: initialData?.capturedImage || ''
   });
 
   const [suggestions, setSuggestions] = useState<Medicine[]>([]);
@@ -72,14 +73,24 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   }, [formData.usageInstructions]);
 
   useEffect(() => {
-    if (medicine.imageUrl === 'local' && !medicine.capturedImage) {
-      localImageStorage.getImage(medicine.id).then((img) => {
-        if (img) {
-          setFormData(prev => ({ ...prev, capturedImage: img }));
-        }
-      }).catch(() => {});
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        dosage: initialData.dosage || '',
+        form: initialData.form || 'tablet',
+        quantity: initialData.quantity ?? 1,
+        expirationDate: initialData.expirationDate || '',
+        schedule: initialData.schedule || '',
+        usageInstructions: initialData.usageInstructions || '',
+        enableLowStockAlert: initialData.enableLowStockAlert !== false,
+        lowStockThreshold: initialData.lowStockThreshold ?? globalLowQuantityThreshold,
+        enableEmailExpiryAlert: initialData.enableEmailExpiryAlert !== false,
+        enableEmailLowStockAlert: initialData.enableEmailLowStockAlert !== false,
+        imageUrl: initialData.imageUrl || '',
+        capturedImage: initialData.capturedImage || ''
+      });
     }
-  }, [medicine]);
+  }, [initialData, globalLowQuantityThreshold]);
 
   const updateField = (field: keyof Medicine, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -90,8 +101,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
 
     if (name.length > 1) {
       const filtered = allMedicines.filter(m => 
-        m.name.toLowerCase().includes(name.toLowerCase()) && 
-        m.id !== medicine.id
+        m.name.toLowerCase().includes(name.toLowerCase())
       );
       const unique = filtered.filter((m, index, self) => 
         index === self.findIndex((t) => t.name.toLowerCase() === m.name.toLowerCase())
@@ -134,27 +144,52 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
       transition={{ duration: 0.22, ease: "easeOut" }}
       className="fixed inset-0 z-50 bg-[#faf8f5] overflow-y-auto flex flex-col text-[#1f1f1f]"
     >
-      {/* Top Header - Save button REMOVED from header as requested */}
+      {/* Top Header */}
       <header className="sticky top-0 z-20 bg-[#faf8f5]/95 backdrop-blur-md border-b border-[#e3e2e0] px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
             className="p-2 -ml-2 rounded-full text-slate-800 hover:text-black hover:bg-black/5 active:scale-95 transition-all"
-            title="Back to Details"
+            title="Back"
             aria-label="Back"
           >
             <ArrowLeft size={22} />
           </button>
           <h1 className="text-lg font-bold tracking-tight text-slate-900">
-            Edit Medicine
+            Add Medicine
           </h1>
         </div>
       </header>
 
-      {/* Main Edit Form - Optimized for Phone Screens */}
+      {/* Main Add Form */}
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Scanned Image Preview if present */}
+          {formData.capturedImage && (
+            <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3 flex items-center gap-3 shadow-xs">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                <img src={formData.capturedImage} alt="Scanned label" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                  <ImageIcon size={14} className="text-[#0f9d58]" /> Scanned Medicine
+                </div>
+                <p className="text-xs text-slate-500 truncate">
+                  Details extracted from prescription or packaging
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Extraction Warning Banner if present */}
+          {extractionWarning && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-2.5 text-xs sm:text-sm">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="font-medium leading-relaxed">{extractionWarning}</p>
+            </div>
+          )}
 
           {/* 1. Medicine Name Input */}
           <div className="space-y-1.5">
@@ -178,7 +213,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
                 </span>
                 {suggestions.map((s, sIdx) => (
                   <button
-                    key={`edit-sug-${s.id || s.name}-${sIdx}`}
+                    key={`add-sug-${s.id || s.name}-${sIdx}`}
                     type="button"
                     onClick={() => applySuggestion(s)}
                     className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-[#0f9d58] border border-emerald-200 hover:bg-emerald-100 transition-colors"
@@ -190,7 +225,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             )}
           </div>
 
-          {/* 2. Medicine Form Switcher - Mobile friendly 2-col or 4-col grid */}
+          {/* 2. Medicine Form Switcher */}
           <div className="space-y-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-900">
               Medicine Form
@@ -320,7 +355,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             </div>
           </div>
 
-          {/* 6. Usage Instructions - Auto Expandable according to text length (No scrollbar) */}
+          {/* 6. Usage Instructions - Auto Expandable according to text length */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-900">
               Usage Instructions
@@ -381,7 +416,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             )}
           </div>
 
-          {/* 8. Email Notification Settings for Expiry & Low Qty (As requested) */}
+          {/* 8. Email Notification Settings for Expiry & Low Qty */}
           <div className="space-y-3 pt-3 border-t border-[#e3e2e0]">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
               <Mail size={14} className="text-slate-700" />
@@ -441,15 +476,15 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             </div>
           </div>
 
-          {/* Sticky Bottom Save Button (Only kept at bottom as requested) */}
+          {/* Sticky Bottom Add Medication Button */}
           <div className="sticky bottom-0 z-10 bg-[#faf8f5]/95 backdrop-blur-md border-t border-[#e3e2e0] py-3.5 -mx-4 sm:-mx-6 px-4 sm:px-6 shadow-md mt-6">
             <button
               type="submit"
               disabled={isSaving || !formData.name?.trim()}
               className="w-full py-4 rounded-2xl bg-[#0f9d58] text-white font-extrabold text-base shadow-lg hover:bg-[#0b7a44] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
-              <Save size={18} />
-              {isSaving ? 'Saving Changes...' : 'Save Medication'}
+              <Plus size={18} />
+              {isSaving ? 'Adding Medication...' : 'Add Medication'}
             </button>
           </div>
 

@@ -172,8 +172,9 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   const groupedMedicinesMap = React.useMemo(() => {
     const map = new Map<string, GroupedMedicine>();
 
-    medicines.forEach(med => {
-      const groupKey = med.name.trim().toLowerCase();
+    medicines.forEach((med, medIdx) => {
+      const rawName = (med.name || '').trim().toLowerCase();
+      const groupKey = rawName || `med-${med.id || medIdx}`;
       const diffDays = getDiffDays(med.expirationDate);
       const isExpired = diffDays < 0;
       const isEmpty = med.quantity !== undefined && med.quantity <= 0;
@@ -184,7 +185,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       if (!group) {
         group = {
           groupKey,
-          name: med.name.trim(),
+          name: (med.name || 'Unnamed Medicine').trim(),
           form: med.form,
           dosage: med.dosage,
           schedule: med.schedule,
@@ -433,20 +434,6 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   <Minus size={16} />
                 </button>
               )}
-
-              {/* Mark Taken Button */}
-              {nearestBatch && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleTaken(nearestBatch);
-                  }}
-                  className="p-2 sm:p-2.5 border rounded-full transition-all active:scale-90 bg-[#faf8f5]/60 text-slate-500 border-[#e3e2e0] hover:bg-slate-100 hover:text-[#1f1f1f]"
-                  title="Mark finished / taken"
-                >
-                  <CheckCircle2 size={16} />
-                </button>
-              )}
             </div>
           )}
         </div>
@@ -563,20 +550,6 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 title="Edit medicine"
               >
                 <Edit3 size={16} />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleTaken(earliestBatch);
-                }}
-                className={`p-2 border rounded-full transition-all ${
-                  earliestBatch.taken 
-                    ? 'bg-emerald-50 text-[#0f9d58] border-emerald-100' 
-                    : 'bg-[#faf8f5]/60 text-slate-500 border-[#e3e2e0]'
-                }`}
-                title={earliestBatch.taken ? "Mark not taken" : "Mark taken"}
-              >
-                <CheckCircle2 size={16} />
               </button>
             </div>
           )}

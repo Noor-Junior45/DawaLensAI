@@ -155,11 +155,11 @@ export const MedicineHistoryPage: React.FC<MedicineHistoryPageProps> = ({
           </div>
         ) : (
           <div className="relative border-l-2 border-slate-200 ml-4 sm:ml-6 pl-5 sm:pl-6 space-y-6 py-2">
-            {history.map((item) => {
+            {history.map((item, idx) => {
               const badge = getActionBadge(item.actionType);
 
               return (
-                <div key={item.id} className="relative group">
+                <div key={`hist-entry-${item.id || idx}-${idx}`} className="relative group">
                   {/* Timeline dot */}
                   <div className="absolute -left-[31px] sm:-left-[35px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-slate-400 group-hover:border-[#0f9d58] transition-colors" />
 

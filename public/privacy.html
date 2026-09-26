@@ -5,94 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - DawaLens AI</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 800px; margin: 40px auto; padding: 0 24px; background-color: #f8fafc; }
-    .card { background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
-    h1 { color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-top: 0; font-size: 28px; }
-    h2 { color: #0f9d58; margin-top: 32px; font-size: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
-    h3 { color: #1e293b; margin-top: 20px; font-size: 16px; }
-    p { margin-bottom: 16px; }
-    ul { margin-bottom: 16px; padding-left: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #111; max-width: 760px; margin: 40px auto; padding: 0 20px; background: #fff; }
+    h1 { color: #0f9d58; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-top: 10px; font-size: 26px; }
+    h2 { color: #222; margin-top: 28px; font-size: 18px; }
+    h3 { color: #333; margin-top: 18px; font-size: 15px; }
+    ul { padding-left: 20px; color: #444; }
     li { margin-bottom: 8px; }
-    code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #0f172a; }
-    footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 12px; color: #64748b; text-align: center; }
-    a { color: #0f9d58; text-decoration: underline; }
-    a:hover { color: #0b7a44; }
+    .badge { display: inline-block; background: #eefcf5; color: #0f9d58; padding: 2px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; }
+    .highlight-box { background: #ecfdf5; border-left: 4px solid #0f9d58; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 13px; color: #065f46; }
+    a { color: #0f9d58; text-decoration: none; font-weight: bold; }
+    a:hover { text-decoration: underline; }
+    p { color: #444; }
+    footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #777; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Privacy Policy for DawaLens AI</h1>
-    <p><strong>Effective Date: July 3, 2026</strong></p>
-    <p>Welcome to DawaLens AI ("we", "our", "us"). We are strongly committed to protecting your personal information and your right to privacy. This privacy policy applies to our application hosted at <strong>https://noorpos.in</strong>, and outlines our policies and practices regarding the collection, use, transmission, and protection of your data when you use DawaLens AI.</p>
-    
-    <p>Our app provides intelligent, AI-assisted medication barcode scanning, dosage scheduling, and interaction warnings, with optional sync to your personal Google account. We prioritize user privacy, data security, and compliance with the <strong>Google API Services User Data Policy</strong>.</p>
+  <span class="badge">Google OAuth & Play Store Data Safety</span>
+  <h1>Privacy Policy for DawaLens AI</h1>
+  <p><strong>Effective Date: June 25, 2026</strong></p>
+  <p>DawaLens AI ("we", "our", or "the Service") operates the digital pharmacy assistant application available at <strong>https://noorpos.in</strong>. This Privacy Policy details our standards regarding the collection, handling, encryption, and deletion of user data in full adherence to the <strong>Google API Services User Data Policy</strong> (including Limited Use requirements) and the <strong>Google Play Store Data Safety Policy</strong>.</p>
 
-    <h2>1. Google User Data Policy Disclosures</h2>
-    <p>DawaLens AI allows users to authenticate using Google Sign-In. To comply with the Google API Services User Data Policy, we disclose the following details regarding how we access, use, store, share, and delete Google user data:</p>
+  <h2>1. Google User Data Handling (Limited Use)</h2>
+  <h3>A. What Google Data We Access</h3>
+  <p>When you authenticate using Google Sign-In, we securely retrieve only your primary Google account identifier: <strong>email address, display name, and profile avatar URL</strong>. We do NOT request access to contacts, Google Drive, Gmail messages, or private external files.</p>
 
-    <h3>A. Data Accessed</h3>
-    <p>When you sign in with Google through Firebase Authentication, DawaLens AI accesses only basic, non-sensitive profile information. Specifically, we access:</p>
-    <ul>
-      <li>Your Google email address</li>
-      <li>Your Google full name / display name</li>
-      <li>Your Google profile picture / avatar URL</li>
-    </ul>
-    <p><em>Note: We do not access, request, or interact with any restricted Google APIs, such as Google Tasks, Google Calendar, or Google Drive. No other scopes or sensitive permissions are requested.</em></p>
+  <h3>B. How We Use Your Google Data</h3>
+  <ul>
+    <li>To securely authenticate your session and associate your medication inventory with your account.</li>
+    <li>To route automated expiry alerts and low-stock reminder emails to your designated email address.</li>
+    <li><strong>No Model Training:</strong> None of your Google user data, profile info, or medication entries are ever used to train, fine-tune, or ground generic AI, machine learning models, or large language models.</li>
+  </ul>
 
-    <h3>B. Data Usage</h3>
-    <p>We use the accessed Google profile data strictly for the following essential application functions:</p>
-    <ul>
-      <li>To authenticate and log you into your secure personal dashboard in DawaLens AI.</li>
-      <li>To display your email, name, and profile picture on your dashboard or account settings screen to personalize your experience.</li>
-      <li>To link and securely associate your private medication lists and scheduling data with your user ID in our secure Cloud Firestore environment.</li>
-      <li><strong>No Model Training:</strong> None of your Google user data, profile info, or medication entries are ever used to train, refine, or ground generic AI, machine learning models, or large language models.</li>
-    </ul>
+  <h3>C. Data Sharing</h3>
+  <p><strong>We do not share or sell your Google user data.</strong> Your information is never sold, traded, or transferred to third-party advertisers or data brokers.</p>
 
-    <h3>C. Data Sharing</h3>
-    <p><strong>We do not share your Google user data.</strong></p>
-    <ul>
-      <li>Your Google profile data is never sold, traded, rented, or disclosed to third-party advertisers, data brokers, tracking analytics SDKs, or marketing agencies.</li>
-      <li>Data transmission is strictly constrained to direct communication between your browser, Firebase Auth, and our secure backend environment. We do not transfer Google user data to third parties under any circumstances.</li>
-    </ul>
-
-    <h3>D. Data Storage & Protection</h3>
-    <p>We employ high-grade security standards to protect your data:</p>
-    <ul>
-      <li><strong>Secure Key Management:</strong> Google Sign-In tokens and session identifiers are handled securely via Firebase Authentication standards and are encrypted in transit.</li>
-      <li><strong>Transport Security:</strong> All API requests, authentication flows, and data exchanges are protected using Transport Layer Security (TLS/SSL) encryption.</li>
-      <li><strong>Database Protections:</strong> Our Cloud Firestore database is fully secured using rigorous server-side Firebase Security Rules to prevent any cross-user or unauthorized access. Users can also enable <strong>Zero-Knowledge End-to-End Encryption (E2EE)</strong> to encrypt medication logs locally in their browser using the Web Crypto API before syncing to the cloud database.</li>
-    </ul>
-
-    <h3>E. Data Retention & Deletion</h3>
-    <p>We respect your right to control your data and provide an accessible process for data deletion:</p>
-    <ul>
-      <li><strong>Account Deletion:</strong> You can permanently wipe all your account data, stored medications, and linked session tokens instantly via the "Delete Account" button in the app's settings panel.</li>
-      <li><strong>Written Requests:</strong> Alternatively, you may request permanent data deletion at any time by contacting us directly at <a href="mailto:noorpos.alerts@gmail.com">noorpos.alerts@gmail.com</a>. Upon receipt of your request, we will permanently purge all your Google profile metadata and stored application history from our databases within 48 hours.</li>
-    </ul>
-
-    <h2>2. App-Specific Medicine & Photo Privacy</h2>
-    <ul>
-      <li><strong>Medicines & Prescriptions:</strong> Stored medicine names, dosages, and schedules are saved securely inside your private cloud database (Firebase Firestore) under secure authentication guards.</li>
-      <li><strong>Local Camera Photos:</strong> Any images or prescription photos scanned using your browser's camera are stored entirely on-device (within secure local IndexedDB storage) and are <strong>never</strong> transmitted to our servers or processed off-device. If you delete a medication log, the corresponding local image is permanently destroyed.</li>
-    </ul>
-
-    <h2>3. Google Analytics and Event Tracking</h2>
-    <p>We use Google Analytics (specifically Google Analytics 4) to collect information about how our users interact with the application. This helps us analyze app usage, improve functionality, monitor performance, and provide a better overall experience.</p>
-    <p>The information collected via Google Analytics is aggregated, anonymous, and includes:</p>
-    <ul>
-      <li>Basic usage statistics (such as page views, button clicks, and screen transitions).</li>
-      <li>Custom application events (such as tracking when a user chats with the AI assistant, scans a medication label, checks for drug interactions, imports/exports data, or logs intake schedules).</li>
-      <li>Technical metrics (such as device type, browser, and general geographic location derived from IP addresses).</li>
-    </ul>
-    <p>We do not send sensitive personal health information, E2EE keys, passwords, or medication imagery to Google Analytics. All tracking is used solely for service optimization and user engagement metrics.</p>
-
-    <h2>4. Compliance and Contact</h2>
-    <p>DawaLens AI is committed to complying with the Google API Services User Data Policy, including Limited Use requirements. For any privacy queries or to request manual deletion of your records, contact us at:</p>
-    <p><strong>Email Support:</strong> <a href="mailto:noorpos.alerts@gmail.com">noorpos.alerts@gmail.com</a></p>
-    
-    <footer>
-      <p>&copy; 2026 DawaLens AI. All rights reserved. Registered Domain: https://noorpos.in</p>
-    </footer>
+  <h2>2. App-Specific Medicine & Photo Privacy</h2>
+  <div class="highlight-box">
+    <strong>100% On-Device Image Storage:</strong> Any images or prescription photos scanned using your browser's camera are stored entirely on-device (within secure local IndexedDB storage) and are <strong>never</strong> transmitted to our servers or processed off-device.
   </div>
+  <p>If you delete a medication log, the corresponding local image is permanently destroyed from your device memory.</p>
+
+  <h2>3. Google Analytics Disclosure</h2>
+  <p>We use Google Analytics 4 to collect aggregated, anonymous diagnostic usage statistics to optimize app performance. We strictly forbid transmitting sensitive personal health information, encryption keys, or medication photos to Google Analytics.</p>
+
+  <h2>4. Data Retention & Account Deletion</h2>
+  <p>In accordance with the Google Play Store Account Deletion Policy, users can permanently delete their account and all associated cloud data at any time via the in-app menu or our <a href="/delete-account.html">Account Deletion Page</a>. Deletions are processed immediately (or within 48 hours for email requests).</p>
+
+  <h2>5. Compliance and Contact</h2>
+  <p>For any privacy queries or data subject requests, email us directly at: <a href="mailto:support@intgoi.resend.app?subject=Privacy%20Inquiry%20-%20DawaLens%20AI">dawalens@noorpos.in</a></p>
+  
+  <footer>
+    <p>&copy; 2026 DawaLens AI. All rights reserved. Registered Domain: https://noorpos.in | <a href="/manual.html">User Guide</a> | <a href="/terms.html">Terms</a> | <a href="/delete-account.html">Delete Account</a></p>
+  </footer>
 </body>
 </html>

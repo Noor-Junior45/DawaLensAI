@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale } from 'lucide-react';
+import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine } from './types';
@@ -23,15 +23,43 @@ import { DoctorLogo } from './components/DoctorLogo';
 import { MedicineDetailsPage } from './components/MedicineDetailsPage';
 import { MedicineHistoryPage } from './components/MedicineHistoryPage';
 import { MedicineEditPage } from './components/MedicineEditPage';
+import { MedicineAddPage } from './components/MedicineAddPage';
+import { UserGuidePage } from './components/UserGuidePage';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { TermsOfServicePage } from './components/TermsOfServicePage';
+import { AccountDeletionPage } from './components/AccountDeletionPage';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
 import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML } from './services/emailService';
 import { trackEvent } from './utils/analytics';
 
+type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | null;
+
+const getInitialPublicPage = (): PublicPageType => {
+  try {
+    const searchParams = new URLSearchParams(window.location.search);
+    const pageParam = searchParams.get('page');
+    if (pageParam === 'guide' || pageParam === 'manual') return 'guide';
+    if (pageParam === 'privacy') return 'privacy';
+    if (pageParam === 'terms') return 'terms';
+    if (pageParam === 'delete-account' || pageParam === 'account-delete' || pageParam === 'deleteaccount') return 'delete-account';
+
+    const pathname = window.location.pathname.toLowerCase();
+    if (pathname.includes('/guide') || pathname.includes('/manual')) return 'guide';
+    if (pathname.includes('/privacy')) return 'privacy';
+    if (pathname.includes('/terms')) return 'terms';
+    if (pathname.includes('/delete-account') || pathname.includes('/account-delete') || pathname.includes('/accountdelete')) return 'delete-account';
+  } catch (e) {
+    console.warn('Failed to parse URL for public page:', e);
+  }
+  return null;
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [publicPage, setPublicPage] = useState<PublicPageType>(getInitialPublicPage);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -58,7 +86,28 @@ export default function App() {
   const [activeFooterModal, setActiveFooterModal] = useState<'guide' | 'privacy' | 'terms' | null>(null);
   const [openedFromSettings, setOpenedFromSettings] = useState<boolean>(false);
   const [selectedDetailsMedicine, setSelectedDetailsMedicine] = useState<Medicine | null>(null);
-  const [activeSystemPage, setActiveSystemPage] = useState<'details' | 'history' | 'edit' | null>(null);
+  const [activeSystemPage, setActiveSystemPage] = useState<'details' | 'history' | 'edit' | 'add' | null>(null);
+
+  const navigateToPublicPage = (page: PublicPageType) => {
+    setPublicPage(page);
+    try {
+      if (page) {
+        window.history.pushState(null, '', `/?page=${page}`);
+      } else {
+        window.history.pushState(null, '', '/');
+      }
+    } catch (e) {
+      console.warn('History pushState error:', e);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPublicPage(getInitialPublicPage());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const currentDetailsMedicine = selectedDetailsMedicine
     ? medicines.find(m => m.id === selectedDetailsMedicine.id) || selectedDetailsMedicine
@@ -83,6 +132,9 @@ export default function App() {
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authStep, setAuthStep] = useState<'email' | 'password'>('email');
+  const [showPassword, setShowPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [isEmailLoginOpen, setIsEmailLoginOpen] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [interactionResult, setInteractionResult] = useState<InteractionResult | null>(null);
@@ -486,6 +538,9 @@ export default function App() {
       // Reset UI states on logout
       setIsSettingsOpen(false);
       setIsEmailLoginOpen(false);
+      setAuthStep('email');
+      setPassword('');
+      setShowPassword(false);
       setIsSignUp(false);
       setIsCameraOpen(false);
       setIsFormOpen(false);
@@ -498,7 +553,7 @@ export default function App() {
   const handleAddManual = () => {
     setEditingMedicine(null);
     setExtractionWarning(null);
-    setIsFormOpen(true);
+    setActiveSystemPage('add');
   };
 
   const handleOpenDetails = (medicine: Medicine) => {
@@ -720,6 +775,18 @@ export default function App() {
         if (firestoreData.quantity !== undefined) {
           newMed.quantity = firestoreData.quantity;
         }
+        if (firestoreData.enableLowStockAlert !== undefined) {
+          newMed.enableLowStockAlert = firestoreData.enableLowStockAlert;
+        }
+        if (firestoreData.lowStockThreshold !== undefined) {
+          newMed.lowStockThreshold = firestoreData.lowStockThreshold;
+        }
+        if (firestoreData.enableEmailExpiryAlert !== undefined) {
+          newMed.enableEmailExpiryAlert = firestoreData.enableEmailExpiryAlert;
+        }
+        if (firestoreData.enableEmailLowStockAlert !== undefined) {
+          newMed.enableEmailLowStockAlert = firestoreData.enableEmailLowStockAlert;
+        }
 
         batch.set(doc(db, 'medicines', id), newMed);
 
@@ -752,6 +819,9 @@ export default function App() {
       setIsFormOpen(false);
       setEditingMedicine(null);
       setExtractionWarning(null);
+      if (activeSystemPage === 'add') {
+        setActiveSystemPage(null);
+      }
     } catch (error: any) {
       console.error('Cloud Save Error:', error);
       setAlertMessage("Cloud sync failed. Please check your internet connection.");
@@ -933,7 +1003,7 @@ export default function App() {
         setExtractionWarning(result.warningMessage);
       }
       setIsCameraOpen(false);
-      setIsFormOpen(true);
+      setActiveSystemPage('add');
     } else {
       trackEvent('capture_image', { success: false, error: result.errorMessage || "Failed extraction" });
       setExtractionError(result.errorMessage || "Could not read the label. Please ensure good lighting and a clear, focused image.");
@@ -1217,134 +1287,344 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  const handleFullAccountDeletion = async () => {
+    if (!user) return;
+    try {
+      // 1. Delete all user medicines from Firestore
+      const snap = await getDocs(query(collection(db, 'medicines'), where('userId', '==', user.uid)));
+      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
+      await Promise.all(deletePromises);
+
+      // 2. Clear local device image caches and storage
+      try {
+        localStorage.clear();
+      } catch (e) {}
+
+      // 3. Try deleting Firebase Auth user account
+      try {
+        await user.delete();
+      } catch (authErr) {
+        console.warn('user.delete() required recent login, signing out:', authErr);
+        await signOut(auth);
+      }
+      setUser(null);
+      setMedicines([]);
+      trackEvent('user_account_deleted', { userId: user.uid });
+    } catch (err: any) {
+      console.error('Account deletion error:', err);
+      throw err;
+    }
+  };
+
+  const handleBackFromPublicPage = () => {
+    navigateToPublicPage(null);
+    if (openedFromSettings) {
+      setIsSettingsOpen(true);
+      setOpenedFromSettings(false);
+    }
+  };
+
+  // PUBLIC LEGAL & GUIDE PAGES (Google Search Console & Play Store Compliant - No Login Required)
+  if (publicPage === 'guide') {
+    return <UserGuidePage onBack={handleBackFromPublicPage} isLoggedIn={!!user} />;
+  }
+  if (publicPage === 'privacy') {
+    return <PrivacyPolicyPage onBack={handleBackFromPublicPage} isLoggedIn={!!user} />;
+  }
+  if (publicPage === 'terms') {
+    return <TermsOfServicePage onBack={handleBackFromPublicPage} isLoggedIn={!!user} />;
+  }
+  if (publicPage === 'delete-account') {
     return (
-      <div className="min-h-screen bg-[#faf8f5] text-[#1f1f1f] font-sans flex flex-col items-center justify-between p-6">
-        <div className="flex-1 flex flex-col items-center justify-center max-w-md w-full text-center space-y-8 my-auto">
+      <AccountDeletionPage 
+        onBack={handleBackFromPublicPage} 
+        user={user} 
+        onExecuteAccountDeletion={handleFullAccountDeletion} 
+      />
+    );
+  }
+
+  if (!user) {
+    const handleContinueEmail = (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      if (!email || !email.trim()) {
+        setAlertMessage('Please enter your email address.');
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        setAlertMessage('Please enter a valid email address.');
+        return;
+      }
+      setAuthStep('password');
+    };
+
+    const handleMagicLink = async () => {
+      if (!email || !email.trim()) {
+        setAlertMessage('Please enter your email address first to receive a magic sign-in link.');
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email.trim());
+        setAlertMessage(`Magic sign-in link has been sent to ${email.trim()}. Please check your email inbox.`);
+        trackEvent('magic_link_sent');
+      } catch (err: any) {
+        console.warn('Magic link error:', err);
+        setAlertMessage(err.message || 'Failed to send magic link. Please check your email address.');
+      }
+    };
+
+    const handleAuthSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (authStep === 'email') {
+        handleContinueEmail(e);
+        return;
+      }
+      if (!password) {
+        setAlertMessage('Please enter your password.');
+        return;
+      }
+      if (!agreedToTerms) {
+        setAlertMessage('Please agree to our Terms of service and Privacy policy to proceed.');
+        return;
+      }
+      if (isSignUp) {
+        await handleEmailSignUp(e);
+      } else {
+        await handleEmailLogin(e);
+      }
+    };
+
+    const handleGoogleSignInWithConsent = () => {
+      if (!agreedToTerms) {
+        setAlertMessage('Please agree to our Terms of service and Privacy policy to proceed.');
+        return;
+      }
+      handleLogin();
+    };
+
+    return (
+      <div className="min-h-screen bg-[#faf8f5] text-slate-800 font-sans flex flex-col items-center justify-between p-4 sm:p-6 selection:bg-[#0f9d58] selection:text-white">
+        <div className="flex-1 flex flex-col items-center justify-center max-w-[400px] w-full my-auto space-y-6">
+          {/* Logo & App Name Header */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="space-y-4"
+            className="space-y-3 text-center"
           >
-            <div className="w-24 h-24 bg-white border border-[#e3e2e0] rounded-[32px] mx-auto flex items-center justify-center shadow-md">
-              <Camera className="text-[#0f9d58]" size={42} />
+            <div className="w-20 h-20 bg-white border border-[#e3e2e0] rounded-[28px] mx-auto flex items-center justify-center shadow-md">
+              <Camera className="text-[#0f9d58]" size={38} />
             </div>
-            <h1 className="text-5xl font-black tracking-tight text-[#0f9d58]">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#0f9d58]">
               DawaLens AI
             </h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">
-              Your AI Medicine Vault
-            </p>
           </motion.div>
 
-          <div className="space-y-6 w-full">
-            <p className="text-slate-600 text-sm leading-relaxed font-medium">
-              Securely store your medicine data in the cloud. Access your vault from any device, anytime.
-            </p>
-            <button
-              onClick={handleLogin}
-              className="w-full py-4.5 bg-white text-slate-800 border border-[#e3e2e0] rounded-[24px] font-bold text-base hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 active:scale-98"
-            >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
-              Sign in with Google
-            </button>
+          {/* Sign In / Create Account Heading (Centered, subtle styling) */}
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-600 text-center tracking-tight">
+            {isSignUp ? 'Create account' : 'Sign in'}
+          </h2>
 
-            <div className="pt-2">
-              <button 
-                onClick={() => {
-                  setIsEmailLoginOpen(!isEmailLoginOpen);
-                  setIsSignUp(false);
-                }}
-                className="text-slate-500 text-xs hover:text-[#0f9d58] transition-colors underline underline-offset-4 font-bold"
+          <form onSubmit={handleAuthSubmit} className="w-full space-y-4">
+            {/* EMAIL FIELD */}
+            <div className="space-y-1.5">
+              <label 
+                htmlFor="auth-email" 
+                className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 block"
               >
-                {isEmailLoginOpen ? 'Hide Email Login' : 'Sign in with Email & Password'}
-              </button>
-              
-              {isEmailLoginOpen && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-6 space-y-4 bg-white border border-[#e3e2e0] rounded-[32px] p-6 shadow-sm text-left"
-                >
-                  <div className="flex gap-2 p-1 bg-[#faf8f5] border border-[#e3e2e0]/60 rounded-2xl mb-2">
-                    <button 
-                      onClick={() => setIsSignUp(false)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${!isSignUp ? 'bg-[#0f9d58] text-white shadow-xs' : 'text-slate-500 hover:text-[#0f9d58]'}`}
-                    >
-                      Login
-                    </button>
-                    <button 
-                      onClick={() => setIsSignUp(true)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${isSignUp ? 'bg-[#0f9d58] text-white shadow-xs' : 'text-slate-500 hover:text-[#0f9d58]'}`}
-                    >
-                      Sign Up
-                    </button>
-                  </div>
-
-                  <form onSubmit={isSignUp ? handleEmailSignUp : handleEmailLogin} className="space-y-3">
-                    <input 
-                      id="auth-email"
-                      name="email"
-                      type="email" 
-                      placeholder="Email address"
-                      value={email || ''}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#0f9d58] focus:ring-2 focus:ring-[#0f9d58]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
-                      required
-                    />
-                    <input 
-                      id="auth-password"
-                      name="password"
-                      type="password" 
-                      placeholder="Password (min. 6 chars)"
-                      value={password || ''}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-white border border-[#e3e2e0] rounded-xl py-3 px-4 focus:outline-none focus:border-[#0f9d58] focus:ring-2 focus:ring-[#0f9d58]/10 transition-all text-sm text-[#1f1f1f] placeholder:text-slate-400"
-                      required
-                    />
-
-                    <div className="flex justify-end px-1 pt-1">
-                      <button
-                        id="auth-forgot-password-btn"
-                        type="button"
-                        onClick={handlePasswordReset}
-                        className="text-xs font-bold text-slate-500 hover:text-[#0f9d58] transition-colors underline underline-offset-2"
-                      >
-                        Forgot Password?
-                      </button>
-                    </div>
-
-                    <button 
-                      id="auth-submit-btn"
-                      type="submit"
-                      className="w-full py-3.5 bg-[#0f9d58] hover:bg-[#0f9d58]/90 text-white rounded-xl font-bold text-sm transition-all shadow-sm active:scale-98"
-                    >
-                      {isSignUp ? 'Create Account' : 'Sign In'}
-                    </button>
-                  </form>
-                  
-                  <p className="text-[10px] text-slate-400 text-center leading-relaxed font-semibold">
-                    {isSignUp 
-                      ? 'By creating an account, you agree to store your medicine data securely in our cloud vault.' 
-                      : 'Welcome back! Your data will sync automatically.'}
-                  </p>
-                </motion.div>
-              )}
+                EMAIL
+              </label>
+              <div className="relative flex items-center bg-white border-b-2 border-slate-300 focus-within:border-slate-700 transition-colors rounded-t-md shadow-2xs">
+                <div className="pl-3.5 pr-2 text-slate-500 shrink-0">
+                  <Mail size={18} />
+                </div>
+                <input
+                  id="auth-email"
+                  name="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && authStep === 'email') {
+                      e.preventDefault();
+                      handleContinueEmail();
+                    }
+                  }}
+                  className="w-full bg-transparent py-3 pr-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  required
+                />
+              </div>
             </div>
+
+            {/* PASSWORD FIELD (Shown when in password step) */}
+            {authStep === 'password' && (
+              <motion.div 
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-1.5 pt-1"
+              >
+                <label 
+                  htmlFor="auth-password" 
+                  className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800 block"
+                >
+                  PASSWORD
+                </label>
+                <div className="relative flex items-center bg-white border-b-2 border-slate-300 focus-within:border-slate-700 transition-colors rounded-t-md shadow-2xs">
+                  <div className="pl-3.5 pr-2 text-slate-500 shrink-0">
+                    <Lock size={18} />
+                  </div>
+                  <input
+                    id="auth-password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent py-3 pr-10 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                    required
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-500 hover:text-slate-800 p-1 cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-600 pt-1 px-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthStep('email');
+                      setPassword('');
+                    }}
+                    className="text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+                  >
+                    Change email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    className="text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* PRIMARY BUTTON: Continue (step 1) -> Sign In (step 2) - Soft White */}
+            <button
+              id="auth-submit-btn"
+              type="submit"
+              className="w-full py-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-extrabold text-sm rounded-full transition-all shadow-xs flex items-center justify-center gap-2 active:scale-[0.99] cursor-pointer mt-2"
+            >
+              {authStep === 'email' ? (
+                <>
+                  <LogIn size={17} strokeWidth={2.5} />
+                  <span>Continue</span>
+                </>
+              ) : (
+                <>
+                  <LogIn size={17} strokeWidth={2.5} />
+                  <span>{isSignUp ? 'Create account' : 'Sign In'}</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Continue with Google button - Matching Soft White */}
+          <div className="w-full">
+            <button
+              id="google-login-btn"
+              type="button"
+              onClick={handleGoogleSignInWithConsent}
+              className="w-full py-3.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-full font-bold text-sm text-slate-800 flex items-center justify-center gap-2.5 transition-all shadow-xs active:scale-[0.99] cursor-pointer"
+            >
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                className="w-4 h-4"
+              />
+              <span>Continue with Google</span>
+            </button>
+          </div>
+
+          {/* ACCOUNT SWITCHER (Moved below Continue with Google) */}
+          <div className="text-center text-xs text-slate-600 pt-0.5">
+            {isSignUp ? (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(false);
+                    setAuthStep('email');
+                  }}
+                  className="text-[#c2410c] font-bold hover:underline cursor-pointer"
+                >
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(true);
+                    setAuthStep('email');
+                  }}
+                  className="text-[#c2410c] font-bold hover:underline cursor-pointer"
+                >
+                  Create one
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* CIRCLE TICK BOX & TERMS/PRIVACY AGREEMENT */}
+          <div className="flex items-center justify-center gap-2 pt-1 text-xs text-slate-600">
+            <button
+              type="button"
+              onClick={() => setAgreedToTerms(!agreedToTerms)}
+              className={`w-4 h-4 rounded-full flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
+                agreedToTerms 
+                  ? 'bg-slate-900 text-white' 
+                  : 'border-2 border-slate-400 bg-white'
+              }`}
+              aria-label="Agree to terms"
+            >
+              {agreedToTerms && <Check size={11} strokeWidth={3} />}
+            </button>
+            <span className="text-[12px] text-slate-600 select-none">
+              You agree to our{' '}
+              <button
+                type="button"
+                onClick={() => navigateToPublicPage('terms')}
+                className="font-semibold text-slate-900 underline hover:text-black cursor-pointer"
+              >
+                Terms of service
+              </button>{' '}
+              and{' '}
+              <button
+                type="button"
+                onClick={() => navigateToPublicPage('privacy')}
+                className="font-semibold text-slate-900 underline hover:text-black cursor-pointer"
+              >
+                Privacy policy
+              </button>
+            </span>
           </div>
         </div>
 
-        {/* Visible compliance footer on the homepage */}
-        <footer className="w-full max-w-md border-t border-[#e3e2e0]/60 mt-12 pt-4 pb-2 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px] text-slate-400 font-bold">
-          <div>&copy; 2026 DawaLens AI. All rights reserved.</div>
-          <div className="flex gap-4">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#0f9d58] hover:underline">
-              Privacy Policy
-            </a>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#0f9d58] hover:underline">
-              Terms of Service
-            </a>
-          </div>
+        {/* Minimal Footer on login page */}
+        <footer className="w-full max-w-lg border-t border-slate-300/60 mt-10 pt-4 pb-2 text-center text-[11px] text-slate-400 font-bold">
+          &copy; 2026 DawaLens AI. All rights reserved.
         </footer>
 
         {/* Global Dialogues & Popups for the Login/Signup Screen */}
@@ -1566,17 +1846,9 @@ export default function App() {
           onToggleLike={handleToggleLike}
         />
 
-        {/* Dynamic & Compliant Footer within main app view */}
-        <footer className="mt-12 px-4 pb-4 border-t border-[#e3e2e0]/40 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px] text-slate-400 font-bold">
-          <div>&copy; 2026 DawaLens AI. All rights reserved.</div>
-          <div className="flex gap-4">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#0f9d58] hover:underline">
-              Privacy Policy
-            </a>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-[#0f9d58] hover:underline">
-              Terms of Service
-            </a>
-          </div>
+        {/* Minimal Footer within main app view */}
+        <footer className="mt-12 px-4 pb-24 border-t border-[#e3e2e0]/60 pt-4 text-center text-[11px] text-slate-400 font-bold">
+          &copy; 2026 DawaLens AI. All rights reserved.
         </footer>
 
       </main>
@@ -1652,6 +1924,22 @@ export default function App() {
             isSaving={isSaving}
             onSave={handleSaveFromEditPage}
             onBack={() => setActiveSystemPage('details')}
+          />
+        )}
+
+        {activeSystemPage === 'add' && (
+          <MedicineAddPage
+            initialData={editingMedicine}
+            extractionWarning={extractionWarning}
+            allMedicines={medicines}
+            globalLowQuantityThreshold={lowQuantityThreshold}
+            isSaving={isSaving}
+            onSave={handleSave}
+            onBack={() => {
+              setActiveSystemPage(null);
+              setEditingMedicine(null);
+              setExtractionWarning(null);
+            }}
           />
         )}
 
@@ -1743,9 +2031,10 @@ export default function App() {
             onResetToHome={() => { setFilter('all'); setSearchQuery(''); setIsLikedOnly(false); }}
             onToggleLikedOnly={() => setIsLikedOnly(!isLikedOnly)}
             isLikedOnly={isLikedOnly}
-            onOpenGuide={() => { triggerLightHaptic(); setOpenedFromSettings(true); setActiveFooterModal('guide'); }}
-            onOpenPrivacy={() => { triggerLightHaptic(); setOpenedFromSettings(true); setActiveFooterModal('privacy'); }}
-            onOpenTerms={() => { triggerLightHaptic(); setOpenedFromSettings(true); setActiveFooterModal('terms'); }}
+            onOpenGuide={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('guide'); }}
+            onOpenPrivacy={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('privacy'); }}
+            onOpenTerms={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('terms'); }}
+            onOpenDeleteAccount={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('delete-account'); }}
           />
         )}
 
@@ -2061,7 +2350,7 @@ export default function App() {
                           If you have any questions, feedback, or concerns regarding your privacy or data protection practices, feel free to contact us at:
                         </p>
                         <p className="font-bold text-slate-800 mt-1.5 select-all">
-                          Email: noorpos.alerts@gmail.com
+                          Email: support@intgoi.resend.app
                         </p>
                       </div>
                     </div>
@@ -2108,7 +2397,7 @@ export default function App() {
                           For any questions or legal inquiries, please contact us at:
                         </p>
                         <p className="font-bold text-slate-800 mt-1.5 select-all">
-                          Email: noorpos.alerts@gmail.com
+                          Email: support@intgoi.resend.app
                         </p>
                       </div>
                     </div>

@@ -2,7 +2,8 @@ import React from 'react';
 import { Medicine } from '../types';
 import { 
   ArrowLeft, History, Pencil, Package, Clock, Calendar, 
-  AlertTriangle, CheckCircle2, XCircle, Bell, BellOff, Mail
+  AlertTriangle, CheckCircle2, XCircle, Bell, BellOff, Mail,
+  FileText, Settings, AlertCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
@@ -121,36 +122,36 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* History Button: Red Color Logo Only */}
+        <div className="flex items-center gap-1">
+          {/* History Button: Red Sign Only (No background, No border) */}
           <button
             type="button"
             onClick={onGoToHistory}
-            className="p-2.5 rounded-full text-rose-600 bg-rose-50 border border-rose-200/80 hover:bg-rose-100 hover:text-rose-700 active:scale-90 transition-all shadow-xs"
+            className="p-2 text-rose-600 hover:text-rose-700 active:scale-90 transition-transform"
             title="View History"
             aria-label="History"
           >
-            <History size={18} />
+            <History size={20} />
           </button>
 
-          {/* Edit Button: Grey/Black Pencil Logo Only */}
+          {/* Edit Button: Dark Sign Only (No background, No border) */}
           <button
             type="button"
             onClick={onGoToEdit}
-            className="p-2.5 rounded-full text-slate-800 bg-white border border-[#e3e2e0] hover:bg-slate-100 hover:text-black active:scale-90 transition-all shadow-xs"
+            className="p-2 text-slate-800 hover:text-black active:scale-90 transition-transform"
             title="Edit Medicine"
             aria-label="Edit"
           >
-            <Pencil size={18} />
+            <Pencil size={20} />
           </button>
         </div>
       </header>
 
-      {/* Main Page Content */}
-      <main className="flex-1 w-full max-w-2xl mx-auto px-5 sm:px-8 py-6 space-y-6 pb-20">
+      {/* Main Page Content - Spacious layout */}
+      <main className="flex-1 w-full max-w-2xl mx-auto px-5 sm:px-8 py-7 space-y-7 pb-24">
         
         {/* 1. Medicine Name & Form / Dosage */}
-        <section className="space-y-2">
+        <section className="space-y-2.5">
           <div className="flex items-start justify-between gap-4">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight leading-tight">
               {medicine.name}
@@ -185,14 +186,12 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
         {/* 2. Medication Schedule */}
         <section className="space-y-1.5">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
-            Medication Schedule
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+            <Clock size={14} className="text-slate-700" />
+            <span>Medication Schedule</span>
           </div>
-          <div className="flex items-center gap-2 text-base text-slate-900 font-medium">
-            <Clock size={16} className="text-slate-700 shrink-0" />
-            <span>
-              {medicine.schedule && medicine.schedule.trim() ? medicine.schedule : 'None'}
-            </span>
+          <div className="text-base text-slate-900 font-medium">
+            {medicine.schedule && medicine.schedule.trim() ? medicine.schedule : 'None'}
           </div>
         </section>
 
@@ -200,8 +199,9 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
         {/* 3. Usage Instructions (Card Design as requested) */}
         <section className="space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
-            Usage Instructions
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+            <FileText size={14} className="text-slate-700" />
+            <span>Usage Instructions</span>
           </div>
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-4 sm:p-5 shadow-xs">
             <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
@@ -216,8 +216,9 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
         {/* 4. Stocks & Expiry Date (Pure direct details) */}
         <section className="space-y-2.5">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
-            Stocks & Expiry Date
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+            <Package size={14} className="text-slate-700" />
+            <span>Stocks & Expiry Date</span>
           </div>
           
           <div className="space-y-2">
@@ -229,7 +230,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
               return (
                 <div 
-                  key={batch.id || index}
+                  key={`detail-batch-${batch.id || 'b'}-${index}`}
                   className="flex items-center justify-between text-base py-1"
                 >
                   <div className="font-semibold text-slate-900">
@@ -258,10 +259,11 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
         {/* 5. Settings Section (Direct values, no verbose explanations) */}
         <section className="space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-900">
-            Settings
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+            <Settings size={14} className="text-slate-700" />
+            <span>Settings</span>
           </div>
-          <div className="space-y-1.5 text-sm sm:text-base text-slate-900 font-medium">
+          <div className="space-y-2 text-sm sm:text-base text-slate-900 font-medium">
             <div className="flex items-center gap-2">
               {isAlertEnabled ? (
                 <Bell size={16} className="text-slate-700 shrink-0" />
@@ -274,11 +276,21 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
             </div>
 
             {/* Email alerts status */}
-            <div className="flex items-center gap-2 text-slate-700">
-              <Mail size={16} className="text-slate-700 shrink-0" />
-              <span>
-                Email Alerts: Expiry ({medicine.enableEmailExpiryAlert !== false ? 'On' : 'Off'}) • Low Stock ({medicine.enableEmailLowStockAlert !== false ? 'On' : 'Off'})
-              </span>
+            <div className="pt-1 space-y-1.5">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Mail size={16} className="text-slate-700 shrink-0" />
+                <span>Email alerts:</span>
+              </div>
+              <div className="ml-7 sm:ml-8 pl-3.5 border-l-2 border-slate-200 space-y-1.5 text-sm sm:text-base text-slate-800 font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                  <span>Expiry: <strong className="text-black font-bold">{medicine.enableEmailExpiryAlert !== false ? 'On' : 'Off'}</strong></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                  <span>Low stock: <strong className="text-black font-bold">{medicine.enableEmailLowStockAlert !== false ? 'On' : 'Off'}</strong></span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -287,8 +299,9 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
 
         {/* 6. Notice Area (Highlight Focus Box) */}
         <section className="pt-1">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">
-            Notice
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2 flex items-center gap-1.5">
+            <AlertCircle size={14} className="text-slate-700" />
+            <span>Notice</span>
           </div>
 
           {isExpired ? (

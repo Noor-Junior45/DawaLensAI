@@ -38,6 +38,7 @@ interface SettingsModalProps {
   onOpenGuide: () => void;
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
+  onOpenDeleteAccount: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -68,7 +69,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isLikedOnly,
   onOpenGuide,
   onOpenPrivacy,
-  onOpenTerms
+  onOpenTerms,
+  onOpenDeleteAccount
 }) => {
   const [showConfirmClear, setShowConfirmClear] = React.useState(false);
   const [isDangerZoneOpen, setIsDangerZoneOpen] = React.useState(false);
@@ -441,10 +443,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="space-y-2.5 pt-4 border-t border-[#e3e2e0]/60">
             <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-[#0f9d58] px-1">Resources & Legal</h4>
             <div className="grid grid-cols-1 gap-2">
+              {/* 1. User Guide & Manual */}
               <button 
                 type="button"
-                onClick={() => { onOpenGuide(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs"
+                onClick={() => { onClose(); onOpenGuide(); }}
+                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
                 <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
                   <BookOpen size={14} className="text-[#0f9d58]" />
@@ -453,10 +456,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="text-[9px] text-[#0f9d58] font-extrabold bg-[#0f9d58]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">Manual</span>
               </button>
 
+              {/* 2. Privacy Policy */}
               <button 
                 type="button"
-                onClick={() => { onOpenPrivacy(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs"
+                onClick={() => { onClose(); onOpenPrivacy(); }}
+                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
                 <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
                   <Shield size={14} className="text-[#0f9d58]" />
@@ -465,10 +469,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="text-[9px] text-[#0f9d58] font-bold uppercase bg-[#0f9d58]/5 px-2 py-0.5 rounded-full">Policy</span>
               </button>
 
+              {/* 3. Terms of Service */}
               <button 
                 type="button"
-                onClick={() => { onOpenTerms(); }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs"
+                onClick={() => { onClose(); onOpenTerms(); }}
+                className="w-full flex items-center justify-between px-4 py-3 bg-[#eefcf5] hover:bg-[#e4faf0] border border-[#d1f2e1] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
                 <span className="text-[12px] font-bold text-[#1a3a2a] flex items-center gap-2">
                   <Scale size={14} className="text-[#0f9d58]" />
@@ -476,85 +481,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </span>
                 <span className="text-[9px] text-[#0f9d58] font-bold uppercase bg-[#0f9d58]/5 px-2 py-0.5 rounded-full">Terms</span>
               </button>
-            </div>
-          </div>
 
-          {/* DANGER ZONE DROPDOWN */}
-          <div className="space-y-3 pt-4 border-t border-[#e3e2e0]/60">
-            <div className="border border-rose-200 rounded-2xl overflow-hidden bg-rose-50/20">
-              <button
+              {/* 4. Delete Account & Data (Google Play Policy Compliant) */}
+              <button 
                 type="button"
-                onClick={() => setIsDangerZoneOpen(!isDangerZoneOpen)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-rose-50/40 transition-colors text-left"
+                onClick={() => { onClose(); onOpenDeleteAccount(); }}
+                className="w-full flex items-center justify-between px-4 py-3 bg-[#fdf2f2] hover:bg-[#fde8e8] border border-[#fecaca] rounded-2xl transition-all text-left active:scale-[0.99] group shadow-2xs cursor-pointer"
               >
-                <span className="text-xs font-extrabold text-rose-700 flex items-center gap-1.5 uppercase tracking-wider">
-                  <ShieldAlert size={14} className="text-rose-600 animate-pulse" />
-                  Danger Zone
+                <span className="text-[12px] font-bold text-[#991b1b] flex items-center gap-2">
+                  <Trash2 size={14} className="text-rose-600" />
+                  Delete Account & Data
                 </span>
-                {isDangerZoneOpen ? <ChevronUp size={14} className="text-rose-600" /> : <ChevronDown size={14} className="text-rose-600" />}
+                <span className="text-[9px] text-rose-700 font-bold uppercase bg-rose-100/70 px-2.5 py-0.5 rounded-full">Delete</span>
               </button>
-              
-              <AnimatePresence>
-                {isDangerZoneOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden border-t border-rose-100 bg-white"
-                  >
-                    <div className="p-4 space-y-3">
-                      <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                        Clearing your data will permanently delete all your stored medicines, custom alerts, history, and configuration. This action is irreversible and cannot be undone.
-                      </p>
-                      
-                      {!showConfirmClear ? (
-                        <button
-                          onClick={() => setShowConfirmClear(true)}
-                          className="w-full py-2.5 bg-rose-600 text-white hover:bg-rose-700 rounded-full text-xs font-bold transition-all shadow-sm active:scale-98"
-                        >
-                          Clear All Data
-                        </button>
-                      ) : (
-                        <div className="space-y-2.5 bg-rose-50 p-3 rounded-2xl border border-rose-100 text-center">
-                          <p className="text-[10px] text-rose-700 font-bold leading-relaxed">Are you absolutely sure? This will delete everything permanently.</p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setShowConfirmClear(false)}
-                              className="flex-1 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors active:scale-95"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => {
-                                onClearData();
-                                setShowConfirmClear(false);
-                                onClose();
-                              }}
-                              className="flex-1 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-full text-xs font-bold shadow-sm transition-colors active:scale-95"
-                            >
-                              Yes, Clear
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
 
-        </div>
+          {/* Sign Out Button placed directly inside the page below Danger Zone */}
+          <div className="pt-3 pb-4 flex justify-center">
+            <button 
+              onClick={onLogout}
+              className="w-full max-w-[320px] py-3.5 bg-[#ea4335] hover:bg-[#ea4335]/90 text-white rounded-full transition-all font-bold flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg active:scale-98"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
 
-        {/* Big Pill Sign Out Button replacing footer */}
-        <div className="px-6 py-5 border-t border-[#e3e2e0] bg-[#faf8f5] shrink-0 flex flex-col items-center justify-center">
-          <button 
-            onClick={onLogout}
-            className="w-full max-w-[320px] py-3.5 bg-[#ea4335] hover:bg-[#ea4335]/90 text-white rounded-full transition-all font-bold flex items-center justify-center gap-2 text-sm shadow-md hover:shadow-lg active:scale-98"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
         </div>
       </motion.div>
     </div>

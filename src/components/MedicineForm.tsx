@@ -565,14 +565,14 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
 
                       <div className="space-y-2 pt-1">
                         {/* Active Batches */}
-                        {activeBatches.map((batch) => {
+                        {activeBatches.map((batch, bIdx) => {
                           const isCurrent = formData.id ? batch.id === formData.id : batch.id === medicine?.id;
                           const status = getExpiryStatus(batch.expirationDate);
                           const diffDays = getDiffDays(batch.expirationDate);
 
                           return (
                             <div
-                              key={batch.id}
+                              key={`form-active-batch-${batch.id || bIdx}-${bIdx}`}
                               onClick={() => {
                                 if (!isCurrent) {
                                   setFormData(batch);
@@ -622,11 +622,11 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
                             <span className="text-[9px] font-bold uppercase tracking-wider text-rose-400/80 block">
                               Expired / Finished Batches ({expiredOrEmptyBatches.length})
                             </span>
-                            {expiredOrEmptyBatches.map((batch) => {
+                            {expiredOrEmptyBatches.map((batch, bIdx) => {
                               const isCurrent = formData.id ? batch.id === formData.id : batch.id === medicine?.id;
                               return (
                                 <div
-                                  key={batch.id}
+                                  key={`form-expired-batch-${batch.id || bIdx}-${bIdx}`}
                                   onClick={() => {
                                     if (!isCurrent) {
                                       setFormData(batch);

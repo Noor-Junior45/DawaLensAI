@@ -18,21 +18,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom premium scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Hide scrollbars globally across all browsers while allowing scroll */
+html,
+body,
+*,
+*::before,
+*::after {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e3e2e0;
-  border-radius: 9999px;
+/* Utility to ensure zero-scrollbar with scrolling intact */
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #d0d4dc;
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
 }
