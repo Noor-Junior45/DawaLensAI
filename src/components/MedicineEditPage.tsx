@@ -441,12 +441,12 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             </div>
           </div>
 
-          {/* Sticky Bottom Save Button (Only kept at bottom as requested) */}
-          <div className="sticky bottom-0 z-10 bg-[#faf8f5]/95 backdrop-blur-md border-t border-[#e3e2e0] py-3.5 -mx-4 sm:-mx-6 px-4 sm:px-6 shadow-md mt-6">
+          {/* Save Medication Button - In-flow below email alert settings */}
+          <div className="pt-2 pb-8">
             <button
               type="submit"
               disabled={isSaving || !formData.name?.trim()}
-              className="w-full py-4 rounded-2xl bg-[#0f9d58] text-white font-extrabold text-base shadow-lg hover:bg-[#0b7a44] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl bg-[#0f9d58] text-white font-extrabold text-base shadow-md hover:bg-[#0b7a44] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Save size={18} />
               {isSaving ? 'Saving Changes...' : 'Save Medication'}

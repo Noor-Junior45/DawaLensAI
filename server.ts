@@ -18,8 +18,9 @@ const app = express();
 app.set('trust proxy', true);
 const PORT = 3000;
 
-// API routes
-app.use(express.json({ limit: '10mb' }));
+// API routes - 50mb limit to handle high-resolution camera photos safely
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Google Search Console Dynamic HTML File Verification Handler
 app.get("/google:id.html", (req, res) => {

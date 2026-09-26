@@ -205,7 +205,13 @@ CRITICAL RULES:
 
     const text = response.text;
     if (!text) throw new Error("AI returned empty response");
-    const result = JSON.parse(text);
+    
+    let cleanedJson = text.trim();
+    if (cleanedJson.startsWith("```")) {
+      cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+    }
+
+    const result = JSON.parse(cleanedJson);
 
     if ((!result.expirationDate || result.expirationDate.includes('undefined')) && hints?.potentialExpiry) {
       result.expirationDate = hints.potentialExpiry;
@@ -257,7 +263,12 @@ CRITICAL RULES:
   const text = response.text;
   if (!text) throw new Error("AI returned empty response");
   
-  const result = JSON.parse(text);
+  let cleanedJson = text.trim();
+  if (cleanedJson.startsWith("```")) {
+    cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  }
+
+  const result = JSON.parse(cleanedJson);
   return { success: true, medicine: result, ocrAssisted: false };
 }
 
@@ -338,13 +349,16 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
         return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
       }
       
-      let errData;
+      let serverErrorMessage = "Failed to extract medicine data from image.";
       try {
-        errData = JSON.parse(errText);
+        const errData = JSON.parse(errText);
+        serverErrorMessage = errData.errorMessage || errData.error || serverErrorMessage;
       } catch {
-        throw new Error("Failed to parse extraction error from server.");
+        if (errText && errText.trim().length > 0 && errText.length < 300) {
+          serverErrorMessage = errText.trim();
+        }
       }
-      throw new Error(errData.errorMessage || errData.error || "Failed to extract medicine data from image.");
+      throw new Error(serverErrorMessage);
     }
     
     return await response.json();

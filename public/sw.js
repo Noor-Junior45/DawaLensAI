@@ -1,5 +1,5 @@
 // sw.js - Progressive Web App Service Worker
-const CACHE_NAME = 'dawalens-cache-v2';
+const CACHE_NAME = 'dawalens-cache-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -34,8 +34,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Exclude API routes or third-party database calls
-  if (event.request.url.includes('/api/') || event.request.url.includes('firestore.googleapis.com')) {
+  // Exclude API routes, vite dynamic chunks, or third-party database calls from stale cache
+  const url = event.request.url;
+  if (
+    url.includes('/api/') || 
+    url.includes('/@vite/') || 
+    url.includes('/@fs/') || 
+    url.includes('/src/') ||
+    url.includes('/assets/') ||
+    url.includes('node_modules') ||
+    url.includes('firestore.googleapis.com')
+  ) {
     return;
   }
 
@@ -43,7 +52,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful page/asset responses
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -53,12 +61,10 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache when offline
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // If offline and request is for navigation, return cached home page
           if (event.request.mode === 'navigate') {
             return caches.match('/');
           }

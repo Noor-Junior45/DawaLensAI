@@ -281,7 +281,13 @@ CRITICAL RULES:
 
         const text = response.text;
         if (!text) throw new Error("AI returned empty response");
-        const result = JSON.parse(text);
+        
+        let cleanedJson = text.trim();
+        if (cleanedJson.startsWith("```")) {
+          cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+        }
+        
+        const result = JSON.parse(cleanedJson);
 
         // Merge local hints if AI missed them
         if ((!result.expirationDate || result.expirationDate.includes('undefined')) && hints?.potentialExpiry) {
@@ -339,7 +345,12 @@ CRITICAL RULES:
       const text = response.text;
       if (!text) throw new Error("AI returned empty response");
       
-      const result = JSON.parse(text);
+      let cleanedJson = text.trim();
+      if (cleanedJson.startsWith("```")) {
+        cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+      }
+
+      const result = JSON.parse(cleanedJson);
       return { success: true, medicine: result, ocrAssisted: false };
     });
   } catch (error: any) {
