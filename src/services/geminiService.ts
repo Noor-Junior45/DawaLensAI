@@ -343,32 +343,70 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
     });
     
     if (!response.ok) {
-      const errText = await response.text();
-      let serverErrorMessage = "Failed to extract medicine data from image.";
-      try {
-        const errData = JSON.parse(errText);
-        serverErrorMessage = errData.errorMessage || errData.error || serverErrorMessage;
-      } catch {
-        if (errText && errText.trim().length > 0 && errText.length < 300) {
-          serverErrorMessage = errText.trim();
-        }
-      }
-      return { success: false, errorMessage: serverErrorMessage };
+      console.warn("Server API returned non-OK status:", response.status);
+      throw new Error(`Server returned status ${response.status}`);
     }
     
     const data = await response.json();
+    if (data.success && data.medicine) {
+      return data;
+    }
+    if (data.errorMessage) {
+      throw new Error(data.errorMessage);
+    }
     return data;
   } catch (error: any) {
-    console.warn("Extraction server error, trying client fallback:", error);
-    if (!getClientApiKey()) {
-      return { success: false, errorMessage: error.message || "Failed to extract medicine details. Please try again." };
+    console.warn("Server extraction unavailable, activating client/on-device fallback:", error);
+    
+    // 1. Try Client-side Gemini if API key is present
+    if (getClientApiKey()) {
+      try {
+        const clientResult = await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
+        if (clientResult.success) {
+          return clientResult;
+        }
+      } catch (clientErr) {
+        console.warn("Client Gemini extraction failed, trying local OCR fallback:", clientErr);
+      }
     }
-    try {
-      return await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
-    } catch (fallbackError: any) {
-      console.error("Client fallback extraction error:", fallbackError);
-      return { success: false, errorMessage: fallbackError.message || String(fallbackError) };
+
+    // 2. On-Device OCR Smart Fallback: if OCR extracted any text or hints, don't drop the user's scan
+    if (ocrResult && (ocrResult.cleanedText || ocrResult.potentialExpiry || ocrResult.potentialDosage)) {
+      const lines = (ocrResult.cleanedText || ocrResult.rawText || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 2 && !/^(exp|mfg|batch|b\.no|mrp|rs|tax)/i.test(l));
+      
+      const candidateName = lines[0] || "Scanned Medicine";
+      const defaultDate = new Date();
+      defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+      const fallbackExpiry = `${defaultDate.getFullYear()}-${String(defaultDate.getMonth() + 1).padStart(2, '0')}-01`;
+
+      return {
+        success: true,
+        medicine: {
+          name: candidateName,
+          dosage: ocrResult.potentialDosage || 'N/A',
+          expirationDate: ocrResult.potentialExpiry || fallbackExpiry,
+          quantity: ocrResult.potentialQuantity || 1,
+          form: 'tablet',
+          usageInstructions: ''
+        },
+        warningMessage: "Details auto-extracted from packaging using on-device scanner. Please review and confirm below.",
+        ocrAssisted: true
+      };
     }
+
+    // Clean user-facing error message
+    let rawMsg = error.message || "";
+    if (rawMsg.includes("FUNCTION_INVOCATION_FAILED") || rawMsg.includes("500") || rawMsg.includes("502") || rawMsg.includes("504")) {
+      rawMsg = "AI processing service is temporarily reconnecting. Please hold the packaging steady with good lighting and scan again.";
+    }
+
+    return { 
+      success: false, 
+      errorMessage: rawMsg || "Could not read the medicine label clearly. Please ensure good lighting and try again." 
+    };
   }
 }
 

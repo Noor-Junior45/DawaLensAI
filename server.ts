@@ -11,8 +11,8 @@ import {
   checkDrugInteractionsServer, 
   chatWithGeminiServer,
   getAvailableKeys
-} from "./server/aiService.js";
-import { getChatCount, incrementChatCount } from "./medCache.js";
+} from "./server/aiService.ts";
+import { getChatCount, incrementChatCount } from "./medCache.ts";
 
 const app = express();
 app.set('trust proxy', true);
@@ -304,6 +304,8 @@ async function setupViteAndListen() {
   }
 }
 
-setupViteAndListen().catch(console.error);
+if (!process.env.VERCEL) {
+  setupViteAndListen().catch(console.error);
+}
 
 export default app;
