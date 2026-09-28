@@ -6,7 +6,7 @@ import {
   FileText, Settings, AlertCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, getCategoryStyle } from '../constants';
 import { LocalImage } from './LocalImage';
 
 interface MedicineDetailsPageProps {
@@ -178,6 +178,14 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
             <span className="flex items-center gap-1.5 text-slate-900">
               <Package size={15} className="text-slate-600" />
               <span>{medicine.dosage || 'N/A'}</span>
+            </span>
+          </div>
+
+          {/* Selected Category Display */}
+          <div className="pt-2 flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${getCategoryStyle(medicine.category).badgeBg} ${getCategoryStyle(medicine.category).badgeText} ${getCategoryStyle(medicine.category).badgeBorder}`}>
+              <span className={`w-2 h-2 rounded-full ${getCategoryStyle(medicine.category).dotColor}`} />
+              <span>{medicine.category || 'General'}</span>
             </span>
           </div>
         </section>

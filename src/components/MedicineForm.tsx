@@ -3,7 +3,7 @@ import { Medicine, MedicineHistory } from '../types';
 import { X, Save, Trash2, Eye, AlertTriangle, History, Clock, Sparkles, Plus, Bell, BellOff, Layers, Package, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, collection, query, orderBy, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
 import { MedicineForm as MedicineFormType } from '../types';
 import { localImageStorage } from '../services/localImageStorage';
 
@@ -29,6 +29,8 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
     schedule: '',
     capturedImage: '',
     quantity: undefined,
+    category: 'Other',
+    tags: [],
     enableLowStockAlert: true,
     lowStockThreshold: undefined,
   });
@@ -41,15 +43,15 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
       if (medicine.imageUrl === 'local' && !medicine.capturedImage) {
         localImageStorage.getImage(medicine.id).then((localImg) => {
           if (localImg) {
-            setFormData({ ...medicine, capturedImage: localImg });
+            setFormData({ ...medicine, capturedImage: localImg, category: medicine.category || 'Other', tags: Array.isArray(medicine.tags) ? medicine.tags : [] });
           } else {
-            setFormData(medicine);
+            setFormData({ ...medicine, category: medicine.category || 'Other', tags: Array.isArray(medicine.tags) ? medicine.tags : [] });
           }
         }).catch(() => {
-          setFormData(medicine);
+          setFormData({ ...medicine, category: medicine.category || 'Other', tags: Array.isArray(medicine.tags) ? medicine.tags : [] });
         });
       } else {
-        setFormData(medicine);
+        setFormData({ ...medicine, category: medicine.category || 'Other', tags: Array.isArray(medicine.tags) ? medicine.tags : [] });
       }
     } else {
       setFormData({
@@ -60,6 +62,8 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
         schedule: '',
         capturedImage: '',
         quantity: undefined,
+        category: 'Other',
+        tags: [],
         enableLowStockAlert: true,
         lowStockThreshold: undefined,
       });
@@ -669,6 +673,39 @@ export const MedicineForm: React.FC<MedicineFormProps> = ({
                         className="w-full bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-white/20"
                         placeholder="e.g. Twice a day, after meals"
                       />
+                    </div>
+
+                    {/* Category Selection */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-bold ml-1 flex items-center justify-between">
+                        <span>Category / Group</span>
+                        {formData.category && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getCategoryStyle(formData.category).badgeBg} ${getCategoryStyle(formData.category).badgeText}`}>
+                            {formData.category}
+                          </span>
+                        )}
+                      </label>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-1 bg-white/[0.02] border border-white/10 rounded-2xl scrollbar-none">
+                        {MEDICINE_CATEGORIES.map(cat => {
+                          const isCatSelected = formData.category === cat;
+                          const style = getCategoryStyle(cat);
+                          return (
+                            <button
+                              key={`form-cat-${cat}`}
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, category: cat }))}
+                              className={`p-2 rounded-xl text-left border transition-all text-xs flex items-center gap-1.5 ${
+                                isCatSelected 
+                                  ? 'bg-white/15 text-white border-white/40 shadow-xs' 
+                                  : 'border-transparent text-white/60 hover:bg-white/5 hover:text-white/90'
+                              }`}
+                            >
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
+                              <span className="truncate text-[11px] font-semibold">{cat}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">

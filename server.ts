@@ -9,6 +9,7 @@ import {
   saveInteractionCache, 
   extractMedicineDataServer, 
   checkDrugInteractionsServer, 
+  categorizeMedicinesServer,
   chatWithGeminiServer,
   getAvailableKeys
 } from "./server/aiService.ts";
@@ -214,6 +215,16 @@ app.post("/api/ai/interactions", async (req, res) => {
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
+app.post("/api/ai/categorize", async (req, res) => {
+  try {
+    const { medicines } = req.body;
+    const result = await categorizeMedicinesServer(medicines || []);
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || String(error) });
   }
 });
 

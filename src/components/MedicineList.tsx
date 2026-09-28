@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
   Calendar, Package, AlertTriangle, CheckCircle2, Clock, Trash2, 
-  CheckSquare, Square, Minus, Heart, Layers, Edit3, XCircle, AlertCircle, ChevronDown, ChevronUp
+  CheckSquare, Square, Minus, Heart, Layers, Edit3, XCircle, AlertCircle, 
+  ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MEDICINE_FORM_ICONS } from '../constants';
+import { MEDICINE_FORM_ICONS, getCategoryStyle } from '../constants';
 import { LocalImage } from './LocalImage';
 
 interface MedicineListProps {
@@ -17,6 +18,14 @@ interface MedicineListProps {
   lowQuantityThreshold: number;
   alertThreshold: number;
   onToggleLike?: (medicine: Medicine) => void;
+  onAutoCategorize?: () => Promise<void>;
+  isCategorizing?: boolean;
+  selectedCategory?: string;
+  onSelectCategory?: (category: string) => void;
+  isSelectionMode?: boolean;
+  setIsSelectionMode?: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedIds?: Set<string>;
+  setSelectedIds?: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
 interface GroupedMedicine {
@@ -28,6 +37,8 @@ interface GroupedMedicine {
   usageInstructions?: string;
   imageUrl?: string;
   liked?: boolean;
+  category?: string;
+  tags: string[];
   enableLowStockAlert?: boolean;
   lowStockThreshold?: number;
   activeBatches: Medicine[];
@@ -42,10 +53,21 @@ interface GroupedMedicine {
 
 export const MedicineList: React.FC<MedicineListProps> = ({ 
   medicines, onEdit, onToggleTaken, onReduceQuantity, onDeleteMultiple, 
-  lowQuantityThreshold, alertThreshold, onToggleLike 
+  lowQuantityThreshold, alertThreshold, onToggleLike, onAutoCategorize, isCategorizing = false,
+  selectedCategory = 'ALL', onSelectCategory,
+  isSelectionMode: propIsSelectionMode,
+  setIsSelectionMode: propSetIsSelectionMode,
+  selectedIds: propSelectedIds,
+  setSelectedIds: propSetSelectedIds
 }) => {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
+  const [internalIsSelectionMode, setInternalIsSelectionMode] = useState(false);
+
+  const selectedIds = propSelectedIds !== undefined ? propSelectedIds : internalSelectedIds;
+  const setSelectedIds = propSetSelectedIds !== undefined ? propSetSelectedIds : setInternalSelectedIds;
+  const isSelectionMode = propIsSelectionMode !== undefined ? propIsSelectionMode : internalIsSelectionMode;
+  const setIsSelectionMode = propSetIsSelectionMode !== undefined ? propSetIsSelectionMode : setInternalIsSelectionMode;
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(new Set());
 
@@ -192,6 +214,8 @@ export const MedicineList: React.FC<MedicineListProps> = ({
           usageInstructions: med.usageInstructions,
           imageUrl: med.imageUrl,
           liked: med.liked,
+          category: med.category,
+          tags: Array.isArray(med.tags) ? [...med.tags] : [],
           enableLowStockAlert: med.enableLowStockAlert,
           lowStockThreshold: med.lowStockThreshold,
           activeBatches: [],
@@ -210,6 +234,17 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       if (!group.schedule && med.schedule) group.schedule = med.schedule;
       if (!group.usageInstructions && med.usageInstructions) group.usageInstructions = med.usageInstructions;
       if (!group.imageUrl && med.imageUrl) group.imageUrl = med.imageUrl;
+
+      // Inherit category and tags across batches for this medication group
+      if (!group.category && med.category) group.category = med.category;
+      if (med.tags && Array.isArray(med.tags)) {
+        med.tags.forEach(t => {
+          const clean = t.trim();
+          if (clean && !group.tags.includes(clean)) {
+            group.tags.push(clean);
+          }
+        });
+      }
 
       // Group alert settings: if any batch explicitly has disabled/enabled
       if (med.enableLowStockAlert !== undefined) {
@@ -249,9 +284,24 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return map;
   }, [medicines]);
 
-  // Separate active groups and expired groups
+  // Count of medicines needing category
+  const uncategorizedCount = React.useMemo(() => {
+    return medicines.filter(m => !m.isDeleted && (!m.category || m.category === 'Other')).length;
+  }, [medicines]);
+
+  // Filter matcher for groups
+  const matchesFilter = (group: GroupedMedicine) => {
+    if (selectedCategory !== 'ALL') {
+      const grpCat = (group.category || 'Other').toLowerCase();
+      if (grpCat !== selectedCategory.toLowerCase()) return false;
+    }
+    return true;
+  };
+
+  // Separate active groups and expired groups with filtering applied
   const activeGroups = Array.from(groupedMedicinesMap.values())
     .filter(g => g.activeBatches.length > 0)
+    .filter(matchesFilter)
     .sort((a, b) => {
       if (a.liked && !b.liked) return -1;
       if (!a.liked && b.liked) return 1;
@@ -262,6 +312,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
 
   const expiredGroups = Array.from(groupedMedicinesMap.values())
     .filter(g => g.activeBatches.length === 0 && g.expiredOrEmptyBatches.length > 0)
+    .filter(matchesFilter)
     .sort((a, b) => {
       if (a.liked && !b.liked) return -1;
       if (!a.liked && b.liked) return 1;
@@ -398,6 +449,25 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   {status.label}
                 </span>
               </div>
+
+              {/* Category Badge (No tags on medicine card) */}
+              {group.category && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectCategory) {
+                        onSelectCategory(selectedCategory.toLowerCase() === (group.category || '').toLowerCase() ? 'ALL' : group.category || 'ALL');
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${getCategoryStyle(group.category).badgeBg} ${getCategoryStyle(group.category).badgeText} ${getCategoryStyle(group.category).badgeBorder}`}
+                    title={`Filter by category: ${group.category}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${getCategoryStyle(group.category).dotColor}`} />
+                    {group.category}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -536,6 +606,25 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   <XCircle size={10} /> Expired Stock
                 </span>
               </div>
+
+              {/* Category Badge (No tags on medicine card) */}
+              {group.category && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectCategory) {
+                        onSelectCategory(selectedCategory.toLowerCase() === (group.category || '').toLowerCase() ? 'ALL' : group.category || 'ALL');
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${getCategoryStyle(group.category).badgeBg} ${getCategoryStyle(group.category).badgeText} ${getCategoryStyle(group.category).badgeBorder}`}
+                    title={`Filter by category: ${group.category}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${getCategoryStyle(group.category).dotColor}`} />
+                    {group.category}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -586,50 +675,109 @@ export const MedicineList: React.FC<MedicineListProps> = ({
 
   return (
     <div className="space-y-2 px-2 sm:px-4 pb-24">
-      {/* Top Toolbar */}
-      <div className="flex justify-between items-center mb-3 px-2">
-        <button 
-          onClick={() => {
-            if (isSelectionMode) {
-              setIsSelectionMode(false);
-              setSelectedIds(new Set());
-            } else {
-              setIsSelectionMode(true);
-            }
-          }}
-          className="text-sm text-slate-500 hover:text-slate-800 font-medium transition-colors"
-        >
-          {isSelectionMode ? 'Cancel Selection' : 'Select Multiple'}
-        </button>
-        
-        <AnimatePresence>
-          {isSelectionMode && (
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="flex items-center gap-3"
+      {/* Top Selection Actions Toolbar (shown when selection mode is active) */}
+      <AnimatePresence>
+        {isSelectionMode && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex justify-between items-center mb-3 px-2 overflow-hidden"
+          >
+            <button 
+              type="button"
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="text-xs text-slate-500 hover:text-slate-800 font-bold transition-colors cursor-pointer"
             >
+              Cancel Selection
+            </button>
+            
+            <div className="flex items-center gap-3">
               <button 
+                type="button"
                 onClick={toggleSelectAll}
-                className="text-sm text-slate-500 hover:text-slate-800 font-medium transition-colors flex items-center gap-1.5"
+                className="text-xs text-slate-600 hover:text-slate-900 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                {selectedIds.size === medicines.length ? <CheckSquare size={16} className="text-[#0f9d58]" /> : <Square size={16} />}
+                {selectedIds.size === medicines.length ? <CheckSquare size={15} className="text-[#0f9d58]" /> : <Square size={15} />}
                 All
               </button>
               {selectedIds.size > 0 && (
                 <button 
+                  type="button"
                   onClick={handleDeleteSelected}
-                  className="text-sm text-red-600 hover:text-red-700 transition-colors flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-full border border-red-100 font-semibold"
+                  className="text-xs text-red-600 hover:text-red-700 transition-colors flex items-center gap-1.5 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full border border-red-100 font-bold cursor-pointer shadow-xs active:scale-95"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                   Delete ({selectedIds.size})
                 </button>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auto-Categorize with Gemini Banner */}
+      {uncategorizedCount > 0 && onAutoCategorize && (
+        <div className="mx-1 mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/70 to-emerald-50 border border-blue-100/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-700 flex items-center justify-center shrink-0">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span>Organize with Gemini AI</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                  {uncategorizedCount} uncategorized
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Automatically assign clinical categories (Heart, Pain Relief, Vitamins).
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onAutoCategorize}
+            disabled={isCategorizing}
+            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
+          >
+            {isCategorizing ? (
+              <>
+                <RefreshCw size={13} className="animate-spin" />
+                <span>Categorizing...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={13} />
+                <span>Auto-Categorize with AI</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Filtered Empty State */}
+      {activeGroups.length === 0 && expiredGroups.length === 0 && medicines.length > 0 && (
+        <div className="py-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 p-6 my-4">
+          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+            <Filter size={20} />
+          </div>
+          <h4 className="text-sm font-bold text-slate-800">No medicines match this filter</h4>
+          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+            No items under "{selectedCategory !== 'ALL' ? selectedCategory : 'selected filter'}".
+          </p>
+          <button
+            type="button"
+            onClick={() => onSelectCategory?.('ALL')}
+            className="mt-3 px-4 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-black transition-colors"
+          >
+            Show All Medicines
+          </button>
+        </div>
+      )}
 
       {/* Active & Safe Medications Section */}
       {activeGroups.length > 0 && (

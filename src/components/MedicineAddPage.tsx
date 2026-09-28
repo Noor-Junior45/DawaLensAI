@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
   ArrowLeft, Plus, Minus, Calendar, Package, Clock, 
-  Sparkles, Mail, AlertTriangle, Image as ImageIcon
+  Sparkles, Mail, AlertTriangle, Image as ImageIcon, X
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
 
 interface MedicineAddPageProps {
   initialData?: Partial<Medicine> | null;
@@ -49,6 +49,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
     expirationDate: initialData?.expirationDate || '',
     schedule: initialData?.schedule || '',
     usageInstructions: initialData?.usageInstructions || '',
+    category: initialData?.category || 'Other',
+    tags: Array.isArray(initialData?.tags) ? [...initialData.tags] : [],
     enableLowStockAlert: initialData?.enableLowStockAlert !== false,
     lowStockThreshold: initialData?.lowStockThreshold ?? globalLowQuantityThreshold,
     enableEmailExpiryAlert: initialData?.enableEmailExpiryAlert !== false,
@@ -82,6 +84,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
         expirationDate: initialData.expirationDate || '',
         schedule: initialData.schedule || '',
         usageInstructions: initialData.usageInstructions || '',
+        category: initialData.category || 'Other',
+        tags: Array.isArray(initialData.tags) ? [...initialData.tags] : [],
         enableLowStockAlert: initialData.enableLowStockAlert !== false,
         lowStockThreshold: initialData.lowStockThreshold ?? globalLowQuantityThreshold,
         enableEmailExpiryAlert: initialData.enableEmailExpiryAlert !== false,
@@ -300,6 +304,35 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
                   <Plus size={18} />
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Category Selection */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center justify-between">
+              <span>Category</span>
+              <span className="text-[11px] text-slate-500 font-normal lowercase">e.g. Heart, Vitamins, Pain Relief</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {MEDICINE_CATEGORIES.map(catKey => {
+                const isSelected = (formData.category || 'Other').toLowerCase() === catKey.toLowerCase();
+                const style = getCategoryStyle(catKey);
+                return (
+                  <button
+                    key={`add-cat-${catKey}`}
+                    type="button"
+                    onClick={() => updateField('category', catKey)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left ${
+                      isSelected
+                        ? `${style.badgeBg} ${style.badgeText} border-current ring-1 ring-current shadow-xs`
+                        : 'bg-white border-[#e3e2e0] text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
+                    <span className="truncate">{catKey}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

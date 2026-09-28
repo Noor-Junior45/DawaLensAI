@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
   ArrowLeft, Save, Plus, Minus, Calendar, Package, Clock, 
-  Sparkles, Bell, BellOff, Mail, Check
+  Sparkles, Bell, BellOff, Mail, Check, X, RefreshCw
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS } from '../constants';
+import { motion, AnimatePresence } from 'motion/react';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
 import { localImageStorage } from '../services/localImageStorage';
+import { categorizeMedicinesWithAI } from '../services/geminiService';
 
 interface MedicineEditPageProps {
   medicine: Medicine;
@@ -48,6 +49,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
     expirationDate: medicine.expirationDate || '',
     schedule: medicine.schedule || '',
     usageInstructions: medicine.usageInstructions || '',
+    category: medicine.category || 'Other',
     enableLowStockAlert: medicine.enableLowStockAlert !== false,
     lowStockThreshold: medicine.lowStockThreshold ?? globalLowQuantityThreshold,
     enableEmailExpiryAlert: medicine.enableEmailExpiryAlert !== false,
@@ -57,7 +59,36 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   });
 
   const [suggestions, setSuggestions] = useState<Medicine[]>([]);
+  const [isGeminiCategorizing, setIsGeminiCategorizing] = useState(false);
+  const [geminiNotice, setGeminiNotice] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleGeminiCategorize = async () => {
+    if (isGeminiCategorizing) return;
+    setIsGeminiCategorizing(true);
+    setGeminiNotice(null);
+    try {
+      const results = await categorizeMedicinesWithAI([{
+        id: medicine.id,
+        name: formData.name || medicine.name,
+        dosage: formData.dosage || medicine.dosage,
+        usageInstructions: formData.usageInstructions || medicine.usageInstructions,
+        form: formData.form || medicine.form
+      }]);
+
+      if (results && results.length > 0 && results[0]?.category) {
+        const detectedCat = results[0].category;
+        updateField('category', detectedCat);
+        setGeminiNotice(`Category set to "${detectedCat}" by Gemini AI!`);
+        setTimeout(() => setGeminiNotice(null), 4000);
+      }
+    } catch (e: any) {
+      console.error("Gemini categorize error:", e);
+      setGeminiNotice("AI classification failed: " + (e.message || String(e)));
+    } finally {
+      setIsGeminiCategorizing(false);
+    }
+  };
 
   // Auto-expand textarea according to text length (no scrollbar)
   const adjustTextareaHeight = () => {
@@ -265,6 +296,83 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
                   <Plus size={18} />
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Category Selection */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Category
+                </label>
+                <span className="text-[11px] text-slate-500 font-normal lowercase">e.g. Heart, Vitamins, Pain Relief</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleGeminiCategorize}
+                disabled={isGeminiCategorizing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all active:scale-95 disabled:opacity-50 shadow-2xs"
+                title="Let Gemini AI detect the best category for this medicine"
+              >
+                {isGeminiCategorizing ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin text-indigo-600" />
+                    <span>Detecting with Gemini...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={12} className="text-indigo-600" />
+                    <span>Gemini Category</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* AI Feedback Notice */}
+            <AnimatePresence>
+              {geminiNotice && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-emerald-600 shrink-0" />
+                    <span>{geminiNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGeminiNotice(null)}
+                    className="text-emerald-600 hover:text-emerald-900"
+                  >
+                    <X size={13} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {MEDICINE_CATEGORIES.map(catKey => {
+                const isSelected = (formData.category || 'Other').toLowerCase() === catKey.toLowerCase();
+                const style = getCategoryStyle(catKey);
+                return (
+                  <button
+                    key={`edit-cat-${catKey}`}
+                    type="button"
+                    onClick={() => updateField('category', catKey)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left ${
+                      isSelected
+                        ? `${style.badgeBg} ${style.badgeText} border-current ring-1 ring-current shadow-xs`
+                        : 'bg-white border-[#e3e2e0] text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
+                    <span className="truncate">{catKey}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

@@ -14,6 +14,8 @@ export interface ExtractedMedicine {
   schedule?: string;
   quantity?: number;
   form?: MedicineForm;
+  category?: string;
+  tags?: string[];
 }
 
 export interface ExtractionResult {
@@ -509,4 +511,59 @@ export async function getChatCountToday(userId: string): Promise<number> {
     console.error("Error fetching chat count:", error);
     return 0;
   }
+}
+
+export interface CategorizedMedicineItem {
+  id: string;
+  category: string;
+  tags?: string[];
+}
+
+export async function categorizeMedicinesWithAI(
+  medicines: { id: string; name: string; dosage?: string; usageInstructions?: string; form?: string }[]
+): Promise<CategorizedMedicineItem[]> {
+  if (!medicines || medicines.length === 0) return [];
+
+  try {
+    const response = await fetch('/api/ai/categorize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ medicines })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && Array.isArray(data.categorized)) {
+        return data.categorized;
+      }
+    }
+  } catch (err) {
+    console.warn("Server categorization failed, falling back to local clinical rules:", err);
+  }
+
+  // Graceful fallback if network or server is offline
+  return medicines.map(m => {
+    const lower = (m.name + ' ' + (m.usageInstructions || '')).toLowerCase();
+    let category = 'Other';
+
+    if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
+      category = 'Heart';
+    } else if (/paracet|dolo|ibupro|combiflam|tramad|diclo|aceclo|aspirin|pain|fever|headache|analgesic/i.test(lower)) {
+      category = 'Pain Relief';
+    } else if (/vit|zinc|calcium|multivit|b12|d3|iron|folic|supple|omega/i.test(lower)) {
+      category = 'Vitamins';
+    } else if (/cillin|amox|clav|azith|cefix|cipro|levo|oflox|antibiotic|infect|fungal/i.test(lower)) {
+      category = 'Antibiotics';
+    } else if (/metformin|glim|insulin|sugar|diabet|januvia|vildag/i.test(lower)) {
+      category = 'Diabetes';
+    } else if (/panto|omepra|rabep|esom|antacid|gel|digene|gas|reflux|vomit|domperi|ibs|digest/i.test(lower)) {
+      category = 'Digestive';
+    } else if (/cetir|levocet|allegra|fexo|allergy|cough|cold|montel|sneez/i.test(lower)) {
+      category = 'Allergy';
+    } else if (/inhaler|salbut|budesonide|asthma|respirat|breath|cough/i.test(lower)) {
+      category = 'Respiratory';
+    }
+
+    return { id: m.id, category };
+  });
 }

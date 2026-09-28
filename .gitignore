@@ -1,6 +1,12 @@
 node_modules/
+dist/
 coverage/
 .DS_Store
 *.log
 .env*
 !.env.example
+
+# Keep Android platform local in AI Studio (do not push to GitHub)
+android/
+.gradle/
+

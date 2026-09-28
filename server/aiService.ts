@@ -118,13 +118,24 @@ function sanitizeExtractedMedicine(
     quantity = hints?.potentialQuantity || 1;
   }
 
+  let category = sanitizeStr(raw?.category, '');
+  let tags: string[] = [];
+  if (Array.isArray(raw?.tags)) {
+    tags = raw.tags
+      .map((t: any) => String(t).trim())
+      .filter((t: string) => t.length > 0 && t.length < 30)
+      .slice(0, 5);
+  }
+
   return {
     name,
     dosage,
     expirationDate,
     usageInstructions,
     form,
-    quantity
+    quantity,
+    ...(category ? { category } : {}),
+    ...(tags.length > 0 ? { tags } : {})
   };
 }
 
@@ -344,7 +355,13 @@ FIELD-BY-FIELD INSTRUCTIONS:
    - Default to 10 for standard blister strips or 1 for bottles/syrups if not specified.
 
 6. "usageInstructions":
-   - Extract clinical guidance if printed (e.g., "As directed by physician", "Take after food", "Store below 25°C protected from moisture").`;
+   - Extract clinical guidance if printed (e.g., "As directed by physician", "Take after food", "Store below 25°C protected from moisture").
+
+7. "category":
+   - Classify this medicine into one standard category: "Heart", "Pain Relief", "Vitamins", "Antibiotics", "Diabetes", "Digestive", "Allergy", "Respiratory", "Mental Health", "Skin Care", "Eye & Ear", or "Other".
+
+8. "tags":
+   - Provide 2-4 concise relevant tags (e.g. ["Pain Relief", "Fever", "OTC"] or ["Heart", "Blood Pressure", "Daily"]).`;
 
       // Multimodal execution: Send both the image and the OCR text so Gemini Vision can see the label directly
       const contentsPayload: any[] = [];
@@ -373,7 +390,12 @@ FIELD-BY-FIELD INSTRUCTIONS:
               expirationDate: { type: Type.STRING },
               usageInstructions: { type: Type.STRING },
               form: { type: Type.STRING, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
-              quantity: { type: Type.NUMBER }
+              quantity: { type: Type.NUMBER },
+              category: { type: Type.STRING },
+              tags: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              }
             },
             required: ["name", "dosage", "expirationDate", "form"]
           }
@@ -408,6 +430,117 @@ FIELD-BY-FIELD INSTRUCTIONS:
     }
 
     return { success: false, errorMessage: error.message || String(error) };
+  }
+}
+
+/**
+ * Categorize a batch of medicines using Gemini AI.
+ * Assigns one standard clinical category and 2 to 4 tags to each medicine.
+ */
+export async function categorizeMedicinesServer(
+  medicines: { id: string; name: string; dosage?: string; usageInstructions?: string; form?: string }[]
+) {
+  if (!medicines || medicines.length === 0) {
+    return { success: true, categorized: [] };
+  }
+
+  try {
+    return await runWithRotation('extraction', async (ai) => {
+      const prompt = `You are a clinical pharmacist and medical classification system.
+Assign an accurate primary category for each of the following medicines. Do not add tags.
+
+Medicines to classify:
+${JSON.stringify(medicines.map(m => ({
+  id: m.id,
+  name: m.name,
+  dosage: m.dosage || '',
+  usageInstructions: m.usageInstructions || '',
+  form: m.form || ''
+})), null, 2)}
+
+STANDARD CATEGORIES:
+- "Heart" (cardiovascular, blood pressure, cholesterol, hypertension, angina, blood thinners)
+- "Pain Relief" (analgesics, NSAIDs, antipyretics, headache, body ache, fever, arthritis)
+- "Vitamins" (multivitamins, minerals, calcium, vitamin D, zinc, dietary supplements)
+- "Antibiotics" (antibacterial, antifungal, antiviral, antiparasitic, infections)
+- "Diabetes" (insulin, metformin, blood sugar control, antidiabetic)
+- "Digestive" (antacids, PPIs, laxatives, nausea, IBS, acid reflux, stomach)
+- "Allergy" (antihistamines, cetirizine, anti-allergy, rhinitis, urticaria)
+- "Respiratory" (asthma, cough, bronchodilators, inhalers, cold, chest congestion)
+- "Mental Health" (antidepressants, anxiolytics, sleep aids, neurology, mood)
+- "Skin Care" (dermatology, creams, ointments, eczema, acne)
+- "Eye & Ear" (ophthalmic drops, ear drops)
+- "Other" (if not matching any above)
+
+Return a JSON array of objects with schema:
+[
+  {
+    "id": string (the exact id passed in),
+    "category": string (must be one of the standard categories)
+  }
+]`;
+
+      const response = await generateContentWithModelFallback(ai, {
+        preferredModel: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                id: { type: Type.STRING },
+                category: { type: Type.STRING }
+              },
+              required: ["id", "category"]
+            }
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error("AI returned empty response");
+      let cleanedJson = text.trim();
+      if (cleanedJson.startsWith("```")) {
+        cleanedJson = cleanedJson.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+      }
+
+      const results = JSON.parse(cleanedJson);
+      return { success: true, categorized: results };
+    });
+  } catch (error: any) {
+    console.error("Server categorization error:", error);
+    // Graceful clinical heuristic fallback so categorization never fails
+    const fallbackCategorized = medicines.map(m => {
+      const lower = (m.name + ' ' + (m.usageInstructions || '')).toLowerCase();
+      let category = 'Other';
+
+      if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
+        category = 'Heart';
+      } else if (/paracet|dolo|ibupro|combiflam|tramad|diclo|aceclo|aspirin|pain|fever|headache|analgesic/i.test(lower)) {
+        category = 'Pain Relief';
+      } else if (/vit|zinc|calcium|multivit|b12|d3|iron|folic|supple|omega/i.test(lower)) {
+        category = 'Vitamins';
+      } else if (/cillin|amox|clav|azith|cefix|cipro|levo|oflox|antibiotic|infect|fungal/i.test(lower)) {
+        category = 'Antibiotics';
+      } else if (/metformin|glim|insulin|sugar|diabet|januvia|vildag/i.test(lower)) {
+        category = 'Diabetes';
+      } else if (/panto|omepra|rabep|esom|antacid|gel|digene|gas|reflux|vomit|domperi|ibs|digest/i.test(lower)) {
+        category = 'Digestive';
+      } else if (/cetir|levocet|allegra|fexo|allergy|cough|cold|montel|sneez/i.test(lower)) {
+        category = 'Allergy';
+      } else if (/inhaler|salbut|budesonide|asthma|respirat|breath|cough/i.test(lower)) {
+        category = 'Respiratory';
+      }
+
+      return {
+        id: m.id,
+        category
+      };
+    });
+
+    return { success: true, categorized: fallbackCategorized, isFallback: true };
   }
 }
 

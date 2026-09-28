@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight } from 'lucide-react';
+import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine } from './types';
+import { MEDICINE_CATEGORIES, getCategoryStyle } from './constants';
 import { CameraCapture } from './components/CameraCapture';
 import { MedicineForm } from './components/MedicineForm';
 import { MedicineList } from './components/MedicineList';
 import { SettingsModal } from './components/SettingsModal';
 import { ChatView } from './components/ChatView';
 import { MailboxModal } from './components/MailboxModal';
-import { extractMedicineData } from './services/geminiService';
+import { extractMedicineData, checkDrugInteractions, InteractionResult, categorizeMedicinesWithAI } from './services/geminiService';
 import { 
   auth, db, storage, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
   collection, doc, setDoc, addDoc, deleteDoc, updateDoc, writeBatch, onSnapshot, query, where, orderBy, getDoc, getDocs, User,
@@ -17,7 +18,6 @@ import {
   ref, uploadBytes, getDownloadURL, deleteObject, serverTimestamp, uploadBytesResumable
 } from './firebase';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { checkDrugInteractions, InteractionResult } from './services/geminiService';
 
 import { DoctorLogo } from './components/DoctorLogo';
 import { MedicineDetailsPage } from './components/MedicineDetailsPage';
@@ -87,6 +87,25 @@ export default function App() {
   const [openedFromSettings, setOpenedFromSettings] = useState<boolean>(false);
   const [selectedDetailsMedicine, setSelectedDetailsMedicine] = useState<Medicine | null>(null);
   const [activeSystemPage, setActiveSystemPage] = useState<'details' | 'history' | 'edit' | 'add' | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMedicineIds, setSelectedMedicineIds] = useState<Set<string>>(new Set());
+  const categoryDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   const navigateToPublicPage = (page: PublicPageType) => {
     setPublicPage(page);
@@ -624,10 +643,36 @@ export default function App() {
       batch.set(medRef, updateData, { merge: true });
 
       const changes: string[] = [];
-      if (currentDetailsMedicine.quantity !== data.quantity) changes.push(`Qty: ${data.quantity}`);
-      if (currentDetailsMedicine.expirationDate !== data.expirationDate) changes.push(`Exp: ${data.expirationDate}`);
-      if (currentDetailsMedicine.dosage !== data.dosage) changes.push(`Dosage: ${data.dosage}`);
-      if (currentDetailsMedicine.form !== data.form) changes.push(`Form: ${data.form}`);
+      if (data.name && currentDetailsMedicine.name !== data.name) {
+        changes.push(`Name: "${currentDetailsMedicine.name}" → "${data.name}"`);
+      }
+      const oldCat = currentDetailsMedicine.category || 'Other';
+      const newCat = data.category || 'Other';
+      if (data.category !== undefined && oldCat.toLowerCase() !== newCat.toLowerCase()) {
+        changes.push(`Category: "${oldCat}" → "${newCat}"`);
+      }
+      if (data.expirationDate && currentDetailsMedicine.expirationDate !== data.expirationDate) {
+        changes.push(`Exp Date: ${currentDetailsMedicine.expirationDate || 'None'} → ${data.expirationDate}`);
+      }
+      if (data.quantity !== undefined && currentDetailsMedicine.quantity !== data.quantity) {
+        changes.push(`Qty: ${currentDetailsMedicine.quantity ?? 0} → ${data.quantity}`);
+      }
+      const oldSched = currentDetailsMedicine.schedule || '';
+      const newSched = data.schedule || '';
+      if (data.schedule !== undefined && oldSched !== newSched) {
+        changes.push(`Schedule: ${oldSched ? `"${oldSched}"` : 'None'} → ${newSched ? `"${newSched}"` : 'None'}`);
+      }
+      if (data.dosage && currentDetailsMedicine.dosage !== data.dosage) {
+        changes.push(`Dosage: ${currentDetailsMedicine.dosage || 'None'} → ${data.dosage}`);
+      }
+      if (data.form && currentDetailsMedicine.form !== data.form) {
+        changes.push(`Form: ${currentDetailsMedicine.form || 'other'} → ${data.form}`);
+      }
+      const oldInst = (currentDetailsMedicine.usageInstructions || '').trim();
+      const newInst = (data.usageInstructions || '').trim();
+      if (data.usageInstructions !== undefined && oldInst !== newInst) {
+        changes.push(`Usage Instructions updated`);
+      }
       
       const historyId = crypto.randomUUID();
       batch.set(doc(db, `medicines/${currentDetailsMedicine.id}/history`, historyId), {
@@ -739,6 +784,13 @@ export default function App() {
         if (firestoreData.schedule || existingMed.schedule) {
           updateData.schedule = firestoreData.schedule || existingMed.schedule || null;
         }
+        if (firestoreData.category || existingMed.category) {
+          updateData.category = firestoreData.category || existingMed.category;
+        }
+        if (firestoreData.tags || existingMed.tags) {
+          const mergedTags = Array.from(new Set([...(existingMed.tags || []), ...(firestoreData.tags || [])]));
+          if (mergedTags.length > 0) updateData.tags = mergedTags;
+        }
 
         batch.set(medRef, updateData, { merge: true });
 
@@ -774,8 +826,36 @@ export default function App() {
         batch.set(medRef, updateData, { merge: true });
         
         const changes: string[] = [];
-        if (editingMedicine.quantity !== data.quantity) changes.push(`Qty: ${data.quantity}`);
-        if (editingMedicine.expirationDate !== data.expirationDate) changes.push(`Exp: ${data.expirationDate}`);
+        if (data.name && editingMedicine.name !== data.name) {
+          changes.push(`Name: "${editingMedicine.name}" → "${data.name}"`);
+        }
+        const oldCat = editingMedicine.category || 'Other';
+        const newCat = data.category || 'Other';
+        if (data.category !== undefined && oldCat.toLowerCase() !== newCat.toLowerCase()) {
+          changes.push(`Category: "${oldCat}" → "${newCat}"`);
+        }
+        if (data.expirationDate && editingMedicine.expirationDate !== data.expirationDate) {
+          changes.push(`Exp Date: ${editingMedicine.expirationDate || 'None'} → ${data.expirationDate}`);
+        }
+        if (data.quantity !== undefined && editingMedicine.quantity !== data.quantity) {
+          changes.push(`Qty: ${editingMedicine.quantity ?? 0} → ${data.quantity}`);
+        }
+        const oldSched = editingMedicine.schedule || '';
+        const newSched = data.schedule || '';
+        if (data.schedule !== undefined && oldSched !== newSched) {
+          changes.push(`Schedule: ${oldSched ? `"${oldSched}"` : 'None'} → ${newSched ? `"${newSched}"` : 'None'}`);
+        }
+        if (data.dosage && editingMedicine.dosage !== data.dosage) {
+          changes.push(`Dosage: ${editingMedicine.dosage || 'None'} → ${data.dosage}`);
+        }
+        if (data.form && editingMedicine.form !== data.form) {
+          changes.push(`Form: ${editingMedicine.form || 'other'} → ${data.form}`);
+        }
+        const oldInst = (editingMedicine.usageInstructions || '').trim();
+        const newInst = (data.usageInstructions || '').trim();
+        if (data.usageInstructions !== undefined && oldInst !== newInst) {
+          changes.push(`Usage Instructions updated`);
+        }
         
         const historyId = crypto.randomUUID();
         batch.set(doc(db, `medicines/${editingMedicine.id}/history`, historyId), {
@@ -784,7 +864,7 @@ export default function App() {
           userId: user.uid,
           timestamp: Date.now(),
           actionType: 'EDIT',
-          details: `Cloud Update: ${changes.join(', ') || 'Metadata updated'}`
+          details: `Updated: ${changes.join(', ') || 'Metadata updated'}`
         });
       } else {
         const id = crypto.randomUUID();
@@ -804,6 +884,12 @@ export default function App() {
 
         if (firestoreData.quantity !== undefined) {
           newMed.quantity = firestoreData.quantity;
+        }
+        if (firestoreData.category) {
+          newMed.category = firestoreData.category;
+        }
+        if (firestoreData.tags && Array.isArray(firestoreData.tags)) {
+          newMed.tags = firestoreData.tags;
         }
         if (firestoreData.enableLowStockAlert !== undefined) {
           newMed.enableLowStockAlert = firestoreData.enableLowStockAlert;
@@ -975,6 +1061,73 @@ export default function App() {
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'medicines');
+    }
+  };
+
+  const [isCategorizing, setIsCategorizing] = useState(false);
+
+  const handleUpdateMedicineDirectly = async (medicineId: string, updates: Partial<Medicine>) => {
+    if (!user) return;
+    try {
+      const medRef = doc(db, 'medicines', medicineId);
+      await updateDoc(medRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      setSelectedDetailsMedicine(prev => prev && prev.id === medicineId ? { ...prev, ...updates } : prev);
+      setMedicines(prev => prev.map(m => m.id === medicineId ? { ...m, ...updates } : m));
+      triggerSuccessHaptic();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'medicines');
+    }
+  };
+
+  const handleAutoCategorize = async () => {
+    if (!user || isCategorizing) return;
+    const activeMeds = medicines.filter(m => !m.isDeleted);
+    if (activeMeds.length === 0) {
+      setAlertMessage("No active medicines found to categorize.");
+      return;
+    }
+
+    setIsCategorizing(true);
+    try {
+      const medsPayload = activeMeds.map(m => ({
+        id: m.id,
+        name: m.name,
+        dosage: m.dosage,
+        usageInstructions: m.usageInstructions,
+        form: m.form
+      }));
+
+      const categorizedList = await categorizeMedicinesWithAI(medsPayload);
+      if (categorizedList && categorizedList.length > 0) {
+        const batch = writeBatch(db);
+        let updatedCount = 0;
+
+        categorizedList.forEach(item => {
+          if (item && item.id) {
+            const medRef = doc(db, 'medicines', item.id);
+            batch.update(medRef, {
+              category: item.category || 'Other',
+              updatedAt: serverTimestamp()
+            });
+            updatedCount++;
+          }
+        });
+
+        await batch.commit();
+        triggerSuccessHaptic();
+        setAlertMessage(`Successfully organized ${updatedCount} medicines into clinical categories using Gemini AI!`);
+        trackEvent('ai_categorize_batch', { count: updatedCount });
+      } else {
+        setAlertMessage("Could not categorize medicines at this time.");
+      }
+    } catch (err: any) {
+      console.error("Auto categorize failed:", err);
+      setAlertMessage("Failed to auto-categorize with Gemini: " + (err.message || String(err)));
+    } finally {
+      setIsCategorizing(false);
     }
   };
 
@@ -1312,6 +1465,11 @@ export default function App() {
       
       // Default: hide taken medicines in other filters unless explicitly selected
       if (filter !== 'taken' && m.taken) return false;
+
+      if (selectedCategory !== 'ALL') {
+        const medCat = (m.category || 'Other').toLowerCase();
+        if (medCat !== selectedCategory.toLowerCase()) return false;
+      }
       
       return true;
     }).sort((a, b) => {
@@ -1319,7 +1477,50 @@ export default function App() {
       if (sortOrder === 'desc') return b.name.toLowerCase().localeCompare(a.name.toLowerCase());
       return 0;
     });
-  }, [medicines, searchQuery, filter, sortOrder, alertThreshold, isLikedOnly]);
+  }, [medicines, searchQuery, filter, sortOrder, alertThreshold, isLikedOnly, selectedCategory]);
+
+  const categoryDropdownItems = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    medicines.forEach(m => {
+      if (m.isDeleted) return;
+      const cat = m.category || 'Other';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+
+    const items: { category: string; count: number; accentColor: string }[] = [];
+    const seen = new Set<string>();
+
+    MEDICINE_CATEGORIES.forEach(cat => {
+      seen.add(cat.toLowerCase());
+      const style = getCategoryStyle(cat);
+      items.push({
+        category: cat,
+        count: counts[cat] || 0,
+        accentColor: style.accent
+      });
+    });
+
+    Object.keys(counts).forEach(cat => {
+      if (!seen.has(cat.toLowerCase())) {
+        seen.add(cat.toLowerCase());
+        const style = getCategoryStyle(cat);
+        items.push({
+          category: cat,
+          count: counts[cat] || 0,
+          accentColor: style.accent
+        });
+      }
+    });
+
+    items.sort((a, b) => {
+      if (b.count > 0 && a.count === 0) return 1;
+      if (a.count > 0 && b.count === 0) return -1;
+      if (b.count !== a.count) return b.count - a.count;
+      return a.category.localeCompare(b.category);
+    });
+
+    return items;
+  }, [medicines]);
 
   if (!isAuthReady) {
     return (
@@ -1845,36 +2046,126 @@ export default function App() {
         </div>
 
         {/* Filters */}
-        <div className="px-4 mb-6 flex flex-wrap gap-2">
+        <div className="px-2.5 sm:px-4 mb-6 flex flex-nowrap items-center gap-1 sm:gap-2 relative z-30">
           <button 
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${filter === 'all' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'all' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             All
           </button>
           <button 
             onClick={() => setFilter('expired')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${filter === 'expired' ? 'bg-[#ea4335] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'expired' ? 'bg-[#ea4335] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             Expired
           </button>
           <button 
             onClick={() => setFilter('expiring_soon')}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${filter === 'expiring_soon' ? 'bg-[#f2a154] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'expiring_soon' ? 'bg-[#f2a154] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             Soon
           </button>
-          <div className="w-px h-6 bg-[#e3e2e0] mx-1 self-center shrink-0"></div>
+          <div className="w-px h-4 sm:h-5 bg-[#e3e2e0] mx-0.5 sm:mx-1 self-center shrink-0"></div>
           <button 
             onClick={() => {
               const nextOrder = sortOrder === 'default' ? 'asc' : sortOrder === 'asc' ? 'desc' : 'default';
               setSortOrder(nextOrder);
               handleUpdateConfig({ sortOrder: nextOrder });
             }}
-            className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border transition-all ${sortOrder !== 'default' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${sortOrder !== 'default' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
           >
             {sortOrder === 'desc' ? 'Z-A' : 'A-Z'}
           </button>
+          <div className="w-px h-4 sm:h-5 bg-[#e3e2e0] mx-0.5 sm:mx-1 self-center shrink-0"></div>
+
+          {/* Categories Dropdown (Small Size) */}
+          <div className="relative inline-block shrink-0" ref={categoryDropdownRef}>
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsCategoryDropdownOpen(prev => !prev);
+              }}
+              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+                selectedCategory !== 'ALL' 
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-xs' 
+                  : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              <span className="truncate max-w-[65px] sm:max-w-none">{selectedCategory !== 'ALL' ? selectedCategory : 'Category'}</span>
+              <ChevronDown size={10} className={`transition-transform duration-200 shrink-0 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isCategoryDropdownOpen && (
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 sm:left-0 sm:right-auto mt-2 w-48 sm:w-52 max-h-64 overflow-y-auto bg-white border border-[#e3e2e0] rounded-2xl shadow-xl z-50 py-1.5 scrollbar-thin"
+              >
+                {/* All Option */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory('ALL');
+                    setIsCategoryDropdownOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left transition-colors hover:bg-slate-50 ${
+                    selectedCategory === 'ALL' ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-700'
+                  }`}
+                >
+                  <span>All</span>
+                  <span className="font-mono text-xs font-bold text-[#0f9d58]">
+                    {medicines.filter(m => !m.isDeleted).length}
+                  </span>
+                </button>
+
+                {/* Categories with Number and Colour (no box or other design) */}
+                {categoryDropdownItems.map(({ category, count, accentColor }) => {
+                  const isSelected = selectedCategory.toLowerCase() === category.toLowerCase();
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(isSelected ? 'ALL' : category);
+                        setIsCategoryDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left transition-colors hover:bg-slate-50 ${
+                        isSelected ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-700'
+                      }`}
+                    >
+                      <span className="truncate pr-2">{category}</span>
+                      <span 
+                        className="font-mono text-xs font-bold shrink-0" 
+                        style={{ color: accentColor }}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Delete Logo Button (replaces Select Multiple: next to Category on mobile, far right on large screen) */}
+          {medicines.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isSelectionMode) {
+                  setIsSelectionMode(false);
+                  setSelectedMedicineIds(new Set());
+                } else {
+                  setIsSelectionMode(true);
+                }
+              }}
+              title={isSelectionMode ? "Cancel Selection" : "Select Multiple to Delete"}
+              aria-label={isSelectionMode ? "Cancel Selection" : "Select Multiple to Delete"}
+              className="p-1 sm:ml-auto text-red-500 hover:text-red-600 active:scale-90 transition-all shrink-0 flex items-center justify-center cursor-pointer"
+            >
+              <Trash2 size={16} className={`transition-all ${isSelectionMode ? 'text-red-600 scale-110' : 'text-red-500 hover:text-red-600'}`} />
+            </button>
+          )}
         </div>
 
         <MedicineList 
@@ -1886,6 +2177,14 @@ export default function App() {
           lowQuantityThreshold={lowQuantityThreshold}
           alertThreshold={alertThreshold}
           onToggleLike={handleToggleLike}
+          onAutoCategorize={handleAutoCategorize}
+          isCategorizing={isCategorizing}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          isSelectionMode={isSelectionMode}
+          setIsSelectionMode={setIsSelectionMode}
+          selectedIds={selectedMedicineIds}
+          setSelectedIds={setSelectedMedicineIds}
         />
 
         {/* Minimal Footer within main app view */}

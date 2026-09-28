@@ -31,7 +31,7 @@ service cloud.firestore {
 
     function isValidMedicine(data) {
       return data.keys().hasAll(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt']) &&
-             data.keys().hasOnly(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 'usageInstructions', 'capturedImage', 'imageUrl', 'taken', 'quantity', 'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert']) &&
+             data.keys().hasOnly(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 'usageInstructions', 'capturedImage', 'imageUrl', 'taken', 'quantity', 'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert', 'category', 'tags']) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.dosage is string && data.dosage.size() < 100 &&
@@ -49,6 +49,8 @@ service cloud.firestore {
              (!('form' in data) || data.form == null || (data.form in ['tablet', 'capsule', 'syrup', 'ampule', 'powder', 'tape', 'liquid', 'other'])) &&
              (!('schedule' in data) || data.schedule == null || (data.schedule is string && data.schedule.size() < 1000)) &&
              (!('liked' in data) || data.liked is bool) &&
+             (!('category' in data) || data.category == null || (data.category is string && data.category.size() < 100)) &&
+             (!('tags' in data) || data.tags == null || (data.tags is list && data.tags.size() <= 30)) &&
              (!('enableLowStockAlert' in data) || data.enableLowStockAlert is bool) &&
              (!('lowStockThreshold' in data) || data.lowStockThreshold == null || (data.lowStockThreshold is number && data.lowStockThreshold >= 0)) &&
              (!('enableEmailExpiryAlert' in data) || data.enableEmailExpiryAlert is bool) &&
