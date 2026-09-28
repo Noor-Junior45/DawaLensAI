@@ -77,7 +77,7 @@ function getClientApiKey(): string {
 }
 
 // Resilient model fallback list for client calls
-const RESILIENT_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
+const RESILIENT_MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
 
 async function generateContentWithModelFallbackClient(
   ai: GoogleGenAI,
@@ -136,7 +136,7 @@ export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<str
   }));
 
   const response = await generateContentWithModelFallbackClient(ai, {
-    preferredModel: "gemini-3.8-flash",
+    preferredModel: "gemini-2.5-flash",
     contents: [
       ...history,
       { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }

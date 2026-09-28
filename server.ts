@@ -13,6 +13,7 @@ import {
   getAvailableKeys
 } from "./server/aiService.ts";
 import { getChatCount, incrementChatCount } from "./medCache.ts";
+import { startExpiryCron } from "./server/expiryCron.ts";
 
 const app = express();
 app.set('trust proxy', true);
@@ -300,6 +301,8 @@ async function setupViteAndListen() {
   if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://0.0.0.0:${PORT}`);
+      // Launch automated expiry cron worker (1 month, 7 days, and expired)
+      startExpiryCron();
     });
   }
 }

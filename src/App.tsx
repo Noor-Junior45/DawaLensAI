@@ -286,98 +286,80 @@ export default function App() {
         }
       }
 
-      // 2. Email Notification Alerts
+      // 2. Scheduled Email Notification Alerts (1 Month, 7 Days, and Expired Disposal Advisory)
       if (emailNotificationsEnabled && user?.email) {
-        // A. Filter medicines for expiration alerts
-        const expiringMeds = medicines.filter(m => {
-          if (m.isDeleted) return false;
-          if (m.enableEmailExpiryAlert === false) return false;
+        // Loop active medicines and evaluate exact alert intervals
+        for (const m of medicines) {
+          if (m.isDeleted || m.taken) continue;
+          if (m.enableEmailExpiryAlert === false) continue;
+          if (!m.expirationDate) continue;
+
           const [year, month, day] = m.expirationDate.split('-').map(Number);
-          const expiry = new Date();
-          if (year && month && day) {
-            expiry.setFullYear(year, month - 1, day);
-          } else {
-            return false;
-          }
+          if (!year || !month || !day) continue;
+
+          const expiry = new Date(year, month - 1, day);
           expiry.setHours(0, 0, 0, 0);
-          
+
           const diffTime = expiry.getTime() - today.getTime();
           const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-          const effectiveThreshold = alertThreshold === 90 ? 92 : alertThreshold;
-          
-          return diffDays === effectiveThreshold || diffDays === 10 || diffDays === 0;
-        });
 
-        // B. Filter medicines for low quantity alerts (respecting individual low-stock alert settings)
+          // Determine target stage
+          let stageToSend: '30_DAYS' | '7_DAYS' | 'EXPIRED' | null = null;
+          if (diffDays === 30 || diffDays === 31) {
+            stageToSend = '30_DAYS';
+          } else if (diffDays === 7) {
+            stageToSend = '7_DAYS';
+          } else if (diffDays <= 0 && diffDays >= -14) {
+            stageToSend = 'EXPIRED';
+          }
+
+          if (stageToSend) {
+            // Stage-specific deduplication key ensuring the exact same alert is NEVER re-sent repeatedly
+            const storageKey = `dawalens_ai_email_${m.id}_stage_${stageToSend}`;
+            const alreadySent = localStorage.getItem(storageKey);
+
+            if (!alreadySent) {
+              try {
+                const subject = stageToSend === 'EXPIRED'
+                  ? `🚨 Urgent: ${m.name} has Expired - Please Dispose Safely`
+                  : (stageToSend === '7_DAYS'
+                      ? `⚠️ Expiry Warning: ${m.name} expires in 7 days`
+                      : `📅 Expiry Notice: ${m.name} expires in 1 month`);
+
+                const text = stageToSend === 'EXPIRED'
+                  ? `DawaLens AI Alert: Your medicine ${m.name} has expired on ${m.expirationDate}. Please do NOT consume this medication and dispose of it safely.`
+                  : (stageToSend === '7_DAYS'
+                      ? `DawaLens AI Alert: Your medicine ${m.name} expires in 7 days on ${m.expirationDate}. Please consult your doctor or pharmacy for a refill.`
+                      : `DawaLens AI Alert: Your medicine ${m.name} expires in 1 month on ${m.expirationDate}.`);
+
+                const html = getExpiryEmailHTML(m.name, m.quantity || "N/A", m.expirationDate, stageToSend);
+
+                await sendEmailAlert({
+                  to: user.email,
+                  subject,
+                  text,
+                  html
+                });
+
+                // Mark this specific stage as completed for this medicine
+                localStorage.setItem(storageKey, String(Date.now()));
+              } catch (err) {
+                console.error("Scheduled expiry email alert error:", err);
+              }
+            }
+          }
+        }
+
+        // Low quantity email alerts (respecting 7-day rate-limiting)
         const lowQuantityMeds = medicines.filter(m => {
           if (m.isDeleted || m.taken) return false;
-          // Skip if low-stock alert or email alert is explicitly disabled for this individual medicine
           if (m.enableLowStockAlert === false) return false;
           if (m.enableEmailLowStockAlert === false) return false;
           const individualThreshold = m.lowStockThreshold !== undefined ? m.lowStockThreshold : lowQuantityThreshold;
           return m.quantity !== undefined && m.quantity <= individualThreshold;
         });
 
-        // Format helper for expiry month & year
-        const formatExpiryMonthYear = (dateStr?: string) => {
-          if (!dateStr) return 'N/A';
-          try {
-            const parts = dateStr.split('-');
-            if (parts.length >= 2) {
-              const year = parts[0];
-              const monthNum = parseInt(parts[1], 10);
-              const months = [
-                "January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"
-              ];
-              const monthName = months[monthNum - 1] || parts[1];
-              return `${monthName} ${year}`;
-            }
-            const d = new Date(dateStr);
-            if (!isNaN(d.getTime())) {
-              return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            }
-          } catch (e) {
-            console.warn(e);
-          }
-          return dateStr;
-        };
-
         const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-
-        // Loop expiring meds and trigger if not already sent in the last 7 days
-        for (const m of expiringMeds) {
-          const storageKey = `dawalens_ai_email_exp_sent_${m.id}`;
-          const lastSentStr = localStorage.getItem(storageKey);
-          let shouldSend = true;
-          if (lastSentStr) {
-            const lastSentTime = Number(lastSentStr);
-            if (!isNaN(lastSentTime) && (Date.now() - lastSentTime < sevenDaysInMs)) {
-              shouldSend = false;
-            }
-          }
-
-          if (shouldSend) {
-            try {
-              const formattedExpiry = formatExpiryMonthYear(m.expirationDate);
-              const subject = `Expiry Alert: ${m.name} is Expiring Soon`;
-              const text = `DawaLens AI alert: Your medicine ${m.name} is expiring soon.`;
-              const html = getExpiryEmailHTML(m.name, m.quantity || "N/A", m.expirationDate);
-
-              await sendEmailAlert({
-                to: user.email,
-                subject,
-                text,
-                html
-              });
-              localStorage.setItem(storageKey, String(Date.now()));
-            } catch (err) {
-              console.error("Auto expiry email alert failed:", err);
-            }
-          }
-        }
-
-        // Loop low quantity meds and trigger if not already sent in the last 7 days
         for (const m of lowQuantityMeds) {
           const storageKey = `dawalens_ai_email_qty_sent_${m.id}`;
           const lastSentStr = localStorage.getItem(storageKey);
@@ -411,11 +393,10 @@ export default function App() {
       }
     };
 
-    // Check immediately on load/change
+    // Check periodically without spamming on every app launch
+    const interval = setInterval(checkAndNotify, 4 * 60 * 60 * 1000);
     checkAndNotify();
 
-    // Then check periodically (e.g., every 12 hours)
-    const interval = setInterval(checkAndNotify, 12 * 60 * 60 * 1000);
     return () => clearInterval(interval);
   }, [medicines, browserNotificationsEnabled, emailNotificationsEnabled, alertThreshold, lowQuantityThreshold, user]);
 
@@ -1036,15 +1017,27 @@ export default function App() {
     if (result.success && result.medicine) {
       trackEvent('capture_image', { success: true, name: result.medicine.name || 'Unknown' });
       setEditingMedicine(null);
-      // Pre-fill form with extracted data
+      
+      const cleanString = (val: any, fallback: string = '') => {
+        if (!val || typeof val !== 'string') return fallback;
+        const trimmed = val.trim();
+        if (trimmed.toLowerCase() === 'null' || trimmed.toLowerCase() === 'undefined') return fallback;
+        return trimmed;
+      };
+
+      // Pre-fill form with extracted data, ensuring NO "null" text ever shows up
+      const defaultDate = new Date();
+      defaultDate.setFullYear(defaultDate.getFullYear() + 1);
+      const fallbackExpiry = `${defaultDate.getFullYear()}-${String(defaultDate.getMonth() + 1).padStart(2, '0')}-01`;
+
       const tempMed: Partial<Medicine> = {
-        name: result.medicine.name,
-        dosage: result.medicine.dosage,
-        expirationDate: result.medicine.expirationDate,
-        usageInstructions: result.medicine.usageInstructions || '',
+        name: cleanString(result.medicine.name, 'Scanned Medicine'),
+        dosage: cleanString(result.medicine.dosage, 'N/A'),
+        expirationDate: cleanString(result.medicine.expirationDate, fallbackExpiry),
+        usageInstructions: cleanString(result.medicine.usageInstructions, ''),
         capturedImage: `data:image/jpeg;base64,${base64}`,
-        ...(result.medicine.quantity !== undefined ? { quantity: result.medicine.quantity } : {}),
-        form: result.medicine.form || 'other',
+        quantity: typeof result.medicine.quantity === 'number' && result.medicine.quantity > 0 ? result.medicine.quantity : 1,
+        form: cleanString(result.medicine.form, 'tablet') as any,
       };
       // We don't save immediately, we let user verify in form
       setEditingMedicine(tempMed as Medicine);

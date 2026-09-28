@@ -242,7 +242,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <div>
                   <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Email Alerts</span>
-                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Weekly expiry alerts to your email</span>
+                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Automated alerts at 1 month, 7 days & on expiration</span>
                 </div>
               </div>
               <button 

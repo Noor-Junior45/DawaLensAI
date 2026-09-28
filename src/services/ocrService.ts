@@ -97,11 +97,12 @@ export function extractLocalPatterns(rawText: string) {
   let potentialDosage: string | undefined;
   let potentialQuantity: number | undefined;
 
-  // 1. Expiry Date matching: EXP, EXPIRY, EX., BB, BEST BEFORE, etc.
-  // Patterns like: EXP 08/26, EXP. 08/2026, EXP: 2026-08, 12/2027, etc.
+  // 1. Expiry Date matching: EXP, EXPIRY, EX., EXP.DT, BB, BEST BEFORE, D.O.E, etc.
+  // Handles embossed foil stamps: "EXP. 05/2027", "EXP: 04/26", "EXPIRY: OCT 2026", "EXP.DT: 11/25"
   const expiryRegexes = [
-    /(?:exp(?:iry)?\.?|bb|best\s*before|use\s*before|valid\s*up\s*to)[\s.:]*([0-9]{1,2}[\/\-.][0-9]{2,4})/i,
-    /(?:exp(?:iry)?\.?|bb)[\s.:]*([a-z]{3,4}[\/\-.\s]*[0-9]{2,4})/i,
+    /(?:exp(?:iry)?(?:\.?\s*dt\.?)?|bb|best\s*before|use\s*before|valid\s*up\s*to|d\.o\.e\.?)[\s.:]*([0-9]{1,2}[\/\-.][0-9]{2,4})/i,
+    /(?:exp(?:iry)?(?:\.?\s*dt\.?)?|bb)[\s.:]*([a-z]{3,4}[\/\-.\s]*[0-9]{2,4})/i,
+    /(?:exp(?:iry)?(?:\.?\s*dt\.?)?)[\s.:]*([0-9]{4}[\/\-.][0-9]{1,2})/i,
     /([0-9]{1,2}[\/\-.][0-9]{4})/
   ];
 
