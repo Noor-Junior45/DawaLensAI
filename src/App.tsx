@@ -33,6 +33,10 @@ import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
 import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML } from './services/emailService';
 import { trackEvent } from './utils/analytics';
+import { signInWithGoogleAdaptive, signOutAdaptive } from './services/nativeAuthService';
+import { setCrashReportingUser } from './services/crashReportingService';
+import { initNativePerformance } from './services/nativePerformanceService';
+import { initNativeNotifications, scheduleNativeMedicineAlerts } from './services/nativeNotificationService';
 
 type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | null;
 
@@ -165,8 +169,120 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthReady(true);
+      setCrashReportingUser(currentUser ? currentUser.uid : null);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Native Android Performance & Back Button Handling
+  const modalsStateRef = React.useRef({
+    isCategoryDropdownOpen,
+    activeFooterModal,
+    selectedDetailsMedicine,
+    activeSystemPage,
+    isCameraOpen,
+    isFormOpen,
+    isSettingsOpen,
+    isEmailLoginOpen,
+    isInteractionModalOpen,
+    isSelectionMode,
+    isChatOpen,
+    isMailboxOpen,
+  });
+
+  useEffect(() => {
+    modalsStateRef.current = {
+      isCategoryDropdownOpen,
+      activeFooterModal,
+      selectedDetailsMedicine,
+      activeSystemPage,
+      isCameraOpen,
+      isFormOpen,
+      isSettingsOpen,
+      isEmailLoginOpen,
+      isInteractionModalOpen,
+      isSelectionMode,
+      isChatOpen,
+      isMailboxOpen,
+    };
+  }, [
+    isCategoryDropdownOpen,
+    activeFooterModal,
+    selectedDetailsMedicine,
+    activeSystemPage,
+    isCameraOpen,
+    isFormOpen,
+    isSettingsOpen,
+    isEmailLoginOpen,
+    isInteractionModalOpen,
+    isSelectionMode,
+    isChatOpen,
+    isMailboxOpen,
+  ]);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    initNativePerformance({
+      handleBackButton: () => {
+        const s = modalsStateRef.current;
+        if (s.isCategoryDropdownOpen) {
+          setIsCategoryDropdownOpen(false);
+          return true;
+        }
+        if (s.activeFooterModal) {
+          setActiveFooterModal(null);
+          return true;
+        }
+        if (s.selectedDetailsMedicine) {
+          setSelectedDetailsMedicine(null);
+          return true;
+        }
+        if (s.activeSystemPage) {
+          setActiveSystemPage(null);
+          return true;
+        }
+        if (s.isCameraOpen) {
+          setIsCameraOpen(false);
+          return true;
+        }
+        if (s.isFormOpen) {
+          setIsFormOpen(false);
+          return true;
+        }
+        if (s.isSettingsOpen) {
+          setIsSettingsOpen(false);
+          return true;
+        }
+        if (s.isEmailLoginOpen) {
+          setIsEmailLoginOpen(false);
+          return true;
+        }
+        if (s.isInteractionModalOpen) {
+          setIsInteractionModalOpen(false);
+          return true;
+        }
+        if (s.isChatOpen) {
+          setIsChatOpen(false);
+          return true;
+        }
+        if (s.isMailboxOpen) {
+          setIsMailboxOpen(false);
+          return true;
+        }
+        if (s.isSelectionMode) {
+          setIsSelectionMode(false);
+          setSelectedMedicineIds(new Set());
+          return true;
+        }
+        return false;
+      },
+    }).then((cleanupFn) => {
+      cleanup = cleanupFn;
+    });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   // Sync User Config from Firestore
@@ -233,6 +349,20 @@ export default function App() {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Native Android Closed-App Notifications Setup
+  // Requests Android POST_NOTIFICATIONS permission and creates notification channels
+  useEffect(() => {
+    initNativeNotifications();
+  }, []);
+
+  // Synchronize scheduled native alarms in Android AlarmManager
+  // Ensures notifications appear on user's phone even when the app is completely closed or device sleeps
+  useEffect(() => {
+    if (medicines.length > 0) {
+      scheduleNativeMedicineAlerts(medicines, alertThreshold);
+    }
+  }, [medicines, alertThreshold]);
 
   // Background Notification Check (Browser and Email)
   useEffect(() => {
@@ -507,8 +637,12 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-      trackEvent('login', { method: 'google' });
+      const res = await signInWithGoogleAdaptive();
+      if (res.success) {
+        trackEvent('login', { method: 'google' });
+      } else if (!res.isCancelled) {
+        setAlertMessage(res.error || 'Failed to sign in with Google. Please try again.');
+      }
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
         // Silently handle popup closure
@@ -582,7 +716,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOutAdaptive();
       trackEvent('logout');
       // Reset UI states on logout
       setIsSettingsOpen(false);

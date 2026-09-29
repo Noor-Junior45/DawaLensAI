@@ -2,7 +2,11 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { initCrashReporting } from './services/crashReportingService';
 import './index.css';
+
+// Initialize Crash Protection & Crashlytics
+initCrashReporting();
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {
