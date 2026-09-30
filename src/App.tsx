@@ -267,6 +267,7 @@ export default function App() {
         }
         if (s.isMailboxOpen) {
           setIsMailboxOpen(false);
+          setIsSettingsOpen(true);
           return true;
         }
         if (s.isSelectionMode) {
@@ -2496,7 +2497,10 @@ export default function App() {
 
         {isMailboxOpen && (
           <MailboxModal 
-            onClose={() => setIsMailboxOpen(false)}
+            onClose={() => {
+              setIsMailboxOpen(false);
+              setIsSettingsOpen(true);
+            }}
             user={user}
             medicines={medicines}
           />
