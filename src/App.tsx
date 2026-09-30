@@ -31,7 +31,7 @@ import { AccountDeletionPage } from './components/AccountDeletionPage';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
-import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML } from './services/emailService';
+import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML, syncExpiryScheduleWithServer } from './services/emailService';
 import { trackEvent } from './utils/analytics';
 import { signInWithGoogleAdaptive, signOutAdaptive } from './services/nativeAuthService';
 import { setCrashReportingUser } from './services/crashReportingService';
@@ -435,110 +435,17 @@ export default function App() {
         }
       }
 
-      // 2. Scheduled Email Notification Alerts (1 Month, 7 Days, and Expired Disposal Advisory)
-      if (emailNotificationsEnabled && user?.email) {
-        // Loop active medicines and evaluate exact alert intervals
-        for (const m of medicines) {
-          if (m.isDeleted || m.taken) continue;
-          if (m.enableEmailExpiryAlert === false) continue;
-          if (!m.expirationDate) continue;
-
-          const [year, month, day] = m.expirationDate.split('-').map(Number);
-          if (!year || !month || !day) continue;
-
-          const expiry = new Date(year, month - 1, day);
-          expiry.setHours(0, 0, 0, 0);
-
-          const diffTime = expiry.getTime() - today.getTime();
-          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-          // Determine target stage
-          let stageToSend: '30_DAYS' | '7_DAYS' | 'EXPIRED' | null = null;
-          if (diffDays === 30 || diffDays === 31) {
-            stageToSend = '30_DAYS';
-          } else if (diffDays === 7) {
-            stageToSend = '7_DAYS';
-          } else if (diffDays <= 0 && diffDays >= -14) {
-            stageToSend = 'EXPIRED';
-          }
-
-          if (stageToSend) {
-            // Stage-specific deduplication key ensuring the exact same alert is NEVER re-sent repeatedly
-            const storageKey = `dawalens_ai_email_${m.id}_stage_${stageToSend}`;
-            const alreadySent = localStorage.getItem(storageKey);
-
-            if (!alreadySent) {
-              try {
-                const subject = stageToSend === 'EXPIRED'
-                  ? `🚨 Urgent: ${m.name} has Expired - Please Dispose Safely`
-                  : (stageToSend === '7_DAYS'
-                      ? `⚠️ Expiry Warning: ${m.name} expires in 7 days`
-                      : `📅 Expiry Notice: ${m.name} expires in 1 month`);
-
-                const text = stageToSend === 'EXPIRED'
-                  ? `DawaLens AI Alert: Your medicine ${m.name} has expired on ${m.expirationDate}. Please do NOT consume this medication and dispose of it safely.`
-                  : (stageToSend === '7_DAYS'
-                      ? `DawaLens AI Alert: Your medicine ${m.name} expires in 7 days on ${m.expirationDate}. Please consult your doctor or pharmacy for a refill.`
-                      : `DawaLens AI Alert: Your medicine ${m.name} expires in 1 month on ${m.expirationDate}.`);
-
-                const html = getExpiryEmailHTML(m.name, m.quantity || "N/A", m.expirationDate, stageToSend);
-
-                await sendEmailAlert({
-                  to: user.email,
-                  subject,
-                  text,
-                  html
-                });
-
-                // Mark this specific stage as completed for this medicine
-                localStorage.setItem(storageKey, String(Date.now()));
-              } catch (err) {
-                console.error("Scheduled expiry email alert error:", err);
-              }
-            }
-          }
-        }
-
-        // Low quantity email alerts (respecting 7-day rate-limiting)
-        const lowQuantityMeds = medicines.filter(m => {
-          if (m.isDeleted || m.taken) return false;
-          if (m.enableLowStockAlert === false) return false;
-          if (m.enableEmailLowStockAlert === false) return false;
-          const individualThreshold = m.lowStockThreshold !== undefined ? m.lowStockThreshold : lowQuantityThreshold;
-          return m.quantity !== undefined && m.quantity <= individualThreshold;
-        });
-
-        const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-        for (const m of lowQuantityMeds) {
-          const storageKey = `dawalens_ai_email_qty_sent_${m.id}`;
-          const lastSentStr = localStorage.getItem(storageKey);
-          let shouldSend = true;
-          if (lastSentStr) {
-            const lastSentTime = Number(lastSentStr);
-            if (!isNaN(lastSentTime) && (Date.now() - lastSentTime < sevenDaysInMs)) {
-              shouldSend = false;
-            }
-          }
-
-          if (shouldSend) {
-            try {
-              const subject = `Refill Required: ${m.name} is Low on Stock`;
-              const text = `DawaLens AI alert: Your medicine ${m.name} quantity is down to ${m.quantity}. Please replenish your stocks soon.`;
-              const thresholdUsed = m.lowStockThreshold !== undefined ? m.lowStockThreshold : lowQuantityThreshold;
-              const html = getLowStockEmailHTML(m.name, m.quantity, thresholdUsed);
-
-              await sendEmailAlert({
-                to: user.email,
-                subject,
-                text,
-                html
-              });
-              localStorage.setItem(storageKey, String(Date.now()));
-            } catch (err) {
-              console.error("Auto quantity email alert failed:", err);
-            }
-          }
-        }
+      // 2. Synchronize active medicine expiry schedule with the backend server.
+      // The backend cron worker runs 24/7 in the background on Render and is responsible
+      // for dispatching expiry emails ONCE per stage while the app is closed.
+      // Opening the app on 1, 2, or more devices will NEVER trigger duplicate emails!
+      if (user?.uid && user?.email) {
+        syncExpiryScheduleWithServer(
+          user.uid,
+          user.email,
+          emailNotificationsEnabled,
+          medicines
+        );
       }
     };
 
@@ -1252,24 +1159,30 @@ export default function App() {
         categorizedList.forEach(item => {
           if (item && item.id) {
             const medRef = doc(db, 'medicines', item.id);
-            batch.update(medRef, {
-              category: item.category || 'Other',
+            const updates: any = {
               updatedAt: serverTimestamp()
-            });
+            };
+            if (item.category) {
+              updates.category = item.category;
+            }
+            if (item.form) {
+              updates.form = item.form;
+            }
+            batch.update(medRef, updates);
             updatedCount++;
           }
         });
 
         await batch.commit();
         triggerSuccessHaptic();
-        setAlertMessage(`Successfully organized ${updatedCount} medicines into clinical categories using Gemini AI!`);
+        setAlertMessage(`Successfully organized ${updatedCount} medicines with AI Pharmacist!`);
         trackEvent('ai_categorize_batch', { count: updatedCount });
       } else {
-        setAlertMessage("Could not categorize medicines at this time.");
+        setAlertMessage("Could not organize medicines at this time.");
       }
     } catch (err: any) {
       console.error("Auto categorize failed:", err);
-      setAlertMessage("Failed to auto-categorize with Gemini: " + (err.message || String(err)));
+      setAlertMessage("Failed to auto-organize with AI Pharmacist: " + (err.message || String(err)));
     } finally {
       setIsCategorizing(false);
     }

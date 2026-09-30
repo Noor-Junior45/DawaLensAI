@@ -10,6 +10,65 @@ export interface EmailParams {
 }
 
 /**
+ * Synchronizes user's active medicines with the backend server.
+ * The backend cron runs 24/7 in the background and sends emails strictly ONCE
+ * per medicine stage when the app is closed, preventing multi-device duplicate emails.
+ */
+export async function syncExpiryScheduleWithServer(
+  userId: string,
+  email: string,
+  emailNotificationsEnabled: boolean,
+  medicines: Array<{
+    id: string;
+    name: string;
+    expirationDate?: string;
+    quantity?: number;
+    enableEmailExpiryAlert?: boolean;
+    isDeleted?: boolean;
+    taken?: boolean;
+  }>
+): Promise<void> {
+  if (!userId || !email) return;
+
+  const activeMeds = medicines
+    .filter(m => !m.isDeleted && !m.taken && m.expirationDate)
+    .map(m => ({
+      id: m.id,
+      name: m.name,
+      expirationDate: m.expirationDate!,
+      quantity: m.quantity || 1,
+      enableEmailExpiryAlert: m.enableEmailExpiryAlert !== false
+    }));
+
+  const payload = JSON.stringify({
+    userId,
+    email,
+    emailNotificationsEnabled,
+    medicines: activeMeds
+  });
+
+  try {
+    let res = await fetch('/api/sync-expiry-schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    });
+
+    if (!res.ok || res.status === 404) {
+      try {
+        await fetch(getDirectRenderUrl('/api/sync-expiry-schedule'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        });
+      } catch (err) {}
+    }
+  } catch (e) {
+    console.warn('[EMAIL SERVICE] Expiry schedule sync skipped:', e);
+  }
+}
+
+/**
  * Dispatches an email alert using the backend SMTP nodemailer server route
  * and records a copy of the message in the Firestore 'mail' collection to populate the mailbox history.
  */

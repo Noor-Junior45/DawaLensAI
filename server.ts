@@ -14,7 +14,11 @@ import {
   getAvailableKeys
 } from "./server/aiService.ts";
 import { getChatCount, incrementChatCount } from "./medCache.ts";
-import { startExpiryCron } from "./server/expiryCron.ts";
+import { 
+  startExpiryCron, 
+  registerUserExpirySchedule, 
+  runBackgroundExpiryCheck 
+} from "./server/expiryCron.ts";
 
 const app = express();
 app.set('trust proxy', true);
@@ -292,6 +296,38 @@ app.post("/api/ai/chat", async (req, res) => {
   }
 });
 
+// Endpoint to register/sync user's active medicine expiry schedule to the server
+app.post("/api/sync-expiry-schedule", async (req, res) => {
+  try {
+    const { userId, email, emailNotificationsEnabled, medicines } = req.body;
+    if (!userId || !email) {
+      return res.status(400).json({ error: "userId and email are required" });
+    }
+
+    await registerUserExpirySchedule(
+      userId,
+      email,
+      emailNotificationsEnabled !== false,
+      Array.isArray(medicines) ? medicines : []
+    );
+
+    res.json({ success: true, count: Array.isArray(medicines) ? medicines.length : 0 });
+  } catch (error: any) {
+    console.error("Error syncing expiry schedule:", error);
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
+// Manual/Webhook endpoint to trigger a background expiry check on demand
+app.post("/api/cron/check-expiry", async (req, res) => {
+  try {
+    const result = await runBackgroundExpiryCheck();
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
 // Serve static assets in production or dynamic Vite in development
 async function setupViteAndListen() {
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
@@ -314,6 +350,12 @@ async function setupViteAndListen() {
       console.log(`Server running on http://0.0.0.0:${PORT}`);
       // Launch automated expiry cron worker (1 month, 7 days, and expired)
       startExpiryCron();
+
+      // Keep-alive self-ping for Render (pings every 14 minutes to maintain background cron running when user apps are closed)
+      const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawalensai.onrender.com";
+      setInterval(() => {
+        fetch(`${renderBackendUrl}/api/health`).catch(() => {});
+      }, 14 * 60 * 1000);
     });
   }
 }

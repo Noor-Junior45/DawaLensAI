@@ -438,8 +438,8 @@ FIELD-BY-FIELD INSTRUCTIONS:
 }
 
 /**
- * Categorize a batch of medicines using Gemini AI.
- * Assigns one standard clinical category and 2 to 4 tags to each medicine.
+ * Categorize and verify medicine dosage forms using Gemini AI Pharmacist.
+ * Assigns one standard clinical category and verifies/allots dosage form (tablet, capsule, syrup, ampule, powder, etc.)
  */
 export async function categorizeMedicinesServer(
   medicines: { id: string; name: string; dosage?: string; usageInstructions?: string; form?: string }[]
@@ -450,42 +450,55 @@ export async function categorizeMedicinesServer(
 
   try {
     return await runWithRotation('extraction', async (ai) => {
-      const prompt = `You are a clinical pharmacist and medical classification system.
-Assign an accurate primary category for each of the following medicines. Do not add tags.
+      const prompt = `You are an expert AI Pharmacist and pharmaceutical classification system.
+For each of the following medicines:
+1. Identify and verify its accurate pharmaceutical dosage form (form).
+   Analyze the product name, brand/generic formulation, dosage (e.g. mg vs ml vs vial), and instructions.
+   Allowed forms:
+   - "tablet": Tablets, pills, caplets, dispersible tabs, chewable tablets, sublingual tablets
+   - "capsule": Gelatin capsules, softgels, hard capsules, cap
+   - "syrup": Liquids, syrups, suspensions, oral solutions, pediatric drops, elixirs
+   - "ampule": Injectables, ampules, vials, IV/IM infusions, injections
+   - "powder": Dry syrup powder, sachets, granules, ORS oral rehydration powder
+   - "tape": Transdermal patches, medical tape, medicinal plasters
+   - "liquid": Topical liquids, lotions, gargles, antiseptic washes
+   - "other": Creams, ointments, inhalers, eye/ear drops, sprays
+   If the existing form is already provided and correct, keep it. If it is missing, empty, or 'other', allot the true dosage form.
 
-Medicines to classify:
+2. Assign an accurate primary clinical category (category):
+   - "Heart" (cardiovascular, blood pressure, cholesterol, hypertension, angina, blood thinners)
+   - "Pain Relief" (analgesics, NSAIDs, antipyretics, headache, body ache, fever, arthritis)
+   - "Vitamins" (multivitamins, minerals, calcium, vitamin D, zinc, dietary supplements)
+   - "Antibiotics" (antibacterial, antifungal, antiviral, antiparasitic, infections)
+   - "Diabetes" (insulin, metformin, blood sugar control, antidiabetic)
+   - "Digestive" (antacids, PPIs, laxatives, nausea, IBS, acid reflux, stomach)
+   - "Allergy" (antihistamines, cetirizine, anti-allergy, rhinitis, urticaria)
+   - "Respiratory" (asthma, cough, bronchodilators, inhalers, cold, chest congestion)
+   - "Mental Health" (antidepressants, anxiolytics, sleep aids, neurology, mood)
+   - "Skin Care" (dermatology, creams, ointments, eczema, acne)
+   - "Eye & Ear" (ophthalmic drops, ear drops)
+   - "Other" (if not matching any above)
+
+Medicines to classify & verify:
 ${JSON.stringify(medicines.map(m => ({
   id: m.id,
   name: m.name,
   dosage: m.dosage || '',
   usageInstructions: m.usageInstructions || '',
-  form: m.form || ''
+  currentForm: m.form || ''
 })), null, 2)}
-
-STANDARD CATEGORIES:
-- "Heart" (cardiovascular, blood pressure, cholesterol, hypertension, angina, blood thinners)
-- "Pain Relief" (analgesics, NSAIDs, antipyretics, headache, body ache, fever, arthritis)
-- "Vitamins" (multivitamins, minerals, calcium, vitamin D, zinc, dietary supplements)
-- "Antibiotics" (antibacterial, antifungal, antiviral, antiparasitic, infections)
-- "Diabetes" (insulin, metformin, blood sugar control, antidiabetic)
-- "Digestive" (antacids, PPIs, laxatives, nausea, IBS, acid reflux, stomach)
-- "Allergy" (antihistamines, cetirizine, anti-allergy, rhinitis, urticaria)
-- "Respiratory" (asthma, cough, bronchodilators, inhalers, cold, chest congestion)
-- "Mental Health" (antidepressants, anxiolytics, sleep aids, neurology, mood)
-- "Skin Care" (dermatology, creams, ointments, eczema, acne)
-- "Eye & Ear" (ophthalmic drops, ear drops)
-- "Other" (if not matching any above)
 
 Return a JSON array of objects with schema:
 [
   {
     "id": string (the exact id passed in),
-    "category": string (must be one of the standard categories)
+    "category": string (must be one of the standard categories),
+    "form": string (must be one of: "tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other")
   }
 ]`;
 
       const response = await generateContentWithModelFallback(ai, {
-        preferredModel: "gemini-2.5-flash",
+        preferredModel: "gemini-3.8-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -495,9 +508,13 @@ Return a JSON array of objects with schema:
               type: Type.OBJECT,
               properties: {
                 id: { type: Type.STRING },
-                category: { type: Type.STRING }
+                category: { type: Type.STRING },
+                form: { 
+                  type: Type.STRING,
+                  enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"]
+                }
               },
-              required: ["id", "category"]
+              required: ["id", "category", "form"]
             }
           }
         }
@@ -515,9 +532,9 @@ Return a JSON array of objects with schema:
     });
   } catch (error: any) {
     console.error("Server categorization error:", error);
-    // Graceful clinical heuristic fallback so categorization never fails
+    // Graceful clinical heuristic fallback so categorization and form verification never fail
     const fallbackCategorized = medicines.map(m => {
-      const lower = (m.name + ' ' + (m.usageInstructions || '')).toLowerCase();
+      const lower = (m.name + ' ' + (m.usageInstructions || '') + ' ' + (m.dosage || '')).toLowerCase();
       let category = 'Other';
 
       if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
@@ -538,9 +555,32 @@ Return a JSON array of objects with schema:
         category = 'Respiratory';
       }
 
+      // Verify or allot dosage form
+      let form: string = m.form || 'other';
+      if (!m.form || m.form === 'other') {
+        if (/syrup|suspension|drops|liquid|solution|elixir|oral sol|cough syrup/i.test(lower)) {
+          form = 'syrup';
+        } else if (/capsule|cap|softgel/i.test(lower)) {
+          form = 'capsule';
+        } else if (/ampul|ampule|vial|injection|inj\b|iv|im\b/i.test(lower)) {
+          form = 'ampule';
+        } else if (/powder|sachet|granule|ors/i.test(lower)) {
+          form = 'powder';
+        } else if (/patch|tape|plaster/i.test(lower)) {
+          form = 'tape';
+        } else if (/lotion|liniment/i.test(lower)) {
+          form = 'liquid';
+        } else if (/tablet|tab|chewable|dispersible|effervescent|pill/i.test(lower)) {
+          form = 'tablet';
+        } else {
+          form = 'tablet'; // Default clinical form for standard solid medications
+        }
+      }
+
       return {
         id: m.id,
-        category
+        category,
+        form
       };
     });
 

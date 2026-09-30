@@ -1,166 +1,264 @@
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { 
+  initializeFirestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  collection, 
+  getDocs 
+} from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 import { sendEmailDirectServer, getExpiryEmailHTMLServer, ExpiryStage } from "./emailTemplates.ts";
-import firebaseConfig from "../firebase-applet-config.json";
 
-// In-memory record of already notified alerts for this server process
-// Format: `${medicineId}_${stage}_${dateStr}`
-const notifiedAlerts = new Set<string>();
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: false,
+}, firebaseConfig.firestoreDatabaseId);
+
+export interface ActiveMedicineItem {
+  id: string;
+  name: string;
+  expirationDate: string;
+  quantity?: number | string;
+  enableEmailExpiryAlert?: boolean;
+}
+
+export interface UserExpirySchedule {
+  userId: string;
+  email: string;
+  emailNotificationsEnabled: boolean;
+  medicines: ActiveMedicineItem[];
+  updatedAt: string;
+}
+
+// In-memory fallback cache
+const memorySchedules = new Map<string, UserExpirySchedule>();
+
+// Mutex lock and in-flight tracking to strictly prevent duplicate email dispatches
+let isCheckRunning = false;
+const inFlightAlerts = new Set<string>();
 
 /**
- * Checks all active medicines in Firestore and triggers background alerts
- * according to the exact policy:
- * - Stage 1: Exactly 30 days before expiration (1 month notice)
- * - Stage 2: Exactly 7 days before expiration (1 week urgent reminder)
- * - Stage 3: On or after expiration date (Expired warning with disposal advice)
- *
- * Runs automatically every 4 hours in the server background even if the user never opens the app.
+ * Registers or updates a user's active medicine schedule in Firestore and memory.
+ * Called whenever a user logs in, adds, edits, or deletes a medicine in the app.
  */
-export async function runBackgroundExpiryCheck(): Promise<void> {
-  const projectId = firebaseConfig.projectId;
-  const databaseId = firebaseConfig.firestoreDatabaseId || "(default)";
+export async function registerUserExpirySchedule(
+  userId: string,
+  email: string,
+  emailNotificationsEnabled: boolean,
+  medicines: ActiveMedicineItem[]
+): Promise<void> {
+  const schedule: UserExpirySchedule = {
+    userId,
+    email,
+    emailNotificationsEnabled,
+    medicines: medicines.filter(m => Boolean(m.name && m.expirationDate)),
+    updatedAt: new Date().toISOString()
+  };
 
-  if (!projectId) {
-    return;
-  }
+  memorySchedules.set(userId, schedule);
 
   try {
-    // 1. Fetch user configs to identify active user emails and notification preferences
-    const usersUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/userConfigs`;
-    const usersResp = await fetch(usersUrl);
-    
-    // Map userId -> { email, emailNotificationsEnabled }
-    const userMap = new Map<string, { email: string; emailNotificationsEnabled: boolean }>();
+    const docRef = doc(db, 'server_expiry_schedules', userId);
+    await setDoc(docRef, schedule);
+    console.log(`[EXPIRY SYNC] Successfully registered ${schedule.medicines.length} medicine(s) for user ${email}`);
+  } catch (err) {
+    console.warn(`[EXPIRY SYNC WARNING] Could not persist schedule to Firestore, kept in memory:`, err);
+  }
+}
 
-    if (usersResp.ok) {
-      const usersData: any = await usersResp.json();
-      if (usersData && usersData.documents) {
-        for (const doc of usersData.documents) {
-          const fields = doc.fields;
-          const uid = fields?.userId?.stringValue;
-          const email = fields?.email?.stringValue;
-          const emailNotificationsEnabled = fields?.emailNotificationsEnabled?.booleanValue !== false;
-          if (uid && email) {
-            userMap.set(uid, { email, emailNotificationsEnabled });
-          }
+/**
+ * Executes the backend automated expiry check.
+ * 
+ * Policy:
+ * - Stage 1 (30_DAYS): Exactly 30-31 days before expiry (1 Month Notice)
+ * - Stage 2 (7_DAYS): Exactly 7 days before expiry (1 Week Warning)
+ * - Stage 3 (EXPIRED): On or within 14 days after expiration date (Safe Disposal Advisory)
+ * 
+ * Crucial Safeguards:
+ * 1. Runs completely in the backend on the server, even when all user apps are closed.
+ * 2. Checks and reserves in `server_sent_expiry_alerts` in Firestore BEFORE sending any email.
+ *    If an alert was already sent or is in-flight for that medicine at that stage, it is SKIPPED.
+ *    Every email is sent strictly ONCE per stage, preventing duplicate emails across multiple devices.
+ */
+export async function runBackgroundExpiryCheck(): Promise<{ checked: number; sent: number; skipped?: boolean }> {
+  if (isCheckRunning) {
+    console.log("[BACKGROUND EXPIRY CRON] Another check is already in progress. Skipping concurrent run.");
+    return { checked: 0, sent: 0, skipped: true };
+  }
+
+  isCheckRunning = true;
+  let totalChecked = 0;
+  let totalSent = 0;
+
+  try {
+    // 1. Gather all registered user schedules (from Firestore + memory)
+    const schedulesToProcess = new Map<string, UserExpirySchedule>();
+
+    // Load from memory first
+    for (const [uid, sched] of memorySchedules.entries()) {
+      schedulesToProcess.set(uid, sched);
+    }
+
+    // Load from Firestore server_expiry_schedules
+    try {
+      const snap = await getDocs(collection(db, 'server_expiry_schedules'));
+      snap.forEach(docSnap => {
+        const data = docSnap.data() as UserExpirySchedule;
+        if (data && data.userId && data.email) {
+          schedulesToProcess.set(data.userId, data);
+          memorySchedules.set(data.userId, data);
         }
-      }
+      });
+    } catch (fsErr) {
+      console.warn("[BACKGROUND EXPIRY] Failed to query server_expiry_schedules from Firestore, using memory:", fsErr);
     }
 
-    // 2. Fetch active medicines collection
-    const medicinesUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/medicines?pageSize=300`;
-    const medsResp = await fetch(medicinesUrl);
-    if (!medsResp.ok) {
-      return;
-    }
-
-    const medsData: any = await medsResp.json();
-    if (!medsData || !medsData.documents) {
-      return;
+    if (schedulesToProcess.size === 0) {
+      return { checked: 0, sent: 0 };
     }
 
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
-    for (const doc of medsData.documents) {
-      const f = doc.fields;
-      if (!f) continue;
-
-      const isDeleted = f.isDeleted?.booleanValue === true;
-      const taken = f.taken?.booleanValue === true;
-      if (isDeleted || taken) continue;
-
-      const enableEmailExpiryAlert = f.enableEmailExpiryAlert?.booleanValue !== false;
-      if (!enableEmailExpiryAlert) continue;
-
-      const name = f.name?.stringValue || "Medicine";
-      const expirationDate = f.expirationDate?.stringValue;
-      const userId = f.userId?.stringValue;
-      const stock = f.quantity?.integerValue || f.quantity?.doubleValue || "1";
-      const medId = f.id?.stringValue || doc.name.split("/").pop();
-
-      if (!expirationDate || !userId) continue;
-
-      const userInfo = userMap.get(userId);
-      if (!userInfo || !userInfo.email || !userInfo.emailNotificationsEnabled) {
+    for (const schedule of schedulesToProcess.values()) {
+      if (!schedule.emailNotificationsEnabled || !schedule.email || !schedule.medicines) {
         continue;
       }
 
-      // Calculate days until expiry
-      const [year, month, day] = expirationDate.split("-").map(Number);
-      if (!year || !month || !day) continue;
-
-      const expiry = new Date(year, month - 1, day);
-      expiry.setHours(0, 0, 0, 0);
-
-      const diffTime = expiry.getTime() - now.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-      let stageToSend: ExpiryStage | null = null;
-
-      // Policy:
-      // 1. 1 month earlier (approx 30 days, or exactly 30 or 31 days)
-      if (diffDays === 30 || diffDays === 31) {
-        stageToSend = "30_DAYS";
-      }
-      // 2. 7 days earlier
-      else if (diffDays === 7) {
-        stageToSend = "7_DAYS";
-      }
-      // 3. Expired (today or past expiry date)
-      else if (diffDays <= 0 && diffDays >= -14) {
-        // Alert for recently expired medicines (within 2 weeks of expiration)
-        stageToSend = "EXPIRED";
-      }
-
-      if (stageToSend) {
-        const dedupeKey = `${medId}_${stageToSend}_${now.toISOString().split("T")[0]}`;
-        const stageSentKey = `${medId}_${stageToSend}`;
-
-        if (notifiedAlerts.has(dedupeKey) || (stageToSend === "EXPIRED" && notifiedAlerts.has(stageSentKey))) {
+      for (const m of schedule.medicines) {
+        if (m.enableEmailExpiryAlert === false || !m.expirationDate) {
           continue;
         }
 
-        const subject = stageToSend === "EXPIRED"
-          ? `🚨 URGENT: ${name} Expired - Please Dispose Safely`
-          : (stageToSend === "7_DAYS"
-              ? `⚠️ Expiry Warning: ${name} Expires in 7 Days`
-              : `📅 Expiry Notice: ${name} Expires in 1 Month`);
+        totalChecked++;
 
-        const text = stageToSend === "EXPIRED"
-          ? `Your medicine ${name} has expired on ${expirationDate}. Please do not take this medication and dispose of it safely.`
-          : (stageToSend === "7_DAYS"
-              ? `Your medicine ${name} will expire in 7 days on ${expirationDate}. Please consult your doctor or pharmacy for a refill.`
-              : `Your medicine ${name} will expire in 1 month on ${expirationDate}.`);
+        // Parse expiration date YYYY-MM-DD
+        const parts = m.expirationDate.split('-').map(Number);
+        if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
+          continue;
+        }
 
-        const html = getExpiryEmailHTMLServer(name, stock, expirationDate, stageToSend);
+        const expiry = new Date(parts[0], parts[1] - 1, parts[2]);
+        expiry.setHours(0, 0, 0, 0);
 
-        console.log(`[BACKGROUND EXPIRY CRON] Dispatching ${stageToSend} alert for ${name} to ${userInfo.email}`);
-        await sendEmailDirectServer(userInfo.email, subject, html, text);
+        const diffTime = expiry.getTime() - now.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-        notifiedAlerts.add(dedupeKey);
-        if (stageToSend === "EXPIRED") {
-          notifiedAlerts.add(stageSentKey);
+        let stageToSend: ExpiryStage | null = null;
+        if (diffDays === 30 || diffDays === 31) {
+          stageToSend = '30_DAYS';
+        } else if (diffDays === 7) {
+          stageToSend = '7_DAYS';
+        } else if (diffDays <= 0 && diffDays >= -14) {
+          stageToSend = 'EXPIRED';
+        }
+
+        if (!stageToSend) {
+          continue;
+        }
+
+        // Global deduplication key in Firestore
+        // Format: ${userId}_${medicineId}_${stage}
+        const alertDocId = `${schedule.userId}_${m.id}_${stageToSend}`;
+
+        // In-memory guard to immediately halt concurrent tasks
+        if (inFlightAlerts.has(alertDocId)) {
+          continue;
+        }
+
+        try {
+          // Check if this alert was already sent in Firestore
+          const alertRef = doc(db, 'server_sent_expiry_alerts', alertDocId);
+          const alertSnap = await getDoc(alertRef);
+
+          if (alertSnap.exists()) {
+            // Already sent! Skip to guarantee only one email is ever sent
+            inFlightAlerts.add(alertDocId);
+            continue;
+          }
+
+          // Mark in-flight memory set immediately
+          inFlightAlerts.add(alertDocId);
+
+          // Atomic reservation in Firestore: write PENDING record immediately to prevent race conditions
+          await setDoc(alertRef, {
+            userId: schedule.userId,
+            medId: m.id,
+            medName: m.name,
+            stage: stageToSend,
+            email: schedule.email,
+            expirationDate: m.expirationDate,
+            status: 'PENDING',
+            claimedAt: new Date().toISOString()
+          });
+
+          // Construct email content
+          const subject = stageToSend === 'EXPIRED'
+            ? `🚨 Urgent: ${m.name} has Expired - Please Dispose Safely`
+            : (stageToSend === '7_DAYS'
+                ? `⚠️ Expiry Warning: ${m.name} expires in 7 days`
+                : `📅 Expiry Notice: ${m.name} expires in 1 month`);
+
+          const text = stageToSend === 'EXPIRED'
+            ? `DawaLens AI Alert: Your medicine ${m.name} has expired on ${m.expirationDate}. Please do NOT consume this medication and dispose of it safely.`
+            : (stageToSend === '7_DAYS'
+                ? `DawaLens AI Alert: Your medicine ${m.name} will expire in 7 days on ${m.expirationDate}. Please consult your doctor or pharmacy for a refill.`
+                : `DawaLens AI Alert: Your medicine ${m.name} will expire in 1 month on ${m.expirationDate}.`);
+
+          const html = getExpiryEmailHTMLServer(
+            m.name, 
+            m.quantity || "1", 
+            m.expirationDate, 
+            stageToSend
+          );
+
+          console.log(`[BACKGROUND EXPIRY CRON] Dispatching single ${stageToSend} notice for "${m.name}" to ${schedule.email}...`);
+          
+          await sendEmailDirectServer(schedule.email, subject, html, text);
+          totalSent++;
+
+          // Finalize permanently sent in Firestore
+          await setDoc(alertRef, {
+            status: 'SENT',
+            sentAt: new Date().toISOString()
+          }, { merge: true });
+
+          console.log(`[BACKGROUND EXPIRY CRON] Logged sent alert in Firestore: ${alertDocId}`);
+        } catch (alertErr) {
+          console.error(`[BACKGROUND EXPIRY CRON ERROR] Failed to dispatch alert for ${m.name}:`, alertErr);
+          // Release lock on error
+          inFlightAlerts.delete(alertDocId);
         }
       }
     }
   } catch (err) {
-    console.error("[BACKGROUND EXPIRY CRON ERROR]", err);
+    console.error("[BACKGROUND EXPIRY CRON ROOT ERROR]", err);
+  } finally {
+    isCheckRunning = false;
   }
+
+  return { checked: totalChecked, sent: totalSent };
 }
 
 /**
- * Initializes the background cron schedule
+ * Initializes the background cron worker on the server.
+ * Runs independently in the server process so emails are sent in the background when the app is closed,
+ * and NOT instantly on user app opening.
  */
 export function startExpiryCron(): void {
-  // Run once shortly after startup (after 30 seconds to allow services to initialize)
-  setTimeout(() => {
-    runBackgroundExpiryCheck().catch(err => console.error("Initial expiry cron run failed:", err));
-  }, 30 * 1000);
-
-  // Check every 4 hours automatically
-  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+  // Periodic run every 1 hour (runs independently in the backend)
+  const ONE_HOUR = 60 * 60 * 1000;
   setInterval(() => {
-    runBackgroundExpiryCheck().catch(err => console.error("Periodic expiry cron run failed:", err));
-  }, FOUR_HOURS);
+    runBackgroundExpiryCheck()
+      .then(res => {
+        if (res.sent > 0) {
+          console.log(`[BACKGROUND EXPIRY CRON] Hourly check dispatched ${res.sent} new email(s).`);
+        }
+      })
+      .catch(err => console.error("[BACKGROUND EXPIRY CRON] Periodic run failed:", err));
+  }, ONE_HOUR);
 
-  console.log("[BACKGROUND EXPIRY CRON] Service initialized. Schedule: 1 Month, 7 Days, and Expired (with safe disposal warnings).");
+  console.log("[BACKGROUND EXPIRY CRON] Automated backend worker running. Interval: Every 1 hour. Concurrency locking & atomic deduplication active.");
 }

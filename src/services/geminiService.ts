@@ -617,6 +617,7 @@ export async function getChatCountToday(userId: string): Promise<number> {
 export interface CategorizedMedicineItem {
   id: string;
   category: string;
+  form?: MedicineForm;
   tags?: string[];
 }
 
@@ -660,7 +661,7 @@ export async function categorizeMedicinesWithAI(
 
   // Graceful fallback if network or server is offline
   return medicines.map(m => {
-    const lower = (m.name + ' ' + (m.usageInstructions || '')).toLowerCase();
+    const lower = (m.name + ' ' + (m.usageInstructions || '') + ' ' + (m.dosage || '')).toLowerCase();
     let category = 'Other';
 
     if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
@@ -681,6 +682,28 @@ export async function categorizeMedicinesWithAI(
       category = 'Respiratory';
     }
 
-    return { id: m.id, category };
+    // Verify or allot dosage form
+    let form: MedicineForm = (m.form as MedicineForm) || 'other';
+    if (!m.form || m.form === 'other') {
+      if (/syrup|suspension|drops|liquid|solution|elixir|oral sol|cough syrup/i.test(lower)) {
+        form = 'syrup';
+      } else if (/capsule|cap|softgel/i.test(lower)) {
+        form = 'capsule';
+      } else if (/ampul|ampule|vial|injection|inj\b|iv|im\b/i.test(lower)) {
+        form = 'ampule';
+      } else if (/powder|sachet|granule|ors/i.test(lower)) {
+        form = 'powder';
+      } else if (/patch|tape|plaster/i.test(lower)) {
+        form = 'tape';
+      } else if (/lotion|liniment/i.test(lower)) {
+        form = 'liquid';
+      } else if (/tablet|tab|chewable|dispersible|effervescent|pill/i.test(lower)) {
+        form = 'tablet';
+      } else {
+        form = 'tablet';
+      }
+    }
+
+    return { id: m.id, category, form };
   });
 }

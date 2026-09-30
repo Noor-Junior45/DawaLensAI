@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   X, Send, Bot, User, Sparkles, Loader2, Plus, 
-  MessageSquare, ChevronLeft, Calendar, Clock, 
+  MessageSquare, Calendar, Clock, 
   History, Search, Trash2, ShieldCheck, Stethoscope,
   AlertCircle, Pill, Info, Mail, ArrowLeft, Check, CheckCheck,
   Camera, Mic, Languages
@@ -373,30 +373,24 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
         {/* Main Bar / Header */}
         <header className="flex items-center justify-between px-4 py-3 bg-[#0f9d58] shrink-0 text-white relative z-30 shadow-xs">
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="p-1.5 text-white/90 hover:text-white transition-colors hover:bg-white/10 rounded-full" title="Back">
-              <ChevronLeft size={24} />
-            </button>
+          <div className="flex items-center gap-3">
+            {/* Keep only that person[svg] */}
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 shadow-3xs">
+              <DoctorLogo className="w-6 h-6 text-white" />
+            </div>
             
-            <div className="flex items-center gap-3">
-              {/* Keep only that person[svg] */}
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 shadow-3xs">
-                <DoctorLogo className="w-6 h-6 text-white" />
-              </div>
-              
+            <div className="flex flex-col">
+              <span className="font-extrabold text-white text-base tracking-tight leading-tight">AI Pharmacist</span>
               <div className="flex flex-col">
-                <span className="font-extrabold text-white text-base tracking-tight leading-tight">AI Pharmacist</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-[#e0e1f9] font-black uppercase tracking-widest flex items-center gap-1.5 mt-0.5 leading-none">
-                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#34d399]' : 'bg-[#ef4444]'}`} />
-                    {isOnline ? 'ONLINE' : 'OFFLINE'}
+                <span className="text-[10px] text-[#e0e1f9] font-black uppercase tracking-widest flex items-center gap-1.5 mt-0.5 leading-none">
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#34d399]' : 'bg-[#ef4444]'}`} />
+                  {isOnline ? 'ONLINE' : 'OFFLINE'}
+                </span>
+                {keyStatus && !keyStatus.hasKey && (
+                  <span className="text-[7px] text-red-100 font-bold leading-none mt-0.5 tracking-wider uppercase">
+                    ⚠️ Keys Not Found Since {keyStatus.checkedAt || new Date().toLocaleTimeString()}
                   </span>
-                  {keyStatus && !keyStatus.hasKey && (
-                    <span className="text-[7px] text-red-100 font-bold leading-none mt-0.5 tracking-wider uppercase">
-                      ⚠️ Keys Not Found Since {keyStatus.checkedAt || new Date().toLocaleTimeString()}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -410,13 +404,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
             >
               <Trash2 size={18} className="stroke-[2.5]" />
             </button>
-            {/* Black cross button with circular apple-style glassmorphism background */}
+            {/* Cross [x] button with NO background - only show [x] */}
             <button 
               onClick={onClose}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-black/10 backdrop-blur-md text-white hover:bg-black/20 active:scale-95 rounded-full transition-all border border-white/10 shadow-xs"
+              className="flex items-center justify-center text-white/90 hover:text-white active:scale-90 transition-all p-1.5 bg-transparent hover:bg-transparent border-0 shadow-none outline-none cursor-pointer"
               title="Close"
             >
-              <X size={18} className="stroke-[2.5]" />
+              <X size={22} className="stroke-[2.5]" />
             </button>
           </div>
         </header>

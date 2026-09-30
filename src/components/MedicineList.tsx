@@ -284,9 +284,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return map;
   }, [medicines]);
 
-  // Count of medicines needing category
+  // Count of medicines needing organization (category or dosage form)
   const uncategorizedCount = React.useMemo(() => {
-    return medicines.filter(m => !m.isDeleted && (!m.category || m.category === 'Other')).length;
+    return medicines.filter(m => !m.isDeleted && (
+      (!m.category || m.category === 'Other') ||
+      (!m.form || m.form === 'other')
+    )).length;
   }, [medicines]);
 
   // Filter matcher for groups
@@ -719,7 +722,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Auto-Categorize with Gemini Banner */}
+      {/* Auto-Organize with AI Pharmacist Banner */}
       {uncategorizedCount > 0 && onAutoCategorize && (
         <div className="mx-1 mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/70 to-emerald-50 border border-blue-100/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -728,13 +731,13 @@ export const MedicineList: React.FC<MedicineListProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span>Organize with Gemini AI</span>
+                <span>Organize with AI Pharmacist</span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                  {uncategorizedCount} uncategorized
+                  {uncategorizedCount} to organize
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 mt-0.5">
-                Automatically assign clinical categories (Heart, Pain Relief, Vitamins).
+                Automatically verify dosage forms (Tablet, Syrup, Capsule, Ampule) and assign clinical categories.
               </p>
             </div>
           </div>
@@ -747,12 +750,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
             {isCategorizing ? (
               <>
                 <RefreshCw size={13} className="animate-spin" />
-                <span>Categorizing...</span>
+                <span>Organizing...</span>
               </>
             ) : (
               <>
                 <Sparkles size={13} />
-                <span>Auto-Categorize with AI</span>
+                <span>Organize with AI Pharmacist</span>
               </>
             )}
           </button>

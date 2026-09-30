@@ -160,6 +160,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /server_expiry_schedules/{scheduleId} {
+      allow read, write: if true;
+    }
+
+    match /server_sent_expiry_alerts/{alertId} {
+      allow read, write: if true;
+    }
+
     match /test/connection {
       allow read: if true;
     }
