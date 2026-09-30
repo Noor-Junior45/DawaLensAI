@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MEDICINE_FORM_ICONS, getCategoryStyle } from '../constants';
+import { MEDICINE_FORM_ICONS, getCategoryStyle, isCategoryMatch } from '../constants';
 import { LocalImage } from './LocalImage';
 
 interface MedicineListProps {
@@ -26,6 +26,7 @@ interface MedicineListProps {
   setIsSelectionMode?: React.Dispatch<React.SetStateAction<boolean>>;
   selectedIds?: Set<string>;
   setSelectedIds?: React.Dispatch<React.SetStateAction<Set<string>>>;
+  totalMedicinesCount?: number;
 }
 
 interface GroupedMedicine {
@@ -58,7 +59,8 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   isSelectionMode: propIsSelectionMode,
   setIsSelectionMode: propSetIsSelectionMode,
   selectedIds: propSelectedIds,
-  setSelectedIds: propSetSelectedIds
+  setSelectedIds: propSetSelectedIds,
+  totalMedicinesCount = 0
 }) => {
   const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
   const [internalIsSelectionMode, setInternalIsSelectionMode] = useState(false);
@@ -236,7 +238,11 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       if (!group.imageUrl && med.imageUrl) group.imageUrl = med.imageUrl;
 
       // Inherit category and tags across batches for this medication group
-      if (!group.category && med.category) group.category = med.category;
+      if ((!group.category || group.category === 'Other') && med.category && med.category !== 'Other') {
+        group.category = med.category;
+      } else if (!group.category && med.category) {
+        group.category = med.category;
+      }
       if (med.tags && Array.isArray(med.tags)) {
         med.tags.forEach(t => {
           const clean = t.trim();
@@ -292,11 +298,10 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     )).length;
   }, [medicines]);
 
-  // Filter matcher for groups
+  // Filter matcher for groups using universal canonical isCategoryMatch
   const matchesFilter = (group: GroupedMedicine) => {
     if (selectedCategory !== 'ALL') {
-      const grpCat = (group.category || 'Other').toLowerCase();
-      if (grpCat !== selectedCategory.toLowerCase()) return false;
+      return isCategoryMatch(group, selectedCategory);
     }
     return true;
   };
@@ -433,6 +438,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
                     <Layers size={10} />
                     {group.activeBatches.length} Batches
+                  </span>
+                )}
+                {group.expiredOrEmptyBatches.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-100">
+                    <XCircle size={10} />
+                    {group.expiredOrEmptyBatches.length} Expired
                   </span>
                 )}
               </div>
@@ -663,6 +674,27 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   };
 
   if (medicines.length === 0) {
+    if (totalMedicinesCount && totalMedicinesCount > 0) {
+      return (
+        <div className="py-16 text-center bg-white rounded-3xl border border-dashed border-slate-200 p-6 my-6 mx-2 shadow-xs">
+          <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3.5">
+            <Filter size={24} />
+          </div>
+          <h4 className="text-base font-bold text-slate-800">No medicines match this filter</h4>
+          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+            No medications found under "{selectedCategory !== 'ALL' ? selectedCategory : 'selected filter'}".
+          </p>
+          <button
+            type="button"
+            onClick={() => onSelectCategory?.('ALL')}
+            className="mt-4 px-5 py-2 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-black transition-all active:scale-95 shadow-xs cursor-pointer"
+          >
+            Show All Medicines
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-6">
         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 border border-[#e3e2e0] shadow-sm">

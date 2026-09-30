@@ -3,7 +3,7 @@ import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Tra
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine } from './types';
-import { MEDICINE_CATEGORIES, getCategoryStyle } from './constants';
+import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getCanonicalCategory, getMedicineCategory, calculateDiffDays } from './constants';
 import { CameraCapture } from './components/CameraCapture';
 import { MedicineForm } from './components/MedicineForm';
 import { MedicineList } from './components/MedicineList';
@@ -1491,85 +1491,100 @@ export default function App() {
       if (m.isDeleted) return false;
       if (isLikedOnly && !m.liked) return false;
 
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = 
-        m.name.toLowerCase().includes(searchLower) ||
-        m.dosage.toLowerCase().includes(searchLower) ||
-        m.usageInstructions.toLowerCase().includes(searchLower);
+      // 1. Search Query Match
+      if (searchQuery.trim()) {
+        const searchLower = searchQuery.toLowerCase().trim();
+        const matchesSearch = 
+          (m.name || '').toLowerCase().includes(searchLower) ||
+          (m.dosage || '').toLowerCase().includes(searchLower) ||
+          (m.usageInstructions || '').toLowerCase().includes(searchLower) ||
+          (m.category || '').toLowerCase().includes(searchLower) ||
+          (m.form || '').toLowerCase().includes(searchLower) ||
+          (Array.isArray(m.tags) && m.tags.some(t => t.toLowerCase().includes(searchLower)));
 
-      if (!matchesSearch) return false;
-
-      if (filter === 'all') return true;
-
-      const expiry = new Date(m.expirationDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const [year, month, day] = m.expirationDate.split('-').map(Number);
-      if (year && month && day) {
-        expiry.setFullYear(year, month - 1, day);
+        if (!matchesSearch) return false;
       }
-      expiry.setHours(0, 0, 0, 0);
-      
-      const diffTime = expiry.getTime() - today.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
+      // 2. Dropdown Category & Form Filter (universal canonical matching)
+      if (selectedCategory !== 'ALL') {
+        if (!isCategoryMatch(m, selectedCategory)) {
+          return false;
+        }
+      }
+
+      // 3. Status/Pill Filters
+      if (filter === 'all') {
+        // When a specific category is selected, show all medicines of that category.
+        // When viewing all categories, show active & expired (exclude taken from main list).
+        if (selectedCategory !== 'ALL') {
+          return true;
+        }
+        return !m.taken;
+      }
+
+      if (filter === 'taken') {
+        return m.taken === true;
+      }
+
+      // Do not include taken medicines in expiry views
+      if (m.taken) return false;
+
+      if (!m.expirationDate) return false;
+
+      const diffDays = calculateDiffDays(m.expirationDate);
       const effectiveThreshold = alertThreshold === 90 ? 92 : alertThreshold;
 
       if (filter === 'expired') return diffDays < 0;
       if (filter === 'expiring_soon') return diffDays >= 0 && diffDays <= 10;
       if (filter === 'expiring_3_months') return diffDays >= 0 && diffDays <= effectiveThreshold;
       if (filter === 'expiring_6_months') return diffDays >= 0 && diffDays <= 180;
-      if (filter === 'taken') return m.taken === true;
-      
-      // Default: hide taken medicines in other filters unless explicitly selected
-      if (filter !== 'taken' && m.taken) return false;
-
-      if (selectedCategory !== 'ALL') {
-        const medCat = (m.category || 'Other').toLowerCase();
-        if (medCat !== selectedCategory.toLowerCase()) return false;
-      }
       
       return true;
     }).sort((a, b) => {
-      if (sortOrder === 'asc') return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-      if (sortOrder === 'desc') return b.name.toLowerCase().localeCompare(a.name.toLowerCase());
+      if (sortOrder === 'asc') return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+      if (sortOrder === 'desc') return (b.name || '').toLowerCase().localeCompare((a.name || '').toLowerCase());
       return 0;
     });
   }, [medicines, searchQuery, filter, sortOrder, alertThreshold, isLikedOnly, selectedCategory]);
 
   const categoryDropdownItems = React.useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts = new Map<string, number>();
+
+    // Count medicines per clinical category
     medicines.forEach(m => {
       if (m.isDeleted) return;
-      const cat = m.category || 'Other';
-      counts[cat] = (counts[cat] || 0) + 1;
+      const canon = getMedicineCategory(m);
+      counts.set(canon, (counts.get(canon) || 0) + 1);
     });
 
     const items: { category: string; count: number; accentColor: string }[] = [];
     const seen = new Set<string>();
 
+    // Standard categories with accurate canonical counts
     MEDICINE_CATEGORIES.forEach(cat => {
-      seen.add(cat.toLowerCase());
+      seen.add(cat);
       const style = getCategoryStyle(cat);
       items.push({
         category: cat,
-        count: counts[cat] || 0,
+        count: counts.get(cat) || 0,
         accentColor: style.accent
       });
     });
 
-    Object.keys(counts).forEach(cat => {
-      if (!seen.has(cat.toLowerCase())) {
-        seen.add(cat.toLowerCase());
+    // Check if any non-standard custom categories exist in user's medicines
+    counts.forEach((count, cat) => {
+      if (!seen.has(cat)) {
+        seen.add(cat);
         const style = getCategoryStyle(cat);
         items.push({
           category: cat,
-          count: counts[cat] || 0,
+          count,
           accentColor: style.accent
         });
       }
     });
 
+    // Sort categories: active ones (count > 0) first, ordered by count descending, then alphabetically
     items.sort((a, b) => {
       if (b.count > 0 && a.count === 0) return 1;
       if (a.count > 0 && b.count === 0) return -1;
@@ -1921,68 +1936,12 @@ export default function App() {
               </button>
             </span>
           </div>
-
-          {/* App Reviewer / Tester Quick Access */}
-          <div className="pt-1 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('playstore.review@dawalens.app');
-                setPassword('ReviewTester2026!');
-                setAuthStep('password');
-                setAgreedToTerms(true);
-              }}
-              className="text-[11px] text-slate-500 hover:text-slate-800 underline transition-colors cursor-pointer"
-            >
-              Store Reviewer &amp; Demo Credentials Quick-Fill
-            </button>
-          </div>
         </div>
 
-        {/* Prominent Footer on homepage/login page for Google OAuth Compliance */}
-        <footer className="w-full max-w-xl border-t border-slate-300/60 mt-10 pt-4 pb-4 text-center text-xs text-slate-500 font-medium space-y-2">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-            <button
-              type="button"
-              onClick={() => navigateToPublicPage('privacy')}
-              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
-            >
-              Privacy Policy
-            </button>
-            <span className="text-slate-300">•</span>
-            <button
-              type="button"
-              onClick={() => navigateToPublicPage('terms')}
-              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
-            >
-              Terms of Service
-            </button>
-            <span className="text-slate-300">•</span>
-            <button
-              type="button"
-              onClick={() => navigateToPublicPage('guide')}
-              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
-            >
-              User Guide
-            </button>
-            <span className="text-slate-300">•</span>
-            <button
-              type="button"
-              onClick={() => navigateToPublicPage('delete-account')}
-              className="text-slate-600 hover:text-rose-600 underline font-semibold transition-colors cursor-pointer"
-            >
-              Account Deletion
-            </button>
-            <span className="text-slate-300">•</span>
-            <a
-              href="mailto:mdnoor4860@gmail.com"
-              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors"
-            >
-              Contact Support
-            </a>
-          </div>
+        {/* Prominent Footer on homepage/login page */}
+        <footer className="w-full max-w-xl border-t border-slate-300/60 mt-10 pt-4 pb-4 text-center text-xs text-slate-500 font-medium">
           <div className="text-[11px] text-slate-400">
-            &copy; 2026 DawaLens AI &bull; Smart Medicine Tracker &bull; https://dawalens.vercel.app
+            &copy; 2026 DawaLens AI &bull; Smart Medicine Tracker
           </div>
         </footer>
 
@@ -2164,20 +2123,42 @@ export default function App() {
         {/* Filters */}
         <div className="px-2.5 sm:px-4 mb-6 flex flex-nowrap items-center gap-1 sm:gap-2 relative z-30">
           <button 
-            onClick={() => setFilter('all')}
-            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'all' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            type="button"
+            onClick={() => {
+              setFilter('all');
+              setSelectedCategory('ALL');
+            }}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 cursor-pointer ${
+              filter === 'all' && selectedCategory === 'ALL'
+                ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' 
+                : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
+            }`}
           >
             All
           </button>
           <button 
-            onClick={() => setFilter('expired')}
-            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'expired' ? 'bg-[#ea4335] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            type="button"
+            onClick={() => {
+              setFilter(prev => prev === 'expired' ? 'all' : 'expired');
+            }}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 cursor-pointer ${
+              filter === 'expired' 
+                ? 'bg-[#ea4335] text-white border-transparent shadow-xs' 
+                : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
+            }`}
           >
             Expired
           </button>
           <button 
-            onClick={() => setFilter('expiring_soon')}
-            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${filter === 'expiring_soon' ? 'bg-[#f2a154] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            type="button"
+            onClick={() => {
+              setFilter(prev => prev === 'expiring_soon' ? 'all' : 'expiring_soon');
+            }}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 cursor-pointer ${
+              filter === 'expiring_soon' 
+                ? 'bg-[#f2a154] text-white border-transparent shadow-xs' 
+                : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
+            }`}
           >
             Soon
           </button>
@@ -2202,14 +2183,28 @@ export default function App() {
                 e.stopPropagation();
                 setIsCategoryDropdownOpen(prev => !prev);
               }}
-              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
                 selectedCategory !== 'ALL' 
                   ? 'bg-slate-900 text-white border-slate-900 shadow-xs' 
                   : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
               }`}
             >
-              <span className="truncate max-w-[65px] sm:max-w-none">{selectedCategory !== 'ALL' ? selectedCategory : 'Category'}</span>
-              <ChevronDown size={10} className={`transition-transform duration-200 shrink-0 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+              <span className="truncate max-w-[95px] sm:max-w-none">{selectedCategory !== 'ALL' ? selectedCategory : 'Category'}</span>
+              {selectedCategory !== 'ALL' ? (
+                <span 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCategory('ALL');
+                    setIsCategoryDropdownOpen(false);
+                  }}
+                  className="hover:text-red-300 transition-colors p-0.5 ml-0.5"
+                  title="Clear category filter"
+                >
+                  <X size={10} className="shrink-0" />
+                </span>
+              ) : (
+                <ChevronDown size={10} className={`transition-transform duration-200 shrink-0 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+              )}
             </button>
 
             {isCategoryDropdownOpen && (
@@ -2242,10 +2237,14 @@ export default function App() {
                       key={category}
                       type="button"
                       onClick={() => {
-                        setSelectedCategory(isSelected ? 'ALL' : category);
+                        const nextCat = isSelected ? 'ALL' : category;
+                        setSelectedCategory(nextCat);
                         setIsCategoryDropdownOpen(false);
+                        if (nextCat !== 'ALL' && filter !== 'all') {
+                          setFilter('all');
+                        }
                       }}
-                      className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left transition-colors hover:bg-slate-50 ${
+                      className={`w-full flex items-center justify-between px-3.5 py-1.5 text-xs text-left transition-colors hover:bg-slate-50 cursor-pointer ${
                         isSelected ? 'font-bold text-slate-900 bg-slate-50' : 'text-slate-700'
                       }`}
                     >
@@ -2296,11 +2295,17 @@ export default function App() {
           onAutoCategorize={handleAutoCategorize}
           isCategorizing={isCategorizing}
           selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+          onSelectCategory={(cat) => {
+            setSelectedCategory(cat);
+            if (cat !== 'ALL' && filter !== 'all') {
+              setFilter('all');
+            }
+          }}
           isSelectionMode={isSelectionMode}
           setIsSelectionMode={setIsSelectionMode}
           selectedIds={selectedMedicineIds}
           setSelectedIds={setSelectedMedicineIds}
+          totalMedicinesCount={medicines.filter(m => !m.isDeleted).length}
         />
 
         {/* Minimal Footer within main app view */}
