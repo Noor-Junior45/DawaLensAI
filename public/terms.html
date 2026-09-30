@@ -4,45 +4,210 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terms of Service - DawaLens AI</title>
+  <meta name="description" content="Terms of Service and Clinical Usage Agreement for DawaLens AI.">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #111; max-width: 760px; margin: 40px auto; padding: 0 20px; background: #fff; }
-    h1 { color: #0f9d58; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-top: 10px; font-size: 26px; }
-    h2 { color: #222; margin-top: 28px; font-size: 18px; }
-    ul { padding-left: 20px; color: #444; }
+    :root {
+      --primary: #0f9d58;
+      --primary-dark: #0b8043;
+      --primary-light: #e6f4ea;
+      --text-main: #202124;
+      --text-muted: #5f6368;
+      --border: #dadce0;
+      --bg-page: #f8f9fa;
+      --bg-card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      color: var(--text-main);
+      background: var(--bg-page);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 18px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    main {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 20px 60px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #202124;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid var(--primary-light);
+      padding-bottom: 8px;
+    }
+    p, li {
+      font-size: 15px;
+      color: #3c4043;
+      line-height: 1.7;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin: 10px 0 18px;
+    }
     li { margin-bottom: 8px; }
-    .badge { display: inline-block; background: #eefcf5; color: #0f9d58; padding: 2px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; }
-    .alert-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; color: #991b1b; font-size: 13px; }
-    a { color: #0f9d58; text-decoration: none; font-weight: bold; }
-    a:hover { text-decoration: underline; }
-    p { color: #444; }
-    footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #777; }
+    strong { color: #202124; }
+    .badge {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    .alert-box {
+      background: #fce8e6;
+      border-left: 4px solid #d93025;
+      padding: 18px 22px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      color: #a50e0e;
+    }
+    .alert-box p { margin: 0; color: #a50e0e; font-size: 14px; font-weight: 500; }
+    .alert-box strong { color: #8a0c0c; font-weight: 800; }
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    a:hover { color: var(--primary-dark); }
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+      padding-top: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
-  <span class="badge">Legal Agreement</span>
-  <h1>Terms of Service for DawaLens AI</h1>
-  <p><strong>Effective Date: June 25, 2026</strong></p>
-  <p>These Terms of Service govern your use of the website and services at <strong>https://noorpos.in</strong>. By accessing our application, you agree to these terms.</p>
+  <header>
+    <div class="header-inner">
+      <a href="/" class="brand">
+        <span>💊 DawaLens AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/guide">User Guide</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/delete-account">Delete Account</a>
+      </div>
+    </div>
+  </header>
 
-  <div class="alert-box">
-    <strong style="display:block; text-transform:uppercase; margin-bottom:4px; font-size:12px; letter-spacing:0.5px;">Critical Medical Disclaimer</strong>
-    <strong>DawaLens AI is NOT a clinical tool, medical device, or licensed medical professional.</strong> Our features (including AI summaries and drug interaction warnings) are generated by general artificial intelligence models and are subject to errors. Never change, delay, or start medical treatment without directly consulting your doctor or pharmacist.
-  </div>
+  <main>
+    <div class="card">
+      <span class="badge">Legal Terms of Service</span>
+      <h1>Terms of Service for DawaLens AI</h1>
+      <p><strong>Effective Date:</strong> September 29, 2026<br>
+      <strong>Last Updated:</strong> September 29, 2026<br>
+      <strong>Application URL:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a><br>
+      <strong>Developer Contact:</strong> <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a></p>
 
-  <h2>1. Description of Service</h2>
-  <p>DawaLens AI provides medication barcode/label scanning, scheduling, and smart drug-interaction checking using AI technology. These features are designed strictly for educational and personal organization purposes.</p>
+      <p>These Terms of Service govern your access to and use of the DawaLens AI digital medication tracking application and website located at <strong>https://dawalens.vercel.app</strong>. By accessing our application or utilizing our medication tracking and AI consultation tools, you agree to these terms.</p>
 
-  <h2>2. Privacy, Photos & Personal Data</h2>
-  <p>We respect your privacy. All captured medicine images or photos are kept locally on your own physical device (IndexedDB storage) and are never sent or stored in our cloud environment. All handling of user inputs is done in accordance with our <a href="/privacy.html">Privacy Policy</a>.</p>
+      <div class="alert-box">
+        <p><strong>CRITICAL MEDICAL &amp; CLINICAL DISCLAIMER:</strong><br>
+        <strong>DawaLens AI is an educational and personal organizational utility ONLY. It is NOT a clinical tool, medical device, hospital diagnostic system, or licensed medical professional.</strong> Information provided through our features (including OCR packaging extraction, AI medication summaries, and drug-drug interaction screenings) is generated by artificial intelligence and is subject to potential errors. <strong>NEVER</strong> modify, stop, or initiate any prescription medication, medical treatment, or healthcare regimen without directly consulting your licensed physician, hospital doctor, or certified pharmacist. In a medical emergency, immediately contact your local emergency services (e.g. 911 / 112).</p>
+      </div>
 
-  <h2>3. Limitation of Liability</h2>
-  <p>DawaLens AI is provided "as is" without any guarantees. We are not responsible for any issues resulting from missed doses, data sync failures, or information accuracy errors.</p>
+      <h2>1. Description of Service</h2>
+      <p>DawaLens AI provides users with personal medication cataloging, dose scheduling, expiration date tracking, optical packaging scanning via camera, and AI-assisted educational medication information. These features are designed strictly for personal reference and inventory organization.</p>
 
-  <h2>4. Governing Law & Contact</h2>
-  <p>For any questions or legal inquiries, email us directly at: <a href="mailto:support@intgoi.resend.app?subject=Terms%20Inquiry%20-%20DawaLens%20AI">dawalens@noorpos.in</a></p>
+      <h2>2. User Responsibilities &amp; Data Verification</h2>
+      <ul>
+        <li>You are solely responsible for verifying the accuracy of all medication names, strengths, expiration dates, and dosing instructions scanned or entered into your vault.</li>
+        <li>You agree not to use the Service for any unlawful, hazardous, or fraudulent purpose.</li>
+        <li>You are responsible for maintaining the confidentiality of your account credentials and ensuring the physical security of your logged-in device.</li>
+      </ul>
 
-  <footer>
-    <p>&copy; 2026 DawaLens AI. All rights reserved. Host: https://noorpos.in | <a href="/manual.html">User Guide</a> | <a href="/privacy.html">Privacy Policy</a> | <a href="/delete-account.html">Delete Account</a></p>
-  </footer>
+      <h2>3. Privacy &amp; Data Handling</h2>
+      <p>Your privacy is protected under our <a href="/privacy">Privacy Policy</a>. In summary:</p>
+      <ul>
+        <li>All camera photos captured during medicine scanning are processed on-device and stored exclusively in your browser's sandboxed local IndexedDB memory. Photos are never uploaded to remote servers.</li>
+        <li>Personal data received via Google Sign-In adheres strictly to the <strong>Google API Services User Data Policy</strong>, including the Limited Use requirements.</li>
+        <li>We do <strong>NOT</strong> sell your personal information or medical data to any third parties or advertisers.</li>
+      </ul>
+
+      <h2>4. Limitation of Liability</h2>
+      <p>To the maximum extent permitted by applicable law, DawaLens AI, its developers, and affiliates are provided on an strictly <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis without warranties of any kind, whether express or implied. Under no circumstances shall DawaLens AI or its developers be held liable for any adverse health complications, missed doses, adverse drug reactions, data inaccuracies, or indirect, incidental, or consequential damages resulting from the use or inability to use the application.</p>
+
+      <h2>5. Account Deletion and Termination</h2>
+      <p>You may terminate your account and permanently delete all your stored data at any time via the in-app profile menu or through our public <a href="/delete-account">Account Deletion Portal</a> (<a href="https://dawalens.vercel.app/delete-account">https://dawalens.vercel.app/delete-account</a>).</p>
+
+      <h2>6. Governing Law &amp; Contact Inquiries</h2>
+      <p>For any questions or formal legal notices, contact our team directly at: <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a>.</p>
+
+      <footer>
+        <p>&copy; 2026 DawaLens AI. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="/guide">User Guide</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/delete-account">Delete Account</a>
+        </div>
+      </footer>
+    </div>
+  </main>
 </body>
 </html>

@@ -23,8 +23,8 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
   user,
   onExecuteAccountDeletion
 }) => {
-  const supportEmail = 'support@intgoi.resend.app';
-  const displayEmail = 'dawalens@noorpos.in';
+  const supportEmail = 'mdnoor4860@gmail.com';
+  const displayEmail = 'mdnoor4860@gmail.com';
 
   // State for logged-in deletion confirmation
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -284,7 +284,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
       {/* Minimal Footer */}
       <footer className="border-t border-slate-100 py-6 px-4 sm:px-8 mt-12 text-xs text-slate-500">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI. Registered Domain: https://noorpos.in</div>
+          <div>&copy; 2026 DawaLens AI. Registered Domain: https://dawalens.vercel.app</div>
           <div className="flex items-center gap-4">
             <a href="/manual" className="hover:text-[#0f9d58] font-semibold transition-colors">User Guide</a>
             <span>•</span>

@@ -143,10 +143,10 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
           <p className="text-sm text-slate-600 leading-relaxed">
             For technical support, feature suggestions, or account assistance, email us at{' '}
             <a 
-              href="mailto:support@intgoi.resend.app?subject=DawaLens%20AI%20Support" 
+              href="mailto:mdnoor4860@gmail.com?subject=DawaLens%20AI%20Support" 
               className="text-[#0f9d58] font-bold hover:underline"
             >
-              dawalens@noorpos.in
+              mdnoor4860@gmail.com
             </a>.
           </p>
         </section>
@@ -155,7 +155,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
       {/* Minimal Footer */}
       <footer className="border-t border-slate-100 py-6 px-4 sm:px-8 mt-12 text-xs text-slate-500">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI. Registered Domain: https://noorpos.in</div>
+          <div>&copy; 2026 DawaLens AI. Registered Domain: https://dawalens.vercel.app</div>
           <div className="flex items-center gap-4">
             <a href="/privacy" className="hover:text-[#0f9d58] font-semibold transition-colors">Privacy Policy</a>
             <span>•</span>

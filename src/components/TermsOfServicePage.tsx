@@ -14,10 +14,10 @@ interface TermsOfServicePageProps {
 
 export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }) => {
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
-      {/* Minimal Sticky Header (No Description) */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 sm:px-8 py-3.5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3.5">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
@@ -27,101 +27,112 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               <ArrowLeft size={18} />
             </button>
             <div className="flex items-center gap-2">
-              <Scale size={18} className="text-[#0f9d58]" />
+              <Scale size={20} className="text-[#0f9d58]" />
               <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                 Terms of Service
               </h1>
             </div>
           </div>
+          <div className="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <a href="/privacy" className="hover:text-[#0f9d58] transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="/delete-account" className="hover:text-rose-600 transition-colors">Delete Account</a>
+          </div>
         </div>
       </header>
 
-      {/* Main Minimal Document */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 space-y-10">
-        {/* Title */}
-        <div className="border-b border-slate-100 pb-6 space-y-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-[#0f9d58]">
-            <CheckCircle2 size={11} /> Effective Date: June 25, 2026
-          </span>
+      {/* Main Document Content */}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 space-y-8">
+        {/* Title Card */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#0f9d58] border border-emerald-200">
+              <CheckCircle2 size={13} /> Effective Date: September 29, 2026
+            </span>
+          </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Terms of Service & Usage Agreement
+            Terms of Service &amp; Usage Agreement
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            These Terms of Service govern your access to and use of DawaLens AI services, website, and mobile client located at <strong>https://noorpos.in</strong>. By accessing our application or utilizing our medication tools, you agree to these terms.
+            These Terms of Service govern your access to and use of DawaLens AI services, website, and mobile client located at{' '}
+            <a href="https://dawalens.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline">
+              https://dawalens.vercel.app
+            </a>. By accessing our application or utilizing our medication tracking and AI consultation tools, you agree to these terms.
           </p>
         </div>
 
-        {/* Critical Medical Disclaimer (Highlighted Callout Box - Required) */}
-        <div className="p-4 sm:p-5 bg-rose-50/70 border-l-4 border-rose-600 rounded-r-xl space-y-2">
+        {/* Critical Medical Disclaimer */}
+        <div className="p-5 sm:p-6 bg-rose-50 border-l-4 border-rose-600 rounded-r-2xl space-y-2.5">
           <div className="flex items-center gap-2 text-rose-800">
-            <ShieldAlert size={18} />
+            <ShieldAlert size={20} />
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-              CRITICAL MEDICAL & CLINICAL DISCLAIMER
+              CRITICAL MEDICAL &amp; CLINICAL DISCLAIMER
             </h3>
           </div>
           <p className="text-xs sm:text-sm text-rose-900 leading-relaxed font-medium">
-            <strong>DawaLens AI is an educational and personal organizational utility ONLY. It is NOT a clinical tool, medical device, or licensed medical professional.</strong> AI-generated summaries, OCR extractions, and drug interaction screenings may contain errors. NEVER modify, stop, or initiate any medical treatment without directly consulting your licensed doctor or pharmacist.
+            <strong>DawaLens AI is an educational and personal organizational utility ONLY. It is NOT a clinical tool, medical device, hospital diagnostic system, or licensed medical professional.</strong> Information provided through our features (including OCR packaging extraction, AI medication summaries, and drug-drug interaction screenings) is generated by artificial intelligence and is subject to potential errors. <strong>NEVER</strong> modify, stop, or initiate any prescription medication, medical treatment, or healthcare regimen without directly consulting your licensed physician, hospital doctor, or certified pharmacist. In a medical emergency, immediately contact emergency services (e.g. 911 / 112).
           </p>
         </div>
 
-        {/* 1. Description of Service */}
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-900">1. Description of Service</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            DawaLens AI provides medication inventory cataloging, expiration date tracking, daily dose intake recording, and AI-assisted drug interaction information for personal reference.
-          </p>
-        </section>
+        {/* Sections */}
+        <section className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-lg font-bold text-slate-900">1. Description of Service</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              DawaLens AI provides medication inventory cataloging, expiration date tracking, daily dose intake recording, optical packaging scanning via camera, and AI-assisted educational drug interaction information for personal reference.
+            </p>
+          </div>
 
-        {/* 2. Privacy & Photos */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900">2. Privacy, Photos & Local Storage</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            We prioritize your privacy. All captured prescription packaging photos are processed strictly on your physical device via browser IndexedDB cache and are never transmitted to our remote servers. Handling of personal data is governed by our <a href="/privacy" className="text-[#0f9d58] font-bold underline">Privacy Policy</a>.
-          </p>
-        </section>
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <h3 className="text-lg font-bold text-slate-900">2. Privacy, Photos &amp; Local Storage</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              We prioritize your privacy. All captured prescription packaging photos are processed strictly on your physical device via browser IndexedDB cache and are never transmitted to remote servers. Personal data is handled in strict accordance with our{' '}
+              <a href="/privacy" className="text-[#0f9d58] font-bold underline">Privacy Policy</a> and the Google API Services User Data Policy.
+            </p>
+          </div>
 
-        {/* 3. User Responsibilities */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900">3. User Responsibilities</h3>
-          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-600 leading-relaxed">
-            <li>You are responsible for verifying the accuracy of dosage strengths, frequencies, and expiration dates entered or scanned.</li>
-            <li>You agree not to use the Service for any hazardous, fraudulent, or unlawful purpose.</li>
-            <li>You may export your data or delete your account at any time via the automated deletion features.</li>
-          </ul>
-        </section>
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <h3 className="text-lg font-bold text-slate-900">3. User Responsibilities</h3>
+            <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-600 leading-relaxed">
+              <li>You are responsible for verifying the accuracy of dosage strengths, frequencies, and expiration dates entered or scanned.</li>
+              <li>You agree not to use the Service for any hazardous, fraudulent, or unlawful purpose.</li>
+              <li>You may export your data or delete your account at any time via the automated deletion features.</li>
+            </ul>
+          </div>
 
-        {/* 4. Limitation of Liability */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900">4. Limitation of Liability</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            DawaLens AI is provided strictly "AS IS" without warranties of any kind. Under no circumstances shall DawaLens AI or its developers be held liable for any health complications, missed doses, adverse drug reactions, data inaccuracies, or indirect damages resulting from application usage.
-          </p>
-        </section>
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <h3 className="text-lg font-bold text-slate-900">4. Limitation of Liability</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              DawaLens AI is provided strictly &ldquo;AS IS&rdquo; without warranties of any kind. Under no circumstances shall DawaLens AI or its developers be held liable for any health complications, missed doses, adverse drug reactions, data inaccuracies, or indirect damages resulting from application usage.
+            </p>
+          </div>
 
-        {/* 5. Contact Information */}
-        <section className="pt-4 border-t border-slate-100 space-y-2">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Mail size={16} className="text-[#0f9d58]" />
-            5. Legal & Contact Inquiries
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            For questions regarding these Terms or formal legal notices, contact us directly at{' '}
-            <a 
-              href="mailto:support@intgoi.resend.app?subject=Terms%20Inquiry%20-%20DawaLens%20AI" 
-              className="text-[#0f9d58] font-bold hover:underline"
-            >
-              dawalens@noorpos.in
-            </a>.
-          </p>
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Mail size={18} className="text-[#0f9d58]" />
+              5. Legal &amp; Contact Inquiries
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              For questions regarding these Terms or formal legal notices, contact us directly at{' '}
+              <a 
+                href="mailto:mdnoor4860@gmail.com" 
+                className="text-[#0f9d58] font-bold hover:underline"
+              >
+                mdnoor4860@gmail.com
+              </a>.
+            </p>
+          </div>
         </section>
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-slate-100 py-6 px-4 sm:px-8 mt-12 text-xs text-slate-500">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI. Registered Domain: https://noorpos.in</div>
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-6 px-4 sm:px-8 mt-12 text-xs text-slate-500">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>&copy; 2026 DawaLens AI. Registered Domain: https://dawalens.vercel.app</div>
           <div className="flex items-center gap-4">
-            <a href="/manual" className="hover:text-[#0f9d58] font-semibold transition-colors">User Guide</a>
+            <a href="/" className="hover:text-[#0f9d58] font-semibold transition-colors">Home</a>
+            <span>•</span>
+            <a href="/guide" className="hover:text-[#0f9d58] font-semibold transition-colors">User Guide</a>
             <span>•</span>
             <a href="/privacy" className="hover:text-[#0f9d58] font-semibold transition-colors">Privacy Policy</a>
             <span>•</span>

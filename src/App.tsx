@@ -2025,9 +2025,51 @@ export default function App() {
           </div>
         </div>
 
-        {/* Minimal Footer on login page */}
-        <footer className="w-full max-w-lg border-t border-slate-300/60 mt-10 pt-4 pb-2 text-center text-[11px] text-slate-400 font-bold">
-          &copy; 2026 DawaLens AI. All rights reserved.
+        {/* Prominent Footer on homepage/login page for Google OAuth Compliance */}
+        <footer className="w-full max-w-xl border-t border-slate-300/60 mt-10 pt-4 pb-4 text-center text-xs text-slate-500 font-medium space-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <button
+              type="button"
+              onClick={() => navigateToPublicPage('privacy')}
+              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-slate-300">•</span>
+            <button
+              type="button"
+              onClick={() => navigateToPublicPage('terms')}
+              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </button>
+            <span className="text-slate-300">•</span>
+            <button
+              type="button"
+              onClick={() => navigateToPublicPage('guide')}
+              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors cursor-pointer"
+            >
+              User Guide
+            </button>
+            <span className="text-slate-300">•</span>
+            <button
+              type="button"
+              onClick={() => navigateToPublicPage('delete-account')}
+              className="text-slate-600 hover:text-rose-600 underline font-semibold transition-colors cursor-pointer"
+            >
+              Account Deletion
+            </button>
+            <span className="text-slate-300">•</span>
+            <a
+              href="mailto:mdnoor4860@gmail.com"
+              className="text-slate-600 hover:text-[#0f9d58] underline font-semibold transition-colors"
+            >
+              Contact Support
+            </a>
+          </div>
+          <div className="text-[11px] text-slate-400">
+            &copy; 2026 DawaLens AI &bull; Smart Medicine Tracker &bull; https://dawalens.vercel.app
+          </div>
         </footer>
 
         {/* Global Dialogues & Popups for the Login/Signup Screen */}
@@ -2822,37 +2864,51 @@ export default function App() {
                     <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 flex gap-3 items-start mb-4">
                       <Shield className="text-[#0f9d58] shrink-0 mt-0.5" size={18} />
                       <div>
-                        <h4 className="font-extrabold text-[#1f1f1f] text-xs uppercase tracking-wider mb-1">Your Privacy is Protected</h4>
+                        <h4 className="font-extrabold text-[#1f1f1f] text-xs uppercase tracking-wider mb-1">Google OAuth &amp; Data Safety Compliance</h4>
                         <p className="text-xs text-emerald-850/80 leading-relaxed font-semibold">
-                          DawaLens AI is dedicated to protecting your personal information and your right to privacy. This privacy policy applies to our application hosted at noorpos.in.
+                          DawaLens AI is dedicated to protecting your personal information and health privacy. This policy applies to our application hosted at dawalens.vercel.app and dawalensai.onrender.com.
                         </p>
                       </div>
                     </div>
 
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed space-y-1">
+                      <strong className="block text-blue-950 font-bold uppercase text-[10px]">Google API Limited Use Disclosure:</strong>
+                      <p>
+                        DawaLens AI&apos;s use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We never sell your Google data or use it for advertising or foundation AI model training.
+                      </p>
+                    </div>
+
                     <div className="space-y-4 text-xs">
                       <div>
-                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. What Information We Access and How We Use It</h5>
-                        <p className="text-slate-500 leading-relaxed mb-2">
-                          DawaLens AI is an AI-powered medication scanner and scheduler designed to assist you in organizing your personal medical reminders with maximum privacy in mind.
-                        </p>
+                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. Information Access &amp; Local Camera Security</h5>
                         <ul className="list-disc pl-5 mt-2 space-y-2 text-slate-500 leading-relaxed">
                           <li>
-                            <strong className="text-slate-700 font-bold">Medicines & Prescriptions Data:</strong> Any medicine name, dosage, or scheduling frequency you input or scan is saved securely inside your private cloud database (Firebase).
+                            <strong className="text-slate-700 font-bold">Medications &amp; Prescriptions:</strong> Medicine details (name, dosage, expiration, schedules) are saved securely in your private cloud database (Firebase Firestore) with AES-256 encryption.
                           </li>
                           <li>
-                            <strong className="text-slate-700 font-bold">On-Device Medicine Photos:</strong> Any images or photos captured using your camera are processed strictly on-device in your browser. The captured images are stored locally on your physical device (using secure IndexedDB browser storage) and are <strong>never</strong> uploaded, sent to, or stored in our cloud databases. If you delete a medicine or log out, these local images are permanently purged from your device cache.
+                            <strong className="text-slate-700 font-bold">100% On-Device Photos:</strong> All photos captured using your camera are processed strictly on-device in your browser using local OCR &amp; CNN algorithms and stored in sandboxed IndexedDB memory. Photos are <strong>never</strong> uploaded to cloud servers.
+                          </li>
+                          <li>
+                            <strong className="text-slate-700 font-bold">Data Deletion:</strong> You can permanently purge your entire account and all records anytime via Account Settings or our web deletion portal.
                           </li>
                         </ul>
                       </div>
 
-                      <div className="pt-4 border-t border-slate-100">
-                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">2. Contact Us</h5>
-                        <p className="text-slate-500 leading-relaxed">
-                          If you have any questions, feedback, or concerns regarding your privacy or data protection practices, feel free to contact us at:
-                        </p>
-                        <p className="font-bold text-slate-800 mt-1.5 select-all">
-                          Email: support@intgoi.resend.app
-                        </p>
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div>
+                          <h5 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Contact &amp; Data Protection</h5>
+                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">mdnoor4860@gmail.com</span></p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveFooterModal(null);
+                            navigateToPublicPage('privacy');
+                          }}
+                          className="px-3 py-1.5 bg-[#0f9d58] text-white rounded-lg text-xs font-bold hover:bg-[#0b8043] transition-colors cursor-pointer"
+                        >
+                          View Full Privacy Policy
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -2893,12 +2949,12 @@ export default function App() {
                       </div>
 
                       <div className="pt-3 border-t border-slate-100">
-                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">4. Governing Law & Contact</h5>
+                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">4. Governing Law &amp; Contact</h5>
                         <p className="text-slate-500 leading-relaxed">
                           For any questions or legal inquiries, please contact us at:
                         </p>
                         <p className="font-bold text-slate-800 mt-1.5 select-all">
-                          Email: support@intgoi.resend.app
+                          Email: mdnoor4860@gmail.com
                         </p>
                       </div>
                     </div>

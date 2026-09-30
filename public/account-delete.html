@@ -3,53 +3,213 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delete Account & Data - DawaLens AI</title>
+  <title>Delete Account &amp; Data - DawaLens AI</title>
+  <meta name="description" content="Permanent account and health data deletion portal for DawaLens AI in full compliance with Google Play Store Data Safety Policy.">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #111; max-width: 760px; margin: 40px auto; padding: 0 20px; background: #fff; }
-    h1 { color: #dc2626; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-top: 10px; font-size: 26px; }
-    h2 { color: #222; margin-top: 28px; font-size: 18px; }
-    ul, ol { padding-left: 20px; color: #444; }
+    :root {
+      --primary: #0f9d58;
+      --danger: #d93025;
+      --danger-light: #fce8e6;
+      --text-main: #202124;
+      --text-muted: #5f6368;
+      --border: #dadce0;
+      --bg-page: #f8f9fa;
+      --bg-card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      color: var(--text-main);
+      background: var(--bg-page);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      margin-left: 18px;
+    }
+    main {
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 20px 60px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--danger);
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #202124;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid var(--danger-light);
+      padding-bottom: 8px;
+    }
+    p, li {
+      font-size: 15px;
+      color: #3c4043;
+      line-height: 1.7;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin: 10px 0 18px;
+    }
     li { margin-bottom: 8px; }
-    .badge { display: inline-block; background: #fee2e2; color: #b91c1c; padding: 2px 10px; border-radius: 9999px; font-weight: bold; font-size: 11px; }
-    .alert-box { background: #fef2f2; border-left: 4px solid #dc2626; padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; color: #991b1b; font-size: 13px; }
-    a { color: #dc2626; text-decoration: none; font-weight: bold; }
-    a:hover { text-decoration: underline; }
-    .btn { display: inline-block; background: #dc2626; color: #fff !important; padding: 10px 20px; border-radius: 9999px; font-weight: bold; margin-top: 10px; font-size: 13px; }
-    p { color: #444; }
-    footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #777; }
+    strong { color: #202124; }
+    .badge {
+      display: inline-block;
+      background: var(--danger-light);
+      color: var(--danger);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    .alert-box {
+      background: #fce8e6;
+      border-left: 4px solid var(--danger);
+      padding: 18px 22px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      color: #a50e0e;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--danger);
+      color: #fff !important;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-weight: 700;
+      text-decoration: none;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+    .btn:hover { background: #b3261e; }
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+      padding-top: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
-  <span class="badge">Google Play Store Data Safety & Deletion Policy</span>
-  <h1>DawaLens AI • Account & Data Deletion Portal</h1>
-  <p>In full compliance with the <strong>Google Play Store Account Deletion Policy</strong>, users have the absolute right to permanently delete their DawaLens AI account, stored medication entries, history logs, and profile records.</p>
+  <header>
+    <div class="header-inner">
+      <a href="/" class="brand">
+        <span>💊 DawaLens AI</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/guide">User Guide</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms</a>
+      </div>
+    </div>
+  </header>
 
-  <div class="alert-box">
-    <strong style="display:block; text-transform:uppercase; margin-bottom:4px; font-size:12px;">What Data Is Permanently Deleted?</strong>
-    <ul style="margin: 6px 0 0 0; padding-left: 18px; color: inherit;">
-      <li><strong>Google Account Credentials & Profile:</strong> Email address, user ID, display name, and authentication tokens.</li>
-      <li><strong>Medication Vault:</strong> All recorded medicines, active dosages, batch numbers, remaining quantities, and schedule notes.</li>
-      <li><strong>Audit History:</strong> All chronological logs of doses taken, edits, and timestamps.</li>
-      <li><strong>On-Device Photos:</strong> Local device camera image caches stored in IndexedDB browser memory are deleted.</li>
-    </ul>
-    <p style="margin-top: 8px; margin-bottom: 0;"><strong>Retention Period:</strong> None. All records are permanently erased within 48 hours of request receipt (or immediately if executed in-app).</p>
-  </div>
+  <main>
+    <div class="card">
+      <span class="badge">Google Play Store &amp; OAuth Data Deletion Portal</span>
+      <h1>DawaLens AI &bull; Account &amp; Data Deletion Portal</h1>
+      <p><strong>Application:</strong> DawaLens AI &bull; <strong>Domain:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a></p>
+      <p>In full compliance with the <strong>Google Play Store Account Deletion Policy</strong> and <strong>Google API Services User Data Policy</strong>, all users have the absolute right to permanently delete their DawaLens AI account, stored medication entries, dose logs, and personal profile records.</p>
 
-  <h2>How to Request Account & Data Deletion</h2>
-  <ol>
-    <li><strong>In-App Deletion (Instant):</strong> Sign in to your account, open the Profile Menu, click <em>Delete Account & Data</em>, and confirm deletion. All data is deleted immediately.</li>
-    <li><strong>Web Deletion Request (Without App):</strong> If you have uninstalled the app, click below or email us to request deletion:</li>
-  </ol>
+      <div class="alert-box">
+        <strong style="display:block; text-transform:uppercase; margin-bottom:6px; font-size:13px;">What Data Is Permanently Purged?</strong>
+        <ul style="margin: 0; padding-left: 20px; color: inherit;">
+          <li><strong>Authentication &amp; Profile Identifiers:</strong> Google account ID, email address, display name, profile photo, and Firebase Auth UID.</li>
+          <li><strong>Medication Vault:</strong> All recorded medicines, dosages, forms, batch numbers, remaining quantities, and schedule timings stored in Firestore.</li>
+          <li><strong>Dose Audit History:</strong> Chronological records of completed doses and notifications.</li>
+          <li><strong>On-Device Photo Cache:</strong> Sandboxed IndexedDB browser memory containing scanned packaging images is wiped.</li>
+        </ul>
+        <p style="margin-top: 10px; margin-bottom: 0;"><strong>Retention Timeline:</strong> Zero. In-app deletions take effect immediately. Email requests are verified and permanently purged within 48 to 72 hours.</p>
+      </div>
 
-  <p style="margin: 20px 0;">
-    <a class="btn" href="mailto:support@intgoi.resend.app?subject=Account%20and%20Data%20Deletion%20Request&body=Please%20delete%20my%20DawaLens%20AI%20account%20and%20all%20associated%20records.%0A%0ARegistered%20Email:%20">Request Account Deletion via Email</a>
-  </p>
+      <h2>How to Request Account &amp; Data Deletion</h2>
+      <ol>
+        <li>
+          <strong>In-App Deletion (Instant):</strong>
+          <p>Open the DawaLens AI application &rarr; Click your <strong>Profile Avatar</strong> in the top header &rarr; Select <strong>Account Settings</strong> &rarr; Click the red <strong>"Delete Account &amp; Data"</strong> button &rarr; Confirm deletion. Your entire account, cloud database documents, and local caches are instantly and irreversibly destroyed.</p>
+        </li>
+        <li>
+          <strong>Web Deletion Request (Without App):</strong>
+          <p>If you have uninstalled the app or cannot sign in, send an email request using the button below:</p>
+          <a class="btn" href="mailto:mdnoor4860@gmail.com?subject=Account%20and%20Data%20Deletion%20Request&amp;body=Please%20permanently%20delete%20my%20DawaLens%20AI%20account%20and%20all%20associated%20records.%0A%0ARegistered%20Email:%20">Request Account Deletion via Email</a>
+        </li>
+        <li>
+          <strong>Revoke Google Account Authorization:</strong>
+          <p>You can revoke DawaLens AI's access to your Google credentials at any time directly through Google's security settings at: <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">https://myaccount.google.com/permissions</a>.</p>
+        </li>
+      </ol>
 
-  <h2>Support & Inquiries</h2>
-  <p>For data protection queries or direct assistance, email us at: <a href="mailto:support@intgoi.resend.app?subject=Account%20Deletion%20Inquiry">dawalens@noorpos.in</a></p>
+      <h2>Support &amp; Data Protection Officer</h2>
+      <p>For questions regarding your privacy rights, data export, or deletion confirmation, contact our developer directly at: <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a>.</p>
 
-  <footer>
-    <p>&copy; 2026 DawaLens AI. Registered Domain: https://noorpos.in | <a href="/manual.html">User Guide</a> | <a href="/privacy.html">Privacy Policy</a> | <a href="/terms.html">Terms</a></p>
-  </footer>
+      <footer>
+        <p>&copy; 2026 DawaLens AI. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="/">Home</a>
+          <a href="/guide">User Guide</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
+        </div>
+      </footer>
+    </div>
+  </main>
 </body>
 </html>
