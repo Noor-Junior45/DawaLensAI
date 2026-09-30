@@ -78,7 +78,7 @@ service cloud.firestore {
              data.title is string && data.title.size() < 500 &&
              data.createdAt is number &&
              data.lastMessageAt is number &&
-             (!('provider' in data) || data.provider in ['gemini']);
+             (!('provider' in data) || data.provider in ['gemini', 'slm']);
     }
 
     function isValidChatMessage(data) {
@@ -87,7 +87,7 @@ service cloud.firestore {
              data.role in ['user', 'assistant', 'system'] &&
              data.content is string && data.content.size() < 10000 &&
              data.timestamp is number &&
-             (!('provider' in data) || data.provider in ['gemini']);
+             (!('provider' in data) || data.provider in ['gemini', 'slm']);
     }
 
     function isValidMail(data) {
@@ -133,6 +133,11 @@ service cloud.firestore {
           allow read, delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
           allow create, update: if isAuthenticated() && request.auth.uid == userId && isValidChatMessage(request.resource.data);
         }
+      }
+
+      match /slmKnowledge/{knowledgeId} {
+        allow read, delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+        allow create, update: if isAuthenticated() && request.auth.uid == userId;
       }
     }
 

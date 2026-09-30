@@ -200,8 +200,8 @@ app.post("/api/ai/interactions-save-cache", async (req, res) => {
 // Actual Gemini API Proxies
 app.post("/api/ai/extract", async (req, res) => {
   try {
-    const { base64Image, ocrText, hints } = req.body;
-    const result = await extractMedicineDataServer(base64Image, ocrText, hints);
+    const { base64Image, ocrText, hints, cnnFeatures } = req.body;
+    const result = await extractMedicineDataServer(base64Image, ocrText, hints, cnnFeatures);
     res.json(result);
   } catch (error: any) {
     res.json({ success: false, errorMessage: error.message || "Failed to extract medicine data from image." });
@@ -267,17 +267,6 @@ app.get("/api/ai/chat-count", async (req, res) => {
 app.post("/api/ai/chat", async (req, res) => {
   try {
     const { messages, userId, medicines } = req.body;
-    
-    if (userId) {
-      const today = new Date().toISOString().split('T')[0];
-      const currentCount = await getChatCount(userId, today);
-      
-      if (currentCount >= 10) {
-        return res.status(429).json({ 
-          error: "You have reached your daily limit of 10 chats. Please come back tomorrow to continue your consultation with Dr. DawaLens!" 
-        });
-      }
-    }
     
     const responseText = await chatWithGeminiServer(messages, userId, medicines);
     

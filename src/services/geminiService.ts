@@ -1,6 +1,16 @@
 import { MedicineForm, ChatMessage } from "../types";
 import { GoogleGenAI } from "@google/genai";
 import { performOnDeviceOcr, OcrPreExtractionHints } from "./ocrService";
+import { runImageCnnClassifier, CnnVisualFeatures } from "./imageCnnService";
+import { 
+  generateOfflineSlmConsultation, 
+  extractMedicineOfflineSlm,
+  isNormalChat,
+  loadUserSlmKnowledge,
+  trainSlmOnUserData,
+  distillGeminiAnswerToSlm,
+  getLearnedSlmContextForGemini
+} from "./slmPharmacistModel";
 
 export const isProviderKeyMissing = (provider: 'gemini' = 'gemini') => {
   return !getClientApiKey();
@@ -320,8 +330,17 @@ export async function checkDrugInteractionsClient(medicines: { name: string; dos
 
 export async function extractMedicineData(base64Image: string): Promise<ExtractionResult> {
   let ocrResult: OcrPreExtractionHints | null = null;
+  let cnnFeatures: CnnVisualFeatures | null = null;
+
   try {
-    // 1. Perform On-Device OCR directly in browser / native bridge
+    // 1. Perform On-Device Image CNN Visual Classification
+    cnnFeatures = await runImageCnnClassifier(base64Image);
+  } catch (cnnErr) {
+    console.warn("On-device Image CNN classifier warning:", cnnErr);
+  }
+
+  try {
+    // 2. Perform On-Device OCR directly in browser / native bridge
     ocrResult = await performOnDeviceOcr(base64Image);
   } catch (ocrErr) {
     console.warn("Client OCR step caught an error, proceeding with image fallback:", ocrErr);
@@ -329,6 +348,7 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
 
   const ocrText = ocrResult?.cleanedText || ocrResult?.rawText || '';
 
+  // Mode A: Online Gemini API Extraction (with CNN visual features & OCR hints)
   try {
     const response = await fetch('/api/ai/extract', {
       method: 'POST',
@@ -336,78 +356,72 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
       body: JSON.stringify({ 
         base64Image,
         ocrText,
+        cnnFeatures: cnnFeatures ? {
+          form: cnnFeatures.form,
+          packagingType: cnnFeatures.packagingType,
+          estimatedUnitCount: cnnFeatures.estimatedUnitCount,
+          hasBlisterGrid: cnnFeatures.hasBlisterGrid,
+          blisterCellCount: cnnFeatures.blisterCellCount
+        } : undefined,
         hints: ocrResult ? {
           potentialExpiry: ocrResult.potentialExpiry,
           potentialDosage: ocrResult.potentialDosage,
-          potentialQuantity: ocrResult.potentialQuantity
+          potentialQuantity: ocrResult.potentialQuantity || cnnFeatures?.estimatedUnitCount
         } : undefined
       })
     });
     
-    if (!response.ok) {
-      console.warn("Server API returned non-OK status:", response.status);
-      throw new Error(`Server returned status ${response.status}`);
-    }
-    
-    const data = await response.json();
-    if (data.success && data.medicine) {
-      return data;
-    }
-    if (data.errorMessage) {
-      throw new Error(data.errorMessage);
-    }
-    return data;
-  } catch (error: any) {
-    console.warn("Server extraction unavailable, activating client/on-device fallback:", error);
-    
-    // 1. Try Client-side Gemini if API key is present
-    if (getClientApiKey()) {
-      try {
-        const clientResult = await extractMedicineDataClient(base64Image, ocrText, ocrResult || undefined);
-        if (clientResult.success) {
-          return clientResult;
-        }
-      } catch (clientErr) {
-        console.warn("Client Gemini extraction failed, trying local OCR fallback:", clientErr);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.medicine) {
+        return data;
+      }
+      if (data.errorMessage) {
+        throw new Error(data.errorMessage);
       }
     }
+  } catch (error: any) {
+    console.warn("Server extraction unavailable, falling back to on-device CNN + SLM model:", error);
+  }
 
-    // 2. On-Device OCR Smart Fallback: if OCR extracted any text or hints, don't drop the user's scan
-    if (ocrResult && (ocrResult.cleanedText || ocrResult.potentialExpiry || ocrResult.potentialDosage)) {
-      const lines = (ocrResult.cleanedText || ocrResult.rawText || '')
-        .split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 2 && !/^(exp|mfg|batch|b\.no|mrp|rs|tax)/i.test(l));
-      
-      const candidateName = lines[0] || "Scanned Medicine";
-      const defaultDate = new Date();
-      defaultDate.setFullYear(defaultDate.getFullYear() + 1);
-      const fallbackExpiry = `${defaultDate.getFullYear()}-${String(defaultDate.getMonth() + 1).padStart(2, '0')}-01`;
-
-      return {
-        success: true,
-        medicine: {
-          name: candidateName,
-          dosage: ocrResult.potentialDosage || 'N/A',
-          expirationDate: ocrResult.potentialExpiry || fallbackExpiry,
-          quantity: ocrResult.potentialQuantity || 1,
-          form: 'tablet',
-          usageInstructions: ''
-        },
-        warningMessage: "Details auto-extracted from packaging using on-device scanner. Please review and confirm below.",
-        ocrAssisted: true
-      };
+  // Mode B: Client-side Gemini if API key is present
+  if (getClientApiKey()) {
+    try {
+      const clientResult = await extractMedicineDataClient(base64Image, ocrText, {
+        ...(ocrResult || { cleanedText: '', rawText: '', source: 'fallback' }),
+        potentialQuantity: ocrResult?.potentialQuantity || cnnFeatures?.estimatedUnitCount
+      });
+      if (clientResult.success) {
+        return clientResult;
+      }
+    } catch (clientErr) {
+      console.warn("Client Gemini extraction failed, proceeding to On-Device SLM:", clientErr);
     }
+  }
 
-    // Clean user-facing error message
-    let rawMsg = error.message || "";
-    if (rawMsg.includes("FUNCTION_INVOCATION_FAILED") || rawMsg.includes("500") || rawMsg.includes("502") || rawMsg.includes("504")) {
-      rawMsg = "AI processing service is temporarily reconnecting. Please hold the packaging steady with good lighting and scan again.";
-    }
+  // Mode C: On-Device Image CNN + Clinical SLM Model (100% Offline execution)
+  try {
+    const offlineMedicine = extractMedicineOfflineSlm(
+      ocrText,
+      cnnFeatures || undefined,
+      ocrResult ? {
+        potentialExpiry: ocrResult.potentialExpiry,
+        potentialDosage: ocrResult.potentialDosage,
+        potentialQuantity: ocrResult.potentialQuantity || cnnFeatures?.estimatedUnitCount
+      } : undefined
+    );
 
-    return { 
-      success: false, 
-      errorMessage: rawMsg || "Could not read the medicine label clearly. Please ensure good lighting and try again." 
+    return {
+      success: true,
+      medicine: offlineMedicine as any,
+      warningMessage: "Details extracted via On-Device Image CNN & Clinical SLM model. Please verify below.",
+      ocrAssisted: true
+    };
+  } catch (offlineErr: any) {
+    console.error("On-device SLM extraction error:", offlineErr);
+    return {
+      success: false,
+      errorMessage: "Could not read the medicine packaging clearly. Please hold steady in good lighting and scan again."
     };
   }
 }
@@ -451,11 +465,64 @@ export async function checkDrugInteractions(medicines: { name: string; dosage: s
   }
 }
 
-export async function chatWithAI(messages: ChatMessage[], provider: 'gemini' = 'gemini', userId?: string, medicines?: any[]): Promise<string> {
-  return chatWithGemini(messages, userId, medicines);
+export async function chatWithAI(
+  messages: ChatMessage[], 
+  provider: 'gemini' | 'slm' = 'gemini', 
+  userId?: string, 
+  medicines?: any[]
+): Promise<string> {
+  const lastUserMsg = messages[messages.length - 1]?.content || '';
+
+  // 1. Load user-trained SLM knowledge (allergies, chronic ailments, previously learned Gemini tasks)
+  const userKnowledge = userId ? await loadUserSlmKnowledge(userId) : [];
+
+  // 2. Dynamic Routing: If normal chat is going on, use SLM model directly!
+  const isNormal = isNormalChat(lastUserMsg, medicines || [], userKnowledge);
+
+  if (isNormal) {
+    console.log('[SLM ROUTER ACTIVE] Normal pharmacist chat turn. Answering directly with On-Device SLM...');
+    const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
+
+    // Train SLM in background on user data to store learned patterns in database
+    if (userId) {
+      trainSlmOnUserData(userId, lastUserMsg, slmResponse).catch(err => console.warn(err));
+    }
+    return slmResponse;
+  }
+
+  // 3. Complex Question (Hospital, clinical triage, or specialized pharmacy related):
+  // Leverage Gemini API, enriched with all user data stored by the SLM for deep personalized understanding!
+  console.log('[GEMINI ROUTER ACTIVE] Complex hospital/pharmacy question detected. Escalate to Gemini API with SLM learned context...');
+  
+  const slmContext = userId ? await getLearnedSlmContextForGemini(userId) : '';
+  const enrichedMessages = messages.map((m, idx) => {
+    if (idx === messages.length - 1 && slmContext) {
+      return { ...m, content: m.content + slmContext };
+    }
+    return m;
+  });
+
+  let geminiResponse = '';
+  try {
+    geminiResponse = await chatWithGemini(enrichedMessages, userId, medicines);
+  } catch (geminiErr) {
+    console.warn('Gemini complex question failed, falling back to SLM model:', geminiErr);
+    return generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
+  }
+
+  // 4. Distill what work Gemini did so the SLM model learns it.
+  // In the future, if the same task appears, SLM can do it without asking Gemini!
+  if (userId && geminiResponse) {
+    distillGeminiAnswerToSlm(userId, lastUserMsg, geminiResponse).catch(err => console.warn(err));
+    trainSlmOnUserData(userId, lastUserMsg, geminiResponse).catch(err => console.warn(err));
+  }
+
+  return geminiResponse;
 }
 
 export async function chatWithGemini(messages: ChatMessage[], userId?: string, medicines?: any[]): Promise<string> {
+  const lastUserMsg = messages[messages.length - 1]?.content || '';
+
   try {
     const response = await fetch('/api/ai/chat', {
       method: 'POST',
@@ -482,35 +549,25 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
     const data = await response.json();
     return data.responseText;
   } catch (error: any) {
-    console.warn('Gemini Server Chat failed, trying client-side fallback:', error);
-    if (!getClientApiKey()) {
-      throw error;
+    console.warn('Gemini Server Chat failed, trying client-side Gemini fallback:', error);
+    
+    if (getClientApiKey()) {
+      try {
+        return await chatWithGeminiClient(messages);
+      } catch (fallbackError: any) {
+        console.warn('Client-side Gemini also unavailable, switching to On-Device Clinical SLM Model:', fallbackError);
+      }
     }
-    try {
-      return await chatWithGeminiClient(messages);
-    } catch (fallbackError: any) {
-      console.error('Client-side fallback also failed:', fallbackError);
-      throw fallbackError;
-    }
+
+    // 100% Offline Small Language Model (SLM) AI Pharmacist Engine
+    console.log('[SLM PHARMACIST ACTIVE] Generating offline clinical consultation via on-device SLM...');
+    return generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
   }
 }
 
 export async function getChatCountToday(userId: string): Promise<number> {
-  try {
-    const response = await fetch(`/api/ai/chat-count?userId=${encodeURIComponent(userId)}`);
-    if (!response.ok) {
-      const errText = await response.text();
-      if (errText.trim().startsWith('<') || response.status === 404) {
-        return 0; // If endpoint is missing/HTML (e.g. Vercel), don't show limit count
-      }
-      throw new Error("Failed to fetch chat count");
-    }
-    const data = await response.json();
-    return data.count;
-  } catch (error) {
-    console.error("Error fetching chat count:", error);
-    return 0;
-  }
+  // Unlimited chat capacity as requested
+  return 0;
 }
 
 export interface CategorizedMedicineItem {

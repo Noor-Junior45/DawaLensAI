@@ -1,6 +1,6 @@
 {
   "appId": "in.dawalens.app",
-  "appName": "DawaLens AI: Smart Medicine Tracker & Scanner",
+  "appName": "DawaLens AI: Medicine Tracker",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

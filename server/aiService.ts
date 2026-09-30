@@ -307,12 +307,16 @@ export async function saveInteractionCache(key: string, data: any) {
 export async function extractMedicineDataServer(
   base64Image?: string,
   ocrText?: string,
-  hints?: { potentialExpiry?: string; potentialDosage?: string; potentialQuantity?: number }
+  hints?: { potentialExpiry?: string; potentialDosage?: string; potentialQuantity?: number },
+  cnnFeatures?: { form?: string; packagingType?: string; estimatedUnitCount?: number; hasBlisterGrid?: boolean; blisterCellCount?: number }
 ) {
   try {
     return await runWithRotation('extraction', async (ai) => {
       // Build a rich clinical extraction prompt
       const contextHints = [];
+      if (cnnFeatures) {
+        contextHints.push(`On-Device CNN Visual Features: Packaging classified as ${cnnFeatures.packagingType || 'blister_strip'} (form: ${cnnFeatures.form || 'tablet'}), estimated units: ${cnnFeatures.estimatedUnitCount || 'N/A'}${cnnFeatures.hasBlisterGrid ? ', blister pocket array detected' : ''}`);
+      }
       if (ocrText && ocrText.trim().length > 3) {
         contextHints.push(`Detected packaging text fragments:\n"""\n${ocrText.trim()}\n"""`);
       }
@@ -322,8 +326,8 @@ export async function extractMedicineDataServer(
       if (hints?.potentialDosage) {
         contextHints.push(`Detected candidate dosage/strength: ${hints.potentialDosage}`);
       }
-      if (hints?.potentialQuantity) {
-        contextHints.push(`Detected candidate quantity: ${hints.potentialQuantity}`);
+      if (hints?.potentialQuantity || cnnFeatures?.estimatedUnitCount) {
+        contextHints.push(`Detected candidate quantity: ${hints?.potentialQuantity || cnnFeatures?.estimatedUnitCount}`);
       }
 
       const promptText = `You are a licensed clinical pharmacist and computer vision specialist specializing in pharmaceutical packaging recognition (blister packs, strips, bottles, boxes, ampules, syrups, ointments).

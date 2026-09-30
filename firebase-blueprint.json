@@ -106,6 +106,23 @@
         "timestamp": { "type": "object" }
       },
       "required": ["to", "message"]
+    },
+    "SlmKnowledge": {
+      "title": "SlmKnowledge",
+      "description": "Learned knowledge, user health patterns, and distilled medical tasks stored by the SLM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["user_profile", "learned_task", "allergy", "chronic_condition", "preference"] },
+        "topic": { "type": "string" },
+        "content": { "type": "string" },
+        "source": { "type": "string", "enum": ["slm_extracted", "gemini_distilled"] },
+        "queryPattern": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "type", "topic", "content", "source", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -132,6 +149,10 @@
     "/users/{userId}/chats/{sessionId}/messages/{messageId}": {
       "schema": "ChatMessage",
       "description": "Messages within a chat session"
+    },
+    "/users/{userId}/slmKnowledge/{knowledgeId}": {
+      "schema": "SlmKnowledge",
+      "description": "User-trained SLM knowledge and distilled Gemini reasoning cache"
     }
   }
 }

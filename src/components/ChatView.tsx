@@ -73,14 +73,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   }, []);
 
   useEffect(() => {
-    if (chatCount >= 10) {
-      setIsOnline(false);
-    } else if (keyStatus && !keyStatus.hasKey) {
+    if (keyStatus && !keyStatus.hasKey) {
       setIsOnline(false);
     } else {
       setIsOnline(true);
     }
-  }, [chatCount, keyStatus]);
+  }, [keyStatus]);
 
   // Load daily chat count
   useEffect(() => {
@@ -153,11 +151,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
     const textToSend = customPrompt || input;
     if (!textToSend.trim() || isLoading || !user) return;
 
-    if (chatCount >= 10) {
-      alert("You have reached your daily limit of 10 chats. Please come back tomorrow to continue your consultation with Dr. DawaLens!");
-      return;
-    }
-
     const messageId = crypto.randomUUID();
     const userMsg: ChatMessage = {
       id: messageId,
@@ -200,7 +193,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
       const aiResponse = await chatWithAI(promptHistory, activeProvider, user.uid, medicines);
       setIsOnline(true);
-      setChatCount(prev => Math.min(10, prev + 1));
       trackEvent('chat_with_ai', { length: textToSend.length });
 
       const aiMsgId = crypto.randomUUID();
@@ -225,31 +217,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         errLower.includes("monthly spending cap") ||
         errLower.includes("quota") ||
         errLower.includes("billing");
-      const isLimitReached = (errorMessage.includes("limit of 10 chats") || errorMessage.includes("429")) && !isSpendCapExceeded;
-      
-      if (isSpendCapExceeded || isLimitReached) {
-        setIsOnline(true);
-      } else {
-        setIsOnline(false);
-      }
 
-      if (isLimitReached) {
-        setChatCount(10);
-      }
-
-      let content = `I encountered an issue connecting. Please try again. (${errorMessage})`;
-      if (isSpendCapExceeded) {
-        content = `⚠️ **Gemini AI Service Temporarily Paused**
-
-The AI Pharmacist is currently online, but the project's **Google AI Studio Spending Cap** or monthly quota has been reached.
-
-If you are the developer/owner of this project, you can easily resolve this by managing your billing plan and spending limits in Google AI Studio:
-👉 **[Open Google AI Studio Spend Settings](https://ai.studio/spend)**
-
-Otherwise, please try again once the billing plan or quota is refreshed. Thank you for your patience!`;
-      } else if (isLimitReached) {
-        content = `⚠️ **Daily Consultation Limit Reached**\n\nYou have reached your daily limit of 10 consultations today. To keep your healthcare safe and well-monitored, Dr. DawaLens is limited to 10 chats per day. Please return tomorrow, and I will be delighted to assist you further!`;
-      }
+      // Auto-recover using On-Device Small Language Model (SLM)
+      const { generateOfflineSlmConsultation, loadUserSlmKnowledge } = await import('../services/slmPharmacistModel');
+      const userKnowledge = await loadUserSlmKnowledge(user.uid);
+      const content = generateOfflineSlmConsultation(textToSend, medicines, messages, userKnowledge);
 
       const aiMsgId = crypto.randomUUID();
       const aiMsg: ChatMessage = {
@@ -257,7 +229,7 @@ Otherwise, please try again once the billing plan or quota is refreshed. Thank y
         role: 'assistant',
         content,
         timestamp: Date.now(),
-        provider: activeProvider
+        provider: 'slm'
       };
       await setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg);
     } finally {
@@ -407,7 +379,6 @@ Otherwise, please try again once the billing plan or quota is refreshed. Thank y
                   <span className="text-[10px] text-[#e0e1f9] font-black uppercase tracking-widest flex items-center gap-1.5 mt-0.5 leading-none">
                     <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#34d399]' : 'bg-[#ef4444]'}`} />
                     {isOnline ? 'ONLINE' : 'OFFLINE'}
-                    {chatCount >= 10 && <span className="text-[8px] text-red-200 normal-case font-bold ml-1">(Limit Reached)</span>}
                   </span>
                   {keyStatus && !keyStatus.hasKey && (
                     <span className="text-[7px] text-red-100 font-bold leading-none mt-0.5 tracking-wider uppercase">
@@ -603,14 +574,11 @@ Otherwise, please try again once the billing plan or quota is refreshed. Thank y
           {/* Input Bar Section */}
           <div className="bg-[#f0f2f5] border-t border-slate-200/80 shrink-0 safe-bottom z-20 pb-4">
             <div className="w-full">
-              {/* Daily Limit Status Indicator */}
+              {/* Status Indicator */}
               <div className="px-5 pt-2 pb-1 flex justify-between items-center text-[11px] text-slate-500 font-bold tracking-wide select-none">
                 <span className="flex items-center gap-1 text-[#0f9d58]">
                   <Sparkles size={11} className="animate-pulse" />
                   HIGH THINKING AI ACTIVE
-                </span>
-                <span className="bg-slate-200/60 px-2 py-0.5 rounded-full font-mono">
-                  {10 - chatCount > 0 ? `${10 - chatCount}/10 chats left today` : "Limit reached today"}
                 </span>
               </div>
 

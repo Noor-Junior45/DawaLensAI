@@ -660,7 +660,17 @@ export default function App() {
       trackEvent('login', { method: 'email' });
     } catch (error: any) {
       console.warn('Email login warning:', error);
-      if (error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+        // If this is a reviewer or demo account, auto-provision so Play Store & Indus reviewers can log in without failure
+        if (email.toLowerCase().includes('review') || email.toLowerCase().includes('tester') || email.toLowerCase().includes('playstore') || email.toLowerCase().includes('indus')) {
+          try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            trackEvent('login', { method: 'reviewer_auto_provision' });
+            return;
+          } catch (createErr: any) {
+            console.warn('Auto provision reviewer account failed:', createErr);
+          }
+        }
         setAlertMessage('Invalid email or password. Please check your credentials or sign up if you don\'t have an account.');
       } else if (error.code === 'auth/user-disabled') {
         setAlertMessage('This account has been disabled.');
@@ -1996,6 +2006,22 @@ export default function App() {
                 Privacy policy
               </button>
             </span>
+          </div>
+
+          {/* App Reviewer / Tester Quick Access */}
+          <div className="pt-1 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('playstore.review@dawalens.app');
+                setPassword('ReviewTester2026!');
+                setAuthStep('password');
+                setAgreedToTerms(true);
+              }}
+              className="text-[11px] text-slate-500 hover:text-slate-800 underline transition-colors cursor-pointer"
+            >
+              Store Reviewer &amp; Demo Credentials Quick-Fill
+            </button>
           </div>
         </div>
 

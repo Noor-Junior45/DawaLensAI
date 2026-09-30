@@ -54,4 +54,16 @@ export interface ChatSession {
   provider?: AIProvider;
 }
 
-export type AIProvider = 'gemini';
+export type AIProvider = 'gemini' | 'slm';
+
+export interface SlmKnowledgeItem {
+  id: string;
+  userId: string;
+  type: 'user_profile' | 'learned_task' | 'allergy' | 'chronic_condition' | 'preference';
+  topic: string;
+  content: string;
+  source: 'slm_extracted' | 'gemini_distilled';
+  queryPattern?: string;
+  createdAt: number;
+  updatedAt: number;
+}
