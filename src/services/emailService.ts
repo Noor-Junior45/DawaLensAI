@@ -1,5 +1,6 @@
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getDirectRenderUrl } from '../utils/apiConfig';
 
 export interface EmailParams {
   to: string;
@@ -14,14 +15,24 @@ export interface EmailParams {
  */
 export async function sendEmailAlert(params: EmailParams): Promise<{ success: boolean; simulated?: boolean; message?: string }> {
   try {
-    // 1. Call our custom Express nodemailer API
-    const response = await fetch('/api/send-email', {
+    // 1. Call our custom Express nodemailer API (proxied to Render or direct Render)
+    let response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(params)
     });
+
+    if (!response.ok || response.status === 404) {
+      try {
+        response = await fetch(getDirectRenderUrl('/api/send-email'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+      } catch (e) {}
+    }
     
     if (response.ok) {
       const data = await response.json();

@@ -19,6 +19,7 @@ import ReactMarkdown from 'react-markdown';
 import { DoctorLogo } from './DoctorLogo';
 import { sendEmailAlert, getConsultationReportEmailHTML } from '../services/emailService';
 import { trackEvent } from '../utils/analytics';
+import { getDirectRenderUrl } from '../utils/apiConfig';
 
 interface ChatViewProps {
   onClose: () => void;
@@ -53,7 +54,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   useEffect(() => {
     const checkKeyStatus = async () => {
       try {
-        const res = await fetch('/api/ai/key-status');
+        let res = await fetch('/api/ai/key-status');
+        if (!res.ok) {
+          try {
+            const directRes = await fetch(getDirectRenderUrl('/api/ai/key-status'));
+            if (directRes.ok) {
+              res = directRes;
+            }
+          } catch (directErr) {
+            console.warn("Direct key-status check failed:", directErr);
+          }
+        }
         const data = await res.json();
         setKeyStatus(data);
         if (!data.hasKey) {

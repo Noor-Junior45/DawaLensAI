@@ -2,6 +2,7 @@ import { MedicineForm, ChatMessage } from "../types";
 import { GoogleGenAI } from "@google/genai";
 import { performOnDeviceOcr, OcrPreExtractionHints } from "./ocrService";
 import { runImageCnnClassifier, CnnVisualFeatures } from "./imageCnnService";
+import { getDirectRenderUrl } from "../utils/apiConfig";
 import { 
   generateOfflineSlmConsultation, 
   extractMedicineOfflineSlm,
@@ -349,28 +350,43 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
   const ocrText = ocrResult?.cleanedText || ocrResult?.rawText || '';
 
   // Mode A: Online Gemini API Extraction (with CNN visual features & OCR hints)
+  const extractPayload = JSON.stringify({ 
+    base64Image,
+    ocrText,
+    cnnFeatures: cnnFeatures ? {
+      form: cnnFeatures.form,
+      packagingType: cnnFeatures.packagingType,
+      estimatedUnitCount: cnnFeatures.estimatedUnitCount,
+      hasBlisterGrid: cnnFeatures.hasBlisterGrid,
+      blisterCellCount: cnnFeatures.blisterCellCount
+    } : undefined,
+    hints: ocrResult ? {
+      potentialExpiry: ocrResult.potentialExpiry,
+      potentialDosage: ocrResult.potentialDosage,
+      potentialQuantity: ocrResult.potentialQuantity || cnnFeatures?.estimatedUnitCount
+    } : undefined
+  });
+
   try {
-    const response = await fetch('/api/ai/extract', {
+    let response = await fetch('/api/ai/extract', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        base64Image,
-        ocrText,
-        cnnFeatures: cnnFeatures ? {
-          form: cnnFeatures.form,
-          packagingType: cnnFeatures.packagingType,
-          estimatedUnitCount: cnnFeatures.estimatedUnitCount,
-          hasBlisterGrid: cnnFeatures.hasBlisterGrid,
-          blisterCellCount: cnnFeatures.blisterCellCount
-        } : undefined,
-        hints: ocrResult ? {
-          potentialExpiry: ocrResult.potentialExpiry,
-          potentialDosage: ocrResult.potentialDosage,
-          potentialQuantity: ocrResult.potentialQuantity || cnnFeatures?.estimatedUnitCount
-        } : undefined
-      })
+      body: extractPayload
     });
     
+    // Direct Render URL fallback if Vercel proxy rewrite is not reachable
+    if (!response.ok || response.status === 404) {
+      try {
+        response = await fetch(getDirectRenderUrl('/api/ai/extract'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: extractPayload
+        });
+      } catch (directErr) {
+        console.warn("Direct Render backend extract attempt failed:", directErr);
+      }
+    }
+
     if (response.ok) {
       const data = await response.json();
       if (data.success && data.medicine) {
@@ -427,12 +443,23 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
 }
 
 export async function checkDrugInteractions(medicines: { name: string; dosage: string }[]): Promise<InteractionResult | null> {
+  const payload = JSON.stringify({ medicines });
   try {
-    const response = await fetch('/api/ai/interactions', {
+    let response = await fetch('/api/ai/interactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ medicines })
+      body: payload
     });
+
+    if (!response.ok || response.status === 404) {
+      try {
+        response = await fetch(getDirectRenderUrl('/api/ai/interactions'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        });
+      } catch (e) {}
+    }
     
     if (!response.ok) {
       const errText = await response.text();
@@ -522,13 +549,30 @@ export async function chatWithAI(
 
 export async function chatWithGemini(messages: ChatMessage[], userId?: string, medicines?: any[]): Promise<string> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
+  const chatPayload = JSON.stringify({ messages, userId, medicines });
 
   try {
-    const response = await fetch('/api/ai/chat', {
+    let response = await fetch('/api/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, userId, medicines })
+      body: chatPayload
     });
+
+    // Direct Render URL fallback if Vercel proxy rewrite is unreachable or 404
+    if (!response.ok || response.status === 404) {
+      try {
+        const directResp = await fetch(getDirectRenderUrl('/api/ai/chat'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: chatPayload
+        });
+        if (directResp.ok) {
+          response = directResp;
+        }
+      } catch (directErr) {
+        console.warn("Direct Render backend chat attempt failed:", directErr);
+      }
+    }
     
     if (!response.ok) {
       const errText = await response.text();
@@ -580,13 +624,29 @@ export async function categorizeMedicinesWithAI(
   medicines: { id: string; name: string; dosage?: string; usageInstructions?: string; form?: string }[]
 ): Promise<CategorizedMedicineItem[]> {
   if (!medicines || medicines.length === 0) return [];
+  const catPayload = JSON.stringify({ medicines });
 
   try {
-    const response = await fetch('/api/ai/categorize', {
+    let response = await fetch('/api/ai/categorize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ medicines })
+      body: catPayload
     });
+
+    if (!response.ok) {
+      try {
+        const directResp = await fetch(getDirectRenderUrl('/api/ai/categorize'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: catPayload
+        });
+        if (directResp.ok) {
+          response = directResp;
+        }
+      } catch (directErr) {
+        console.warn("Direct Render backend categorization failed:", directErr);
+      }
+    }
 
     if (response.ok) {
       const data = await response.json();

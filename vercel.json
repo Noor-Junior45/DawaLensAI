@@ -3,19 +3,62 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "https://dawalensai.onrender.com/api/$1"
     },
     {
       "source": "/privacy",
-      "destination": "/api/index.ts"
+      "destination": "https://dawalensai.onrender.com/privacy"
+    },
+    {
+      "source": "/privacy.html",
+      "destination": "https://dawalensai.onrender.com/privacy.html"
     },
     {
       "source": "/terms",
-      "destination": "/api/index.ts"
+      "destination": "https://dawalensai.onrender.com/terms"
     },
     {
-      "source": "/google(.*).html",
-      "destination": "/api/index.ts"
+      "source": "/terms.html",
+      "destination": "https://dawalensai.onrender.com/terms.html"
+    },
+    {
+      "source": "/guide",
+      "destination": "https://dawalensai.onrender.com/guide"
+    },
+    {
+      "source": "/guide.html",
+      "destination": "https://dawalensai.onrender.com/guide.html"
+    },
+    {
+      "source": "/manual",
+      "destination": "https://dawalensai.onrender.com/manual"
+    },
+    {
+      "source": "/delete-account",
+      "destination": "https://dawalensai.onrender.com/delete-account"
+    },
+    {
+      "source": "/account-delete",
+      "destination": "https://dawalensai.onrender.com/account-delete"
+    },
+    {
+      "source": "/google:id.html",
+      "destination": "https://dawalensai.onrender.com/google:id.html"
+    },
+    {
+      "source": "/((?!api/|.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
+      ]
     }
   ]
 }
