@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { MEDICINE_FORM_ICONS, getCategoryStyle, isCategoryMatch } from '../constants';
 import { LocalImage } from './LocalImage';
+import { triggerLightHaptic, triggerMediumHaptic, triggerSelectionHaptic, triggerSuccessHaptic } from '../utils/haptics';
 
 interface MedicineListProps {
   medicines: Medicine[];
@@ -386,6 +387,18 @@ export const MedicineList: React.FC<MedicineListProps> = ({
           isLowQuantity ? 'bg-white border-amber-500 hover:border-amber-600 hover:bg-amber-50/20' :
           'bg-white border-blue-400 hover:border-blue-500 hover:bg-blue-50/20'
         }`}
+        drag={isSelectionMode ? false : "x"}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.22}
+        onDragEnd={(_, info) => {
+          if (info.offset.x > 75 && nearestBatch && nearestBatch.quantity !== undefined && nearestBatch.quantity > 0) {
+            triggerSuccessHaptic();
+            onReduceQuantity(nearestBatch);
+          } else if (info.offset.x < -75 && nearestBatch) {
+            triggerLightHaptic();
+            onEdit(nearestBatch);
+          }
+        }}
       >
         {/* Background Image if available */}
         {group.imageUrl && (
@@ -422,6 +435,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
             <div 
               className="flex-1 min-w-0 cursor-pointer"
               onClick={() => {
+                triggerLightHaptic();
                 if (isSelectionMode) {
                   toggleSelectGroup(group.allBatches);
                 } else if (nearestBatch) {
@@ -491,6 +505,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  triggerLightHaptic();
                   if (nearestBatch && onToggleLike) {
                     onToggleLike(nearestBatch);
                   }
@@ -510,6 +525,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    triggerMediumHaptic();
                     onReduceQuantity(nearestBatch);
                   }}
                   className="p-2 sm:p-2.5 bg-[#faf8f5]/60 border border-[#e3e2e0] rounded-full text-slate-500 hover:text-[#1f1f1f] hover:bg-slate-100 transition-all active:scale-90"

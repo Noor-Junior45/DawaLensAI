@@ -10,6 +10,8 @@ import {
   Mail,
   Sparkles
 } from 'lucide-react';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic } from '../utils/haptics';
 
 interface UserGuidePageProps {
   onBack: () => void;
@@ -17,6 +19,7 @@ interface UserGuidePageProps {
 }
 
 export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
+  useEdgeSwipeBack({ onBack });
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
       {/* Minimal Sticky Header (No Description) */}
@@ -24,7 +27,10 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={onBack}
+              onClick={() => {
+                triggerLightHaptic();
+                onBack();
+              }}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600 active:scale-95 cursor-pointer"
               title="Back"
             >

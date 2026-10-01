@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight, ChevronDown } from 'lucide-react';
+import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine } from './types';
@@ -36,14 +36,15 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { AccountDeletionPage } from './components/AccountDeletionPage';
 
-import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
+import { triggerLightHaptic, triggerMediumHaptic, triggerSuccessHaptic, triggerSelectionHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
 import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML, syncExpiryScheduleWithServer } from './services/emailService';
 import { trackEvent } from './utils/analytics';
 import { signInWithGoogleAdaptive, signOutAdaptive } from './services/nativeAuthService';
 import { setCrashReportingUser } from './services/crashReportingService';
-import { initNativePerformance } from './services/nativePerformanceService';
+import { initNativePerformance, setNativeBackButtonHandler } from './services/nativePerformanceService';
 import { initNativeNotifications, scheduleNativeMedicineAlerts } from './services/nativeNotificationService';
+import { useEdgeSwipeBack, usePullToRefresh } from './utils/mobileGestures';
 
 type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | null;
 
@@ -181,8 +182,11 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Native Android Performance & Back Button Handling
+  // Native Android Performance & Universal Back Button Handling
   const modalsStateRef = React.useRef({
+    publicPage,
+    alertMessage,
+    passwordResetEmailSent,
     isCategoryDropdownOpen,
     activeFooterModal,
     selectedDetailsMedicine,
@@ -195,10 +199,16 @@ export default function App() {
     isSelectionMode,
     isChatOpen,
     isMailboxOpen,
+    searchQuery,
+    filter,
+    isLikedOnly,
   });
 
   useEffect(() => {
     modalsStateRef.current = {
+      publicPage,
+      alertMessage,
+      passwordResetEmailSent,
       isCategoryDropdownOpen,
       activeFooterModal,
       selectedDetailsMedicine,
@@ -211,8 +221,14 @@ export default function App() {
       isSelectionMode,
       isChatOpen,
       isMailboxOpen,
+      searchQuery,
+      filter,
+      isLikedOnly,
     };
   }, [
+    publicPage,
+    alertMessage,
+    passwordResetEmailSent,
     isCategoryDropdownOpen,
     activeFooterModal,
     selectedDetailsMedicine,
@@ -225,65 +241,124 @@ export default function App() {
     isSelectionMode,
     isChatOpen,
     isMailboxOpen,
+    searchQuery,
+    filter,
+    isLikedOnly,
   ]);
+
+  const handleGlobalBackNavigation = React.useCallback((): boolean => {
+    const s = modalsStateRef.current;
+
+    // 1. Notices & Alerts
+    if (s.alertMessage) {
+      setAlertMessage(null);
+      return true;
+    }
+    if (s.passwordResetEmailSent) {
+      setPasswordResetEmailSent(null);
+      return true;
+    }
+
+    // 2. Public legal & guide pages (User Guide, Privacy, Terms, Delete Account)
+    if (s.publicPage) {
+      handleBackFromPublicPage();
+      return true;
+    }
+
+    // 3. Dropdowns & Footer Modals
+    if (s.isCategoryDropdownOpen) {
+      setIsCategoryDropdownOpen(false);
+      return true;
+    }
+    if (s.activeFooterModal) {
+      setActiveFooterModal(null);
+      return true;
+    }
+
+    // 4. Safety & Interaction Modal
+    if (s.isInteractionModalOpen) {
+      setIsInteractionModalOpen(false);
+      return true;
+    }
+
+    // 5. System Pages (Edit -> Details, History -> Details, Details -> Home, Add -> Home)
+    if (s.activeSystemPage === 'edit' || s.activeSystemPage === 'history') {
+      setActiveSystemPage('details');
+      return true;
+    }
+    if (s.activeSystemPage === 'details') {
+      setActiveSystemPage(null);
+      setSelectedDetailsMedicine(null);
+      return true;
+    }
+    if (s.activeSystemPage === 'add') {
+      setActiveSystemPage(null);
+      setEditingMedicine(null);
+      return true;
+    }
+
+    // 6. Camera & Manual Form
+    if (s.isCameraOpen) {
+      setIsCameraOpen(false);
+      setExtractionError(null);
+      return true;
+    }
+    if (s.isFormOpen) {
+      setIsFormOpen(false);
+      setEditingMedicine(null);
+      return true;
+    }
+
+    // 7. Mailbox, Chat, Settings & Login
+    if (s.isMailboxOpen) {
+      setIsMailboxOpen(false);
+      setIsSettingsOpen(true);
+      return true;
+    }
+    if (s.isChatOpen) {
+      setIsChatOpen(false);
+      return true;
+    }
+    if (s.isSettingsOpen) {
+      setIsSettingsOpen(false);
+      return true;
+    }
+    if (s.isEmailLoginOpen) {
+      setIsEmailLoginOpen(false);
+      return true;
+    }
+
+    // 8. Multi-Selection Mode
+    if (s.isSelectionMode) {
+      setIsSelectionMode(false);
+      setSelectedMedicineIds(new Set());
+      return true;
+    }
+
+    // 9. Active Search or Filters
+    if (s.searchQuery && s.searchQuery.trim().length > 0) {
+      setSearchQuery('');
+      return true;
+    }
+    if (s.filter !== 'all' || s.isLikedOnly) {
+      setFilter('all');
+      setIsLikedOnly(false);
+      return true;
+    }
+
+    // Return false when at root dashboard -> native double-tap exit with toast and haptic
+    return false;
+  }, []);
+
+  // Dynamically update native hardware back listener
+  useEffect(() => {
+    setNativeBackButtonHandler(handleGlobalBackNavigation);
+  }, [handleGlobalBackNavigation]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     initNativePerformance({
-      handleBackButton: () => {
-        const s = modalsStateRef.current;
-        if (s.isCategoryDropdownOpen) {
-          setIsCategoryDropdownOpen(false);
-          return true;
-        }
-        if (s.activeFooterModal) {
-          setActiveFooterModal(null);
-          return true;
-        }
-        if (s.selectedDetailsMedicine) {
-          setSelectedDetailsMedicine(null);
-          return true;
-        }
-        if (s.activeSystemPage) {
-          setActiveSystemPage(null);
-          return true;
-        }
-        if (s.isCameraOpen) {
-          setIsCameraOpen(false);
-          return true;
-        }
-        if (s.isFormOpen) {
-          setIsFormOpen(false);
-          return true;
-        }
-        if (s.isSettingsOpen) {
-          setIsSettingsOpen(false);
-          return true;
-        }
-        if (s.isEmailLoginOpen) {
-          setIsEmailLoginOpen(false);
-          return true;
-        }
-        if (s.isInteractionModalOpen) {
-          setIsInteractionModalOpen(false);
-          return true;
-        }
-        if (s.isChatOpen) {
-          setIsChatOpen(false);
-          return true;
-        }
-        if (s.isMailboxOpen) {
-          setIsMailboxOpen(false);
-          setIsSettingsOpen(true);
-          return true;
-        }
-        if (s.isSelectionMode) {
-          setIsSelectionMode(false);
-          setSelectedMedicineIds(new Set());
-          return true;
-        }
-        return false;
-      },
+      handleBackButton: handleGlobalBackNavigation,
     }).then((cleanupFn) => {
       cleanup = cleanupFn;
     });
@@ -291,7 +366,44 @@ export default function App() {
     return () => {
       if (cleanup) cleanup();
     };
-  }, []);
+  }, [handleGlobalBackNavigation]);
+
+  // Mobile Edge-Swipe navigation from left edge to navigate back
+  useEdgeSwipeBack({
+    onBack: handleGlobalBackNavigation,
+    enabled: Boolean(
+      publicPage ||
+      activeSystemPage ||
+      isCameraOpen ||
+      isFormOpen ||
+      isSettingsOpen ||
+      isChatOpen ||
+      isMailboxOpen ||
+      activeFooterModal ||
+      isInteractionModalOpen ||
+      searchQuery ||
+      filter !== 'all' ||
+      isLikedOnly
+    ),
+  });
+
+  // Mobile Pull-To-Refresh on main dashboard
+  const handleDashboardRefresh = async () => {
+    if (!user) return;
+    try {
+      const q = query(collection(db, 'medicines'), where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
+      setMedicines(data);
+    } catch (e) {
+      console.warn('Pull-to-refresh sync:', e);
+    }
+  };
+
+  const { pullDistance, isRefreshing: isPullRefreshing } = usePullToRefresh({
+    onRefresh: handleDashboardRefresh,
+    enabled: !publicPage && !activeSystemPage && !isCameraOpen && !isFormOpen && !isChatOpen && !isSettingsOpen && !activeFooterModal,
+  });
 
   // Sync User Config from Firestore
   useEffect(() => {
@@ -2032,6 +2144,19 @@ export default function App() {
       </header>
 
       <main className="flex-1 w-full max-w-2xl mx-auto pt-6 pb-32">
+        {/* Pull-To-Refresh Visual Indicator with Mobile Haptics */}
+        {(pullDistance > 0 || isPullRefreshing) && (
+          <div 
+            className="flex items-center justify-center transition-all duration-100 overflow-hidden px-4 mb-3"
+            style={{ height: `${Math.max(pullDistance, isPullRefreshing ? 48 : 0)}px`, opacity: Math.min(pullDistance / 40, 1) }}
+          >
+            <div className="bg-white/95 border border-[#e3e2e0] rounded-full px-4 py-2 shadow-sm flex items-center gap-2 text-slate-700 text-xs font-bold">
+              <RefreshCw size={15} className={`text-[#0f9d58] ${pullDistance >= 70 || isPullRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isPullRefreshing ? 'Refreshing cabinet...' : pullDistance >= 70 ? 'Release to refresh' : 'Pull down to refresh'}</span>
+            </div>
+          </div>
+        )}
+
         {/* Stats / Info */}
         <div className="px-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3.5 shadow-sm">

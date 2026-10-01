@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
 import { localImageStorage } from '../services/localImageStorage';
 import { categorizeMedicinesWithAI } from '../services/geminiService';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic, triggerSuccessHaptic, triggerSelectionHaptic } from '../utils/haptics';
 
 interface MedicineEditPageProps {
   medicine: Medicine;
@@ -39,8 +41,10 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   globalLowQuantityThreshold,
   isSaving = false,
   onSave,
-  onBack
+  onBack,
 }) => {
+  // Mobile Edge-Swipe from left to navigate back
+  useEdgeSwipeBack({ onBack });
   const [formData, setFormData] = useState<Partial<Medicine>>({
     name: medicine.name || '',
     dosage: medicine.dosage || '',

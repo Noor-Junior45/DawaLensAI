@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic, triggerSuccessHaptic, triggerSelectionHaptic } from '../utils/haptics';
 
 interface MedicineAddPageProps {
   initialData?: Partial<Medicine> | null;
@@ -41,6 +43,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
   onSave,
   onBack
 }) => {
+  // Mobile Edge-Swipe from left to navigate back
+  useEdgeSwipeBack({ onBack });
   const [formData, setFormData] = useState<Partial<Medicine>>({
     name: initialData?.name || '',
     dosage: initialData?.dosage || '',

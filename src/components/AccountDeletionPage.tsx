@@ -11,6 +11,8 @@ import {
   Send,
   Loader2
 } from 'lucide-react';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic } from '../utils/haptics';
 
 interface AccountDeletionPageProps {
   onBack: () => void;
@@ -23,6 +25,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
   user,
   onExecuteAccountDeletion
 }) => {
+  useEdgeSwipeBack({ onBack });
   const supportEmail = 'mdnoor4860@gmail.com';
   const displayEmail = 'mdnoor4860@gmail.com';
 

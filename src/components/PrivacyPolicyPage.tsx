@@ -14,6 +14,8 @@ import {
   Server,
   FileText
 } from 'lucide-react';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic } from '../utils/haptics';
 
 interface PrivacyPolicyPageProps {
   onBack: () => void;
@@ -21,6 +23,7 @@ interface PrivacyPolicyPageProps {
 }
 
 export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) => {
+  useEdgeSwipeBack({ onBack });
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
       {/* Sticky Header */}
@@ -28,7 +31,10 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={onBack}
+              onClick={() => {
+                triggerLightHaptic();
+                onBack();
+              }}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600 active:scale-95 cursor-pointer"
               title="Back"
             >

@@ -8,6 +8,8 @@ import {
 import { motion } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, getCategoryStyle } from '../constants';
 import { LocalImage } from './LocalImage';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic, triggerSelectionHaptic } from '../utils/haptics';
 
 interface MedicineDetailsPageProps {
   medicine: Medicine;
@@ -28,6 +30,8 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
   onGoToHistory,
   onGoToEdit,
 }) => {
+  // Mobile Edge-Swipe from left to navigate back
+  useEdgeSwipeBack({ onBack });
   // Format dates cleanly like "27 Feb 2027"
   const formatDateFormal = (dateStr?: string) => {
     if (!dateStr) return 'N/A';

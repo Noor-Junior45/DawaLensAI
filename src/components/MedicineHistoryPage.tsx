@@ -3,6 +3,8 @@ import { Medicine, MedicineHistory } from '../types';
 import { ArrowLeft, Clock, History as HistoryIcon, Calendar, CheckCircle2, Edit3, PlusCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { db, collection, query, orderBy, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
+import { triggerLightHaptic } from '../utils/haptics';
 
 interface MedicineHistoryPageProps {
   medicine: Medicine;
@@ -13,6 +15,8 @@ export const MedicineHistoryPage: React.FC<MedicineHistoryPageProps> = ({
   medicine,
   onBack
 }) => {
+  // Mobile Edge-Swipe from left to navigate back
+  useEdgeSwipeBack({ onBack });
   const [history, setHistory] = useState<MedicineHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
