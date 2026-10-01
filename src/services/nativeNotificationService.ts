@@ -62,13 +62,55 @@ export async function initNativeNotifications(): Promise<boolean> {
       await LocalNotifications.createChannel(dailyChannel);
     }
 
-    // 3. Register for Firebase Cloud Messaging (Push Notifications) if supported
+    // 3. Register for Firebase Cloud Messaging (Push Notifications) and listen for messages
     try {
       let pushPerm = await PushNotifications.checkPermissions();
       if (pushPerm.receive !== 'granted') {
         pushPerm = await PushNotifications.requestPermissions();
       }
       if (pushPerm.receive === 'granted') {
+        // Remove existing listeners before re-attaching
+        await PushNotifications.removeAllListeners();
+
+        // On successful FCM registration token received
+        PushNotifications.addListener('registration', (token) => {
+          console.log('[FCM] Push registration successful, FCM Token:', token.value);
+          try {
+            localStorage.setItem('dawalens_fcm_token', token.value);
+          } catch {
+            // Ignore storage errors
+          }
+        });
+
+        // Registration error
+        PushNotifications.addListener('registrationError', (error) => {
+          console.warn('[FCM] Push registration error:', error);
+        });
+
+        // When a push notification message arrives while app is open
+        PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          console.log('[FCM] Push notification received in foreground:', notification);
+          // Show as local notification banner so user sees heads-up
+          LocalNotifications.schedule({
+            notifications: [
+              {
+                title: notification.title || 'DawaLens Alert',
+                body: notification.body || '',
+                id: Math.floor(Math.random() * 1000000) + 1,
+                schedule: { at: new Date(Date.now() + 100) },
+                channelId: 'medicine_alerts',
+                smallIcon: 'ic_launcher',
+                extra: notification.data || {}
+              }
+            ]
+          }).catch(() => {});
+        });
+
+        // When user taps on a push notification
+        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          console.log('[FCM] Push notification action performed:', action);
+        });
+
         await PushNotifications.register();
       }
     } catch (pushErr) {

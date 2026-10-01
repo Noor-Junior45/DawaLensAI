@@ -16,6 +16,7 @@ interface SettingsModalProps {
   setEmailNotificationsEnabled: (val: boolean) => void;
   browserNotificationsEnabled: boolean;
   setBrowserNotificationsEnabled: (val: boolean) => void;
+  onTestNotification?: () => void;
   photoURL?: string;
   userEmail: string;
   onLogout: () => void;
@@ -54,6 +55,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   setEmailNotificationsEnabled,
   browserNotificationsEnabled,
   setBrowserNotificationsEnabled,
+  onTestNotification,
   photoURL,
   userEmail,
   onLogout,
@@ -262,8 +264,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Bell size={15} />
                 </div>
                 <div>
-                  <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Push Notifications</span>
-                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Local browser warning triggers</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Push &amp; Chrome Alerts</span>
+                    {browserNotificationsEnabled && onTestNotification && (
+                      <button
+                        type="button"
+                        onClick={onTestNotification}
+                        className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded font-bold transition-colors cursor-pointer border border-amber-200"
+                        title="Send test Chrome notification"
+                      >
+                        Send Test
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Chrome desktop &amp; native mobile expiry alerts</span>
                 </div>
               </div>
               <button 

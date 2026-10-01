@@ -17,7 +17,9 @@ import { getChatCount, incrementChatCount } from "./medCache.ts";
 import { 
   startExpiryCron, 
   registerUserExpirySchedule, 
-  runBackgroundExpiryCheck 
+  runBackgroundExpiryCheck,
+  registerPushToken,
+  sendPushNotificationToUser
 } from "./server/expiryCron.ts";
 
 const app = express();
@@ -314,6 +316,39 @@ app.post("/api/sync-expiry-schedule", async (req, res) => {
     res.json({ success: true, count: Array.isArray(medicines) ? medicines.length : 0 });
   } catch (error: any) {
     console.error("Error syncing expiry schedule:", error);
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
+// Endpoint to register a push notification token (FCM / Web Push)
+app.post("/api/notifications/register-token", async (req, res) => {
+  try {
+    const { userId, token, platform } = req.body;
+    if (!userId || !token) {
+      return res.status(400).json({ error: "userId and token are required" });
+    }
+    await registerPushToken(userId, token, platform || 'web');
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
+// Endpoint to send a test notification
+app.post("/api/notifications/send-test", async (req, res) => {
+  try {
+    const { userId, title, body } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+    const result = await sendPushNotificationToUser(
+      userId,
+      title || "🚨 DawaLens AI Test Alert",
+      body || "Push notification is working perfectly on your device/browser!",
+      { test: true }
+    );
+    res.json({ success: true, ...result });
+  } catch (error: any) {
     res.status(500).json({ error: error.message || String(error) });
   }
 });

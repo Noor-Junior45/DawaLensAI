@@ -72,3 +72,54 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// Push notification listener for Chrome / Browser Web Push
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'DawaLens AI Expiry Alert',
+    body: 'You have medicines expiring soon or needing refills.'
+  };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/logo.png',
+    badge: data.badge || '/logo.png',
+    tag: data.tag || 'dawalens-expiry-notification',
+    vibrate: [200, 100, 200],
+    data: data.data || { url: '/' },
+    actions: [
+      { action: 'open', title: 'Open Vault' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'DawaLens AI Expiry Alert', options)
+  );
+});
+
+// Notification click listener: focuses open tab or opens new window
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = (event.notification.data && event.notification.data.url) || '/';
+  
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});

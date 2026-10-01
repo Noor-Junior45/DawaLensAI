@@ -1,3 +1,4 @@
+# Dependencies
 node_modules/
 dist/
 coverage/
@@ -6,7 +7,42 @@ coverage/
 .env*
 !.env.example
 
-# Keep Android platform local in AI Studio (do not push to GitHub)
-android/
+# Sensitive Keystores, Certificates & Signing Credentials (Prevents GitHub Push Protection GH013 secret scan errors)
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+keystore.properties
+android/keystore.properties
+android/app/keystore.properties
+keystore/keystore.properties
+!keystore/keystore.properties.example
+!android/keystore.properties.example
+
+# Android build outputs, caches & Android Studio files
 .gradle/
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/.idea/
+android/.navigation/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+*.dex
+*.class
+*.hprof
+*.iml
+.idea/
+
+# Android copied web assets and generated configs (Capacitor sync regenerates these)
+android/app/src/main/assets/
+android/app/src/main/res/xml/config.xml
+
+
 

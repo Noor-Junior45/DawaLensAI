@@ -34,10 +34,103 @@ export interface UserExpirySchedule {
 
 // In-memory fallback cache
 const memorySchedules = new Map<string, UserExpirySchedule>();
+// In-memory registered tokens map: userId -> Set of tokens
+const userPushTokens = new Map<string, Set<string>>();
 
 // Mutex lock and in-flight tracking to strictly prevent duplicate email dispatches
 let isCheckRunning = false;
 const inFlightAlerts = new Set<string>();
+
+/**
+ * Registers a browser/device push token for a user.
+ */
+export async function registerPushToken(
+  userId: string, 
+  token: string, 
+  platform: string = 'web'
+): Promise<void> {
+  if (!userPushTokens.has(userId)) {
+    userPushTokens.set(userId, new Set());
+  }
+  userPushTokens.get(userId)!.add(token);
+
+  try {
+    const tokenDoc = doc(db, 'user_push_tokens', `${userId}_${token.slice(-12)}`);
+    await setDoc(tokenDoc, {
+      userId,
+      token,
+      platform,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    console.log(`[PUSH TOKEN] Registered ${platform} token for user ${userId}`);
+  } catch (err) {
+    console.warn('[PUSH TOKEN WARNING] Firestore save warning:', err);
+  }
+}
+
+/**
+ * Sends a push notification to all active devices registered for a user.
+ */
+export async function sendPushNotificationToUser(
+  userId: string, 
+  title: string, 
+  body: string, 
+  data: Record<string, any> = {}
+): Promise<{ sent: number }> {
+  const tokens = new Set<string>(userPushTokens.get(userId) || []);
+
+  try {
+    const snap = await getDocs(collection(db, 'user_push_tokens'));
+    snap.forEach(d => {
+      const dData = d.data();
+      if (dData.userId === userId && dData.token) {
+        tokens.add(dData.token);
+      }
+    });
+  } catch {
+    // Non-fatal
+  }
+
+  if (tokens.size === 0) {
+    return { sent: 0 };
+  }
+
+  let sent = 0;
+  const fcmKey = process.env.FCM_SERVER_KEY || 'AIzaSyA0ZW1Xda-doqe5QxINvfvyFmbxMuBwKkM';
+
+  for (const token of tokens) {
+    try {
+      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `key=${fcmKey}`
+        },
+        body: JSON.stringify({
+          to: token,
+          notification: {
+            title,
+            body,
+            icon: '/logo.png',
+            sound: 'default'
+          },
+          data: {
+            ...data,
+            title,
+            body
+          }
+        })
+      });
+      if (res.ok) {
+        sent++;
+      }
+    } catch (e) {
+      console.warn('[FCM SEND ERROR]:', e);
+    }
+  }
+
+  return { sent };
+}
 
 /**
  * Registers or updates a user's active medicine schedule in Firestore and memory.
@@ -218,6 +311,21 @@ export async function runBackgroundExpiryCheck(): Promise<{ checked: number; sen
           
           await sendEmailDirectServer(schedule.email, subject, html, text);
           totalSent++;
+
+          // Also dispatch Firebase Cloud Message / Push Notification to registered browser & mobile devices
+          try {
+            const pushRes = await sendPushNotificationToUser(
+              schedule.userId,
+              subject,
+              text,
+              { medicineId: m.id, stage: stageToSend, name: m.name, expirationDate: m.expirationDate }
+            );
+            if (pushRes.sent > 0) {
+              console.log(`[BACKGROUND EXPIRY CRON] Sent push notification to ${pushRes.sent} device(s) for user ${schedule.userId}`);
+            }
+          } catch (pushErr) {
+            console.warn('[BACKGROUND EXPIRY CRON] Push notification warning:', pushErr);
+          }
 
           // Finalize permanently sent in Firestore
           await setDoc(alertRef, {

@@ -18,6 +18,13 @@ import {
   ref, uploadBytes, getDownloadURL, deleteObject, serverTimestamp, uploadBytesResumable
 } from './firebase';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { 
+  isBrowserNotificationSupported, 
+  requestBrowserNotificationPermission, 
+  checkAndTriggerBrowserExpiryNotifications, 
+  showBrowserNotification,
+  registerBrowserPushTokenWithServer 
+} from './services/browserNotificationService';
 
 import { DoctorLogo } from './components/DoctorLogo';
 import { MedicineDetailsPage } from './components/MedicineDetailsPage';
@@ -374,66 +381,11 @@ export default function App() {
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
 
-      // 1. Browser Notification Alert
-      const hasNotification = typeof window !== 'undefined' && 'Notification' in window && typeof Notification !== 'undefined';
-      if (browserNotificationsEnabled && hasNotification && Notification.permission === 'granted') {
-        const expiringMeds = medicines.filter(m => {
-          if (m.isDeleted) return false;
-          const [year, month, day] = m.expirationDate.split('-').map(Number);
-          const expiry = new Date();
-          if (year && month && day) {
-            expiry.setFullYear(year, month - 1, day);
-          } else {
-            return false;
-          }
-          expiry.setHours(0, 0, 0, 0);
-          
-          const diffTime = expiry.getTime() - today.getTime();
-          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-          const effectiveThreshold = alertThreshold === 90 ? 92 : alertThreshold;
-          
-          return diffDays === effectiveThreshold || diffDays === 10 || diffDays === 0;
+      // 1. Browser & Chrome Notification Alert
+      if (browserNotificationsEnabled && isBrowserNotificationSupported()) {
+        checkAndTriggerBrowserExpiryNotifications(medicines, alertThreshold).catch(err => {
+          console.warn('Browser notification check warning:', err);
         });
-
-        if (expiringMeds.length > 0) {
-          let lastNotifiedDate = null;
-          try {
-            lastNotifiedDate = localStorage.getItem('dawalens_ai_last_notified');
-          } catch (e) {
-            console.warn('LocalStorage access denied:', e);
-          }
-          
-          if (lastNotifiedDate !== todayStr) {
-            const medNames = expiringMeds.map(m => m.name).join(', ');
-            try {
-              if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
-                navigator.serviceWorker.ready.then(reg => {
-                  reg.showNotification('DawaLens AI Alert', {
-                    body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
-                    icon: '/favicon.ico'
-                  });
-                }).catch(() => {
-                  try {
-                    new Notification('DawaLens AI Alert', {
-                      body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
-                      icon: '/favicon.ico'
-                    });
-                  } catch (e) {
-                    // Mobile chrome ignores new Notification()
-                  }
-                });
-              } else {
-                new Notification('DawaLens AI Alert', {
-                  body: `You have ${expiringMeds.length} medicine(s) expiring soon: ${medNames}`,
-                  icon: '/favicon.ico'
-                });
-              }
-              localStorage.setItem('dawalens_ai_last_notified', todayStr);
-            } catch (e) {
-              console.warn('Failed to trigger notification:', e);
-            }
-          }
-        }
       }
 
       // 2. Synchronize active medicine expiry schedule with the backend server.
@@ -2458,24 +2410,54 @@ export default function App() {
             browserNotificationsEnabled={browserNotificationsEnabled}
             setBrowserNotificationsEnabled={async (val) => {
               if (val) {
-                if (!('Notification' in window)) {
+                if (!isBrowserNotificationSupported()) {
                   setAlertMessage('Notifications are not supported in this browser.');
                   return;
                 }
-                try {
-                  const permission = await Notification.requestPermission();
-                  if (permission === 'granted') {
-                    handleUpdateConfig({ browserNotificationsEnabled: true });
-                  } else {
-                    setAlertMessage('Please allow notifications in your browser settings to use this feature.');
-                    handleUpdateConfig({ browserNotificationsEnabled: false });
+                const granted = await requestBrowserNotificationPermission();
+                if (granted) {
+                  handleUpdateConfig({ browserNotificationsEnabled: true });
+                  checkAndTriggerBrowserExpiryNotifications(medicines, alertThreshold).catch(() => {});
+                  if (user?.uid) {
+                    registerBrowserPushTokenWithServer(user.uid, `web_${user.uid}`).catch(() => {});
                   }
-                } catch (e) {
-                  console.error('Notification permission error:', e);
-                  setAlertMessage('An error occurred while requesting notification permission. It might be blocked by your browser or iframe settings.');
+                } else {
+                  setAlertMessage('Please allow notifications in your browser/Chrome settings to receive expiry alerts.');
+                  handleUpdateConfig({ browserNotificationsEnabled: false });
                 }
               } else {
                 handleUpdateConfig({ browserNotificationsEnabled: false });
+              }
+            }}
+            onTestNotification={async () => {
+              if (!isBrowserNotificationSupported()) {
+                setAlertMessage('Notifications are not supported in this browser.');
+                return;
+              }
+              if (Notification.permission !== 'granted') {
+                const granted = await requestBrowserNotificationPermission();
+                if (!granted) {
+                  setAlertMessage('Notification permission not granted. Please allow notifications in Chrome.');
+                  return;
+                }
+              }
+              const success = await showBrowserNotification('🚨 DawaLens AI Test Alert', {
+                body: 'Chrome notifications are active and working! You will receive automated medicine expiry alerts.',
+                tag: 'dawalens-test-direct'
+              });
+              if (!success) {
+                setAlertMessage('Could not display notification. Please check browser permission settings.');
+              }
+              if (user?.uid) {
+                fetch('/api/notifications/send-test', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.uid,
+                    title: '🚨 DawaLens AI Server Alert',
+                    body: 'Server push notification reached your browser successfully!'
+                  })
+                }).catch(() => {});
               }
             }}
             photoURL={user?.photoURL || undefined}

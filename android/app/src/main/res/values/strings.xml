@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DawaLens AI: Medicine Tracker</string>
+    <string name="title_activity_main">DawaLens AI: Medicine Tracker</string>
+    <string name="package_name">in.dawalens.app</string>
+    <string name="custom_url_scheme">in.dawalens.app</string>
+</resources>
