@@ -3,7 +3,7 @@ import { Medicine, MedicineForm } from '../types';
 import { 
   Calendar, Package, AlertTriangle, CheckCircle2, Clock, Trash2, 
   CheckSquare, Square, Minus, Heart, Layers, Edit3, XCircle, AlertCircle, 
-  ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw
+  ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MEDICINE_FORM_ICONS, getCategoryStyle, isCategoryMatch } from '../constants';
@@ -73,6 +73,14 @@ export const MedicineList: React.FC<MedicineListProps> = ({
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(new Set());
+  const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('dawalens_hide_organize_banner') === 'true' ||
+             localStorage.getItem('dawalens_medicines_organized') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const toggleGroupExpanded = (groupKey: string) => {
     setExpandedGroupKeys(prev => {
@@ -291,11 +299,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return map;
   }, [medicines]);
 
-  // Count of medicines needing organization (category or dosage form)
+  // Count of medicines needing organization (medicines missing category or explicitly uncategorized)
   const uncategorizedCount = React.useMemo(() => {
     return medicines.filter(m => !m.isDeleted && (
-      (!m.category || m.category === 'Other') ||
-      (!m.form || m.form === 'other')
+      !m.category ||
+      m.category.trim() === '' ||
+      m.category.toLowerCase() === 'uncategorized'
     )).length;
   }, [medicines]);
 
@@ -771,14 +780,14 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       </AnimatePresence>
 
       {/* Auto-Organize with AI Pharmacist Banner */}
-      {uncategorizedCount > 0 && onAutoCategorize && (
-        <div className="mx-1 mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/70 to-emerald-50 border border-blue-100/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-700 flex items-center justify-center shrink-0">
+      {!isBannerDismissed && uncategorizedCount > 0 && onAutoCategorize && (
+        <div className="mx-1 mb-3 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/70 to-emerald-50 border border-blue-100/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative">
+          <div className="flex items-start sm:items-center gap-2.5 pr-6 sm:pr-0">
+            <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-700 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
               <Sparkles size={16} />
             </div>
             <div>
-              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                 <span>Organize with AI Pharmacist</span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                   {uncategorizedCount} to organize
@@ -789,24 +798,52 @@ export const MedicineList: React.FC<MedicineListProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onAutoCategorize}
-            disabled={isCategorizing}
-            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
-          >
-            {isCategorizing ? (
-              <>
-                <RefreshCw size={13} className="animate-spin" />
-                <span>Organizing...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={13} />
-                <span>Organize with AI Pharmacist</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={async () => {
+                triggerMediumHaptic();
+                try {
+                  await onAutoCategorize();
+                  setIsBannerDismissed(true);
+                  try {
+                    sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
+                  } catch {}
+                } catch (e) {
+                  console.error("Auto organize error:", e);
+                }
+              }}
+              disabled={isCategorizing}
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all shrink-0 disabled:opacity-50 touch-manipulation cursor-pointer"
+            >
+              {isCategorizing ? (
+                <>
+                  <RefreshCw size={13} className="animate-spin" />
+                  <span>Organizing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} />
+                  <span>Organize with AI Pharmacist</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                triggerLightHaptic();
+                setIsBannerDismissed(true);
+                try {
+                  sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
+                } catch {}
+              }}
+              aria-label="Dismiss organize banner"
+              title="Dismiss banner"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-blue-100/50 transition-colors cursor-pointer"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
       )}
 

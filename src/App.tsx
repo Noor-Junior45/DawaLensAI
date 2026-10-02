@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight, ChevronDown, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
-import { Medicine } from './types';
+import { Medicine, MedicineForm as MedicineFormType } from './types';
 import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getCanonicalCategory, getMedicineCategory, calculateDiffDays } from './constants';
 import { CameraCapture } from './components/CameraCapture';
 import { MedicineForm } from './components/MedicineForm';
@@ -1200,10 +1200,10 @@ export default function App() {
   };
 
   const handleAutoCategorize = async () => {
-    if (!user || isCategorizing) return;
+    if (isCategorizing) return;
     const activeMeds = medicines.filter(m => !m.isDeleted);
     if (activeMeds.length === 0) {
-      setAlertMessage("No active medicines found to categorize.");
+      setAlertMessage("No active medicines found to organize.");
       return;
     }
 
@@ -1219,30 +1219,61 @@ export default function App() {
 
       const categorizedList = await categorizeMedicinesWithAI(medsPayload);
       if (categorizedList && categorizedList.length > 0) {
-        const batch = writeBatch(db);
-        let updatedCount = 0;
+        const updatesMap = new Map(categorizedList.map(item => [item.id, item]));
 
-        categorizedList.forEach(item => {
-          if (item && item.id) {
-            const medRef = doc(db, 'medicines', item.id);
-            const updates: any = {
-              updatedAt: serverTimestamp()
-            };
-            if (item.category) {
-              updates.category = item.category;
-            }
-            if (item.form) {
-              updates.form = item.form;
-            }
-            batch.update(medRef, updates);
-            updatedCount++;
-          }
+        // 1. Optimistic React state update so UI re-renders with new categories instantly in Android & Web
+        setMedicines(prev => prev.map(m => {
+          const update = updatesMap.get(m.id);
+          if (!update) return m;
+          return {
+            ...m,
+            category: update.category || m.category || 'General Care',
+            form: (update.form as MedicineFormType) || m.form || 'tablet',
+            updatedAt: Date.now()
+          };
+        }));
+
+        setSelectedDetailsMedicine(prev => {
+          if (!prev) return prev;
+          const update = updatesMap.get(prev.id);
+          if (!update) return prev;
+          return {
+            ...prev,
+            category: update.category || prev.category || 'General Care',
+            form: (update.form as MedicineFormType) || prev.form || 'tablet'
+          };
         });
 
-        await batch.commit();
+        // 2. Hide organize banner immediately
+        try {
+          sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
+          localStorage.setItem('dawalens_medicines_organized', 'true');
+        } catch {}
+
+        // 3. Persist to Firestore if user logged in
+        if (user) {
+          try {
+            const batch = writeBatch(db);
+            categorizedList.forEach(item => {
+              if (item && item.id) {
+                const medRef = doc(db, 'medicines', item.id);
+                const updates: any = {
+                  updatedAt: serverTimestamp()
+                };
+                if (item.category) updates.category = item.category;
+                if (item.form) updates.form = item.form;
+                batch.update(medRef, updates);
+              }
+            });
+            await batch.commit();
+          } catch (dbErr) {
+            console.warn("Firestore batch sync deferred/offline:", dbErr);
+          }
+        }
+
         triggerSuccessHaptic();
-        setAlertMessage(`Successfully organized ${updatedCount} medicines with AI Pharmacist!`);
-        trackEvent('ai_categorize_batch', { count: updatedCount });
+        setAlertMessage(`Successfully organized ${categorizedList.length} medicines with AI Pharmacist!`);
+        trackEvent('ai_categorize_batch', { count: categorizedList.length });
       } else {
         setAlertMessage("Could not organize medicines at this time.");
       }
