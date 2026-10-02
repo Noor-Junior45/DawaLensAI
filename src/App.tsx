@@ -45,6 +45,7 @@ import { setCrashReportingUser } from './services/crashReportingService';
 import { initNativePerformance, setNativeBackButtonHandler } from './services/nativePerformanceService';
 import { initNativeNotifications, scheduleNativeMedicineAlerts } from './services/nativeNotificationService';
 import { useEdgeSwipeBack, usePullToRefresh } from './utils/mobileGestures';
+import { getApiUrl } from './utils/apiConfig';
 
 type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | null;
 
@@ -2574,7 +2575,7 @@ export default function App() {
                 setAlertMessage('Could not display notification. Please check browser permission settings.');
               }
               if (user?.uid) {
-                fetch('/api/notifications/send-test', {
+                fetch(getApiUrl('/api/notifications/send-test'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({

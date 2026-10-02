@@ -2,7 +2,7 @@ import { MedicineForm, ChatMessage } from "../types";
 import { GoogleGenAI } from "@google/genai";
 import { performOnDeviceOcr, OcrPreExtractionHints } from "./ocrService";
 import { runImageCnnClassifier, CnnVisualFeatures } from "./imageCnnService";
-import { getDirectRenderUrl } from "../utils/apiConfig";
+import { getApiUrl, getDirectRenderUrl } from "../utils/apiConfig";
 import { 
   generateOfflineSlmConsultation, 
   extractMedicineOfflineSlm,
@@ -368,14 +368,19 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
   });
 
   try {
-    let response = await fetch('/api/ai/extract', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: extractPayload
-    });
+    let response: Response | null = null;
+    try {
+      response = await fetch(getApiUrl('/api/ai/extract'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: extractPayload
+      });
+    } catch (e) {
+      console.warn("Primary extract fetch failed:", e);
+    }
     
-    // Direct Render URL fallback if Vercel proxy rewrite is not reachable
-    if (!response.ok || response.status === 404) {
+    // Direct Render URL fallback if Vercel proxy rewrite is not reachable or initial fetch threw
+    if (!response || !response.ok || response.status === 404) {
       try {
         response = await fetch(getDirectRenderUrl('/api/ai/extract'), {
           method: 'POST',
@@ -387,7 +392,7 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
       }
     }
 
-    if (response.ok) {
+    if (response && response.ok) {
       const data = await response.json();
       if (data.success && data.medicine) {
         return data;
@@ -445,13 +450,18 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
 export async function checkDrugInteractions(medicines: { name: string; dosage: string }[]): Promise<InteractionResult | null> {
   const payload = JSON.stringify({ medicines });
   try {
-    let response = await fetch('/api/ai/interactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload
-    });
+    let response: Response | null = null;
+    try {
+      response = await fetch(getApiUrl('/api/ai/interactions'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      });
+    } catch (e) {
+      console.warn("Primary interactions fetch failed:", e);
+    }
 
-    if (!response.ok || response.status === 404) {
+    if (!response || !response.ok || response.status === 404) {
       try {
         response = await fetch(getDirectRenderUrl('/api/ai/interactions'), {
           method: 'POST',
@@ -461,9 +471,9 @@ export async function checkDrugInteractions(medicines: { name: string; dosage: s
       } catch (e) {}
     }
     
-    if (!response.ok) {
-      const errText = await response.text();
-      if (errText.trim().startsWith('<') || response.status === 404) {
+    if (!response || !response.ok) {
+      const errText = response ? await response.text() : '';
+      if (!response || errText.trim().startsWith('<') || response.status === 404) {
         console.warn("Server API returned HTML or 404. Falling back to client-side interaction check...");
         return await checkDrugInteractionsClient(medicines);
       }
@@ -492,12 +502,17 @@ export async function checkDrugInteractions(medicines: { name: string; dosage: s
   }
 }
 
+export interface AIChatResponse {
+  content: string;
+  provider: 'gemini' | 'slm';
+}
+
 export async function chatWithAI(
   messages: ChatMessage[], 
   provider: 'gemini' | 'slm' = 'gemini', 
   userId?: string, 
   medicines?: any[]
-): Promise<string> {
+): Promise<AIChatResponse> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
 
   // 1. Load user-trained SLM knowledge (allergies, chronic ailments, previously learned Gemini tasks)
@@ -507,19 +522,19 @@ export async function chatWithAI(
   const isNormal = isNormalChat(lastUserMsg, medicines || [], userKnowledge);
 
   if (isNormal) {
-    console.log('[SLM ROUTER ACTIVE] Normal pharmacist chat turn. Answering directly with On-Device SLM...');
+    console.log('[SLM ROUTER ACTIVE] Normal pharmacist chat turn. Answering directly with On-Device SLM (Ross)...');
     const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
 
     // Train SLM in background on user data to store learned patterns in database
     if (userId) {
       trainSlmOnUserData(userId, lastUserMsg, slmResponse).catch(err => console.warn(err));
     }
-    return slmResponse;
+    return { content: slmResponse, provider: 'slm' };
   }
 
   // 3. Complex Question (Hospital, clinical triage, or specialized pharmacy related):
-  // Leverage Gemini API, enriched with all user data stored by the SLM for deep personalized understanding!
-  console.log('[GEMINI ROUTER ACTIVE] Complex hospital/pharmacy question detected. Escalate to Gemini API with SLM learned context...');
+  // Leverage Gemini API (Jack), enriched with all user data stored by the SLM for deep personalized understanding!
+  console.log('[GEMINI ROUTER ACTIVE] Complex hospital/pharmacy question detected. Escalate to Gemini API (Jack) with SLM learned context...');
   
   const slmContext = userId ? await getLearnedSlmContextForGemini(userId) : '';
   const enrichedMessages = messages.map((m, idx) => {
@@ -533,8 +548,9 @@ export async function chatWithAI(
   try {
     geminiResponse = await chatWithGemini(enrichedMessages, userId, medicines);
   } catch (geminiErr) {
-    console.warn('Gemini complex question failed, falling back to SLM model:', geminiErr);
-    return generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
+    console.warn('Gemini complex question failed, falling back to SLM model (Ross):', geminiErr);
+    const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
+    return { content: slmFallback, provider: 'slm' };
   }
 
   // 4. Distill what work Gemini did so the SLM model learns it.
@@ -544,7 +560,7 @@ export async function chatWithAI(
     trainSlmOnUserData(userId, lastUserMsg, geminiResponse).catch(err => console.warn(err));
   }
 
-  return geminiResponse;
+  return { content: geminiResponse, provider: 'gemini' };
 }
 
 export async function chatWithGemini(messages: ChatMessage[], userId?: string, medicines?: any[]): Promise<string> {
@@ -552,14 +568,19 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
   const chatPayload = JSON.stringify({ messages, userId, medicines });
 
   try {
-    let response = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: chatPayload
-    });
+    let response: Response | null = null;
+    try {
+      response = await fetch(getApiUrl('/api/ai/chat'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: chatPayload
+      });
+    } catch (e) {
+      console.warn("Primary chat fetch failed:", e);
+    }
 
     // Direct Render URL fallback if Vercel proxy rewrite is unreachable or 404
-    if (!response.ok || response.status === 404) {
+    if (!response || !response.ok || response.status === 404) {
       try {
         const directResp = await fetch(getDirectRenderUrl('/api/ai/chat'), {
           method: 'POST',
@@ -574,9 +595,9 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
       }
     }
     
-    if (!response.ok) {
-      const errText = await response.text();
-      if (errText.trim().startsWith('<') || response.status === 404) {
+    if (!response || !response.ok) {
+      const errText = response ? await response.text() : '';
+      if (!response || errText.trim().startsWith('<') || response.status === 404) {
         console.warn("Server API returned HTML or 404. Falling back to client-side chat...");
         return await chatWithGeminiClient(messages);
       }
@@ -628,13 +649,18 @@ export async function categorizeMedicinesWithAI(
   const catPayload = JSON.stringify({ medicines });
 
   try {
-    let response = await fetch('/api/ai/categorize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: catPayload
-    });
+    let response: Response | null = null;
+    try {
+      response = await fetch(getApiUrl('/api/ai/categorize'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: catPayload
+      });
+    } catch (e) {
+      console.warn("Primary categorize fetch failed:", e);
+    }
 
-    if (!response.ok) {
+    if (!response || !response.ok) {
       try {
         const directResp = await fetch(getDirectRenderUrl('/api/ai/categorize'), {
           method: 'POST',
@@ -649,7 +675,7 @@ export async function categorizeMedicinesWithAI(
       }
     }
 
-    if (response.ok) {
+    if (response && response.ok) {
       const data = await response.json();
       if (data.success && Array.isArray(data.categorized)) {
         return data.categorized;

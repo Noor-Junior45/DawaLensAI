@@ -1,4 +1,5 @@
 import { Medicine } from '../types';
+import { getApiUrl } from '../utils/apiConfig';
 
 /**
  * Service to manage Chrome and browser native desktop/mobile notifications for medication expiries.
@@ -189,7 +190,7 @@ export async function checkAndTriggerBrowserExpiryNotifications(
  */
 export async function registerBrowserPushTokenWithServer(userId: string, token: string): Promise<boolean> {
   try {
-    const res = await fetch('/api/notifications/register-token', {
+    const res = await fetch(getApiUrl('/api/notifications/register-token'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

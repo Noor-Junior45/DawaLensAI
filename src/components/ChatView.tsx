@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
-  X, Send, Bot, User, Sparkles, Loader2, Plus, 
+  X, Send, Bot, User, Loader2, Plus, 
   MessageSquare, Calendar, Clock, 
   History, Search, Trash2, ShieldCheck, Stethoscope,
   AlertCircle, Pill, Info, Mail, ArrowLeft, Check, CheckCheck,
@@ -19,7 +19,7 @@ import ReactMarkdown from 'react-markdown';
 import { DoctorLogo } from './DoctorLogo';
 import { sendEmailAlert, getConsultationReportEmailHTML } from '../services/emailService';
 import { trackEvent } from '../utils/analytics';
-import { getDirectRenderUrl } from '../utils/apiConfig';
+import { getApiUrl, getDirectRenderUrl } from '../utils/apiConfig';
 
 interface ChatViewProps {
   onClose: () => void;
@@ -45,6 +45,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const [disclaimerTimeLeft, setDisclaimerTimeLeft] = useState(30);
   const [activeProvider] = useState<AIProvider>('gemini');
   const [isOnline, setIsOnline] = useState(true);
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(true);
+  const [activeAiName, setActiveAiName] = useState<'Jack' | 'Ross'>('Ross');
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [keyStatus, setKeyStatus] = useState<{ hasKey: boolean; checkedAt?: string; error?: string } | null>(null);
 
@@ -52,10 +54,25 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
+    const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    if (lastAssistantMsg) {
+      setActiveAiName(lastAssistantMsg.provider === 'gemini' ? 'Jack' : 'Ross');
+    } else {
+      setActiveAiName('Ross');
+    }
+  }, [messages]);
+
+  useEffect(() => {
     const checkKeyStatus = async () => {
       try {
-        let res = await fetch('/api/ai/key-status');
-        if (!res.ok) {
+        let res: Response | null = null;
+        try {
+          res = await fetch(getApiUrl('/api/ai/key-status'));
+        } catch (fetchErr) {
+          console.warn("Primary key-status endpoint check failed, attempting direct backend URL:", fetchErr);
+        }
+
+        if (!res || !res.ok) {
           try {
             const directRes = await fetch(getDirectRenderUrl('/api/ai/key-status'));
             if (directRes.ok) {
@@ -65,19 +82,32 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
             console.warn("Direct key-status check failed:", directErr);
           }
         }
-        const data = await res.json();
-        setKeyStatus(data);
-        if (!data.hasKey) {
-          setIsOnline(false);
+
+        if (res && res.ok) {
+          const data = await res.json();
+          setKeyStatus(data);
+          const keyFound = data.hasKey === true;
+          setHasGeminiKey(keyFound);
+          setIsOnline(keyFound);
+        } else {
+          // If server is warming up or unreachable, verify client key
+          const clientKeyPresent = !isProviderKeyMissing('gemini');
+          setKeyStatus({ 
+            hasKey: clientKeyPresent, 
+            checkedAt: new Date().toLocaleTimeString() 
+          });
+          setHasGeminiKey(clientKeyPresent);
+          setIsOnline(clientKeyPresent);
         }
       } catch (err) {
-        console.error("Failed to check key status:", err);
+        console.warn("Key status verification skipped:", err);
+        const clientKeyPresent = !isProviderKeyMissing('gemini');
         setKeyStatus({ 
-          hasKey: false, 
-          checkedAt: new Date().toLocaleTimeString(), 
-          error: "Failed to connect to server status endpoint." 
+          hasKey: clientKeyPresent, 
+          checkedAt: new Date().toLocaleTimeString() 
         });
-        setIsOnline(false);
+        setHasGeminiKey(clientKeyPresent);
+        setIsOnline(clientKeyPresent);
       }
     };
     checkKeyStatus();
@@ -85,8 +115,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
   useEffect(() => {
     if (keyStatus && !keyStatus.hasKey) {
+      setHasGeminiKey(false);
       setIsOnline(false);
-    } else {
+    } else if (keyStatus && keyStatus.hasKey) {
+      setHasGeminiKey(true);
       setIsOnline(true);
     }
   }, [keyStatus]);
@@ -188,23 +220,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         timestamp: m.timestamp
       }));
 
-      const medContext = `[Patient Profile & Storage Context:
-      - Inventory Check: Use this list to intelligently suggest medicines the user ALREADY has in their vault.
-      - User's Stored Medicines: ${medicines.map(m => `${m.name} (${m.dosage}, ${m.form})`).join(", ")}
-      - Date: ${new Date().toLocaleDateString()}
-      - Task: If the user asks for a remedy or recommendation, search their 'User's Stored Medicines' first. Tell them exactly what they have that might help.]\n\n`;
-      
-      const lastMsgWithContext: ChatMessage = { 
-        role: 'user', 
-        content: messages.length === 0 ? medContext + textToSend : textToSend,
-        timestamp: Date.now()
-      };
-      
-      const promptHistory = historyContext.slice(0, -1).concat(lastMsgWithContext);
+      const aiResult = await chatWithAI(historyContext, activeProvider, user.uid, medicines);
+      const aiResponse = typeof aiResult === 'string' ? aiResult : aiResult.content;
+      const responseProvider: AIProvider = typeof aiResult === 'object' && aiResult.provider ? aiResult.provider : activeProvider;
 
-      const aiResponse = await chatWithAI(promptHistory, activeProvider, user.uid, medicines);
-      setIsOnline(true);
-      trackEvent('chat_with_ai', { length: textToSend.length });
+      setActiveAiName(responseProvider === 'gemini' ? 'Jack' : 'Ross');
+      if (responseProvider === 'gemini') {
+        setHasGeminiKey(true);
+      }
+      trackEvent('chat_with_ai', { length: textToSend.length, provider: responseProvider });
 
       const aiMsgId = crypto.randomUUID();
       const aiMsg: ChatMessage = {
@@ -212,16 +236,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         role: 'assistant',
         content: aiResponse,
         timestamp: Date.now(),
-        provider: activeProvider
+        provider: responseProvider
       };
 
       await setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg);
       await updateDoc(sessionRef, { lastMessageAt: Date.now() });
     } catch (error: any) {
       console.error("Chat Error:", error);
+      setActiveAiName('Ross');
       
       const errorMessage = error.message || String(error);
       const errLower = errorMessage.toLowerCase();
+      if (errLower.includes('key') || errLower.includes('api_key') || errLower.includes('unauthorized') || errLower.includes('401') || errLower.includes('403')) {
+        setHasGeminiKey(false);
+      }
       const isSpendCapExceeded = 
         errLower.includes("spending cap") || 
         errLower.includes("resource_exhausted") || 
@@ -347,6 +375,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
   };
 
+  const cleanMessageDisplay = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaLens),?\s*Your\s*On-Device\s*SLM\s*Pharmacist\s*[🧠🌿🩺💊]*/gi, '')
+      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaLens)[^\n`]*/gi, '')
+      .replace(/\s*Dr\.?\s*(?:Ross|Rose|DawaLens),?\s*your\s*on-device\s*slm\s*pharmacist[^\n`]*/gi, '')
+      .trim();
+  };
+
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   return (
@@ -381,16 +418,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
             
             <div className="flex flex-col">
               <span className="font-extrabold text-white text-base tracking-tight leading-tight">AI Pharmacist</span>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-[#e0e1f9] font-black uppercase tracking-widest flex items-center gap-1.5 mt-0.5 leading-none">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#34d399]' : 'bg-[#ef4444]'}`} />
-                  {isOnline ? 'ONLINE' : 'OFFLINE'}
+              <div 
+                className="flex items-center gap-1.5 mt-0.5"
+                title={hasGeminiKey ? "Gemini API Key: Present" : "Gemini API Key: Missing"}
+              >
+                <span 
+                  className={`inline-block w-2 h-2 rounded-full transition-all duration-300 ${
+                    hasGeminiKey 
+                      ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]' 
+                      : 'bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                  }`} 
+                />
+                <span className="text-[11px] text-[#e0e1f9] font-black uppercase tracking-wider leading-none">
+                  {activeAiName}
                 </span>
-                {keyStatus && !keyStatus.hasKey && (
-                  <span className="text-[7px] text-red-100 font-bold leading-none mt-0.5 tracking-wider uppercase">
-                    ⚠️ Keys Not Found Since {keyStatus.checkedAt || new Date().toLocaleTimeString()}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -489,6 +530,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
                       {/* Flex column for Chat Bubble and action buttons below */}
                       <div className="flex flex-col max-w-[80%] md:max-w-[72%]">
+                        {msg.role === 'assistant' && (
+                          <div className="flex items-center mb-1 px-1">
+                            <span className="text-[10px] font-black tracking-wider uppercase text-slate-500">
+                              {msg.provider === 'slm' ? 'Ross' : 'Jack'}
+                            </span>
+                          </div>
+                        )}
                         {/* Chat Bubble */}
                         <div className={`relative px-4 py-3 shadow-3xs flex flex-col ${
                           msg.role === 'user' 
@@ -507,7 +555,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                                 )
                               }}
                             >
-                              {msg.content}
+                              {cleanMessageDisplay(msg.content)}
                             </ReactMarkdown>
                           </div>
                           
@@ -577,18 +625,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           </div>
 
           {/* Input Bar Section */}
-          <div className="bg-[#f0f2f5] border-t border-slate-200/80 shrink-0 safe-bottom z-20 pb-4">
+          <div className="bg-[#f0f2f5] border-t border-slate-200/80 shrink-0 safe-bottom z-20 py-2.5 pb-4">
             <div className="w-full">
-              {/* Status Indicator */}
-              <div className="px-5 pt-2 pb-1 flex justify-between items-center text-[11px] text-slate-500 font-bold tracking-wide select-none">
-                <span className="flex items-center gap-1 text-[#0f9d58]">
-                  <Sparkles size={11} className="animate-pulse" />
-                  HIGH THINKING AI ACTIVE
-                </span>
-              </div>
-
               {/* Input Row */}
-              <div className="px-4 pt-1 flex items-center gap-3">
+              <div className="px-4 flex items-center gap-3">
                 {/* Main Input Pill */}
                 <div className="flex-1">
                   <input

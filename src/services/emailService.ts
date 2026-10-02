@@ -1,6 +1,6 @@
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getDirectRenderUrl } from '../utils/apiConfig';
+import { getApiUrl, getDirectRenderUrl } from '../utils/apiConfig';
 
 export interface EmailParams {
   to: string;
@@ -48,13 +48,16 @@ export async function syncExpiryScheduleWithServer(
   });
 
   try {
-    let res = await fetch('/api/sync-expiry-schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload
-    });
+    let res: Response | null = null;
+    try {
+      res = await fetch(getApiUrl('/api/sync-expiry-schedule'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      });
+    } catch (e) {}
 
-    if (!res.ok || res.status === 404) {
+    if (!res || !res.ok || res.status === 404) {
       try {
         await fetch(getDirectRenderUrl('/api/sync-expiry-schedule'), {
           method: 'POST',
@@ -75,15 +78,18 @@ export async function syncExpiryScheduleWithServer(
 export async function sendEmailAlert(params: EmailParams): Promise<{ success: boolean; simulated?: boolean; message?: string }> {
   try {
     // 1. Call our custom Express nodemailer API (proxied to Render or direct Render)
-    let response = await fetch('/api/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(params)
-    });
+    let response: Response | null = null;
+    try {
+      response = await fetch(getApiUrl('/api/send-email'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+      });
+    } catch (e) {}
 
-    if (!response.ok || response.status === 404) {
+    if (!response || !response.ok || response.status === 404) {
       try {
         response = await fetch(getDirectRenderUrl('/api/send-email'), {
           method: 'POST',
