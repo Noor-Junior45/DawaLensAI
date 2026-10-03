@@ -4,6 +4,7 @@ import {
   doc, 
   getDoc, 
   setDoc, 
+  deleteDoc,
   collection, 
   getDocs 
 } from 'firebase/firestore';
@@ -369,4 +370,33 @@ export function startExpiryCron(): void {
   }, ONE_HOUR);
 
   console.log("[BACKGROUND EXPIRY CRON] Automated backend worker running. Interval: Every 1 hour. Concurrency locking & atomic deduplication active.");
+}
+
+/**
+ * Permanently removes user's expiry schedule and push notification tokens from server memory & Firestore.
+ * Executed during account deletion to ensure zero lingering data.
+ */
+export async function purgeUserServerData(userId: string): Promise<void> {
+  memorySchedules.delete(userId);
+  userPushTokens.delete(userId);
+
+  try {
+    const schedRef = doc(db, 'server_expiry_schedules', userId);
+    await deleteDoc(schedRef);
+  } catch (err) {
+    console.warn(`[PURGE] Notice when deleting server_expiry_schedules doc for ${userId}:`, err);
+  }
+
+  try {
+    const snap = await getDocs(collection(db, 'user_push_tokens'));
+    const toDelete: Promise<any>[] = [];
+    snap.forEach(d => {
+      if (d.data().userId === userId) {
+        toDelete.push(deleteDoc(d.ref));
+      }
+    });
+    await Promise.all(toDelete);
+  } catch (err) {
+    console.warn(`[PURGE] Notice when deleting user_push_tokens for ${userId}:`, err);
+  }
 }

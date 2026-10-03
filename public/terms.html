@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terms of Service - DawaLens AI</title>
-  <meta name="description" content="Terms of Service and Clinical Usage Agreement for DawaLens AI.">
+  <title>Terms of Service &amp; Clinical Usage Agreement - DawaLens AI</title>
+  <meta name="description" content="Terms of Service, Medical Disclaimers, and Clinical Usage Agreement for DawaLens AI. Ref: DAWALENS-TOS-2026-V2.5.">
   <style>
     :root {
       --primary: #0f9d58;
@@ -15,6 +15,8 @@
       --border: #dadce0;
       --bg-page: #f8f9fa;
       --bg-card: #ffffff;
+      --danger: #d93025;
+      --danger-bg: #fce8e6;
     }
     * { box-sizing: border-box; }
     body {
@@ -28,13 +30,13 @@
     header {
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
-      padding: 24px 20px;
+      padding: 20px;
       position: sticky;
       top: 0;
       z-index: 10;
     }
     .header-inner {
-      max-width: 860px;
+      max-width: 900px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -59,21 +61,21 @@
     }
     .nav-links a:hover { color: var(--primary); }
     main {
-      max-width: 860px;
+      max-width: 900px;
       margin: 32px auto;
       padding: 0 20px 60px;
     }
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 36px 32px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     h1 {
       font-size: 28px;
       font-weight: 800;
-      color: var(--primary);
+      color: #1a1a1a;
       margin-top: 0;
       margin-bottom: 8px;
     }
@@ -81,10 +83,17 @@
       font-size: 20px;
       font-weight: 700;
       color: #202124;
-      margin-top: 32px;
+      margin-top: 36px;
       margin-bottom: 12px;
       border-bottom: 2px solid var(--primary-light);
       padding-bottom: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #202124;
+      margin-top: 20px;
+      margin-bottom: 8px;
     }
     p, li {
       font-size: 15px;
@@ -97,6 +106,14 @@
     }
     li { margin-bottom: 8px; }
     strong { color: #202124; }
+    code {
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      background: #f1f3f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #1a1a1a;
+    }
     .badge {
       display: inline-block;
       background: var(--primary-light);
@@ -108,15 +125,47 @@
       margin-bottom: 12px;
     }
     .alert-box {
-      background: #fce8e6;
-      border-left: 4px solid #d93025;
+      background: var(--danger-bg);
+      border-left: 5px solid var(--danger);
       padding: 18px 22px;
-      border-radius: 0 8px 8px 0;
+      border-radius: 0 10px 10px 0;
       margin: 20px 0;
-      color: #a50e0e;
     }
-    .alert-box p { margin: 0; color: #a50e0e; font-size: 14px; font-weight: 500; }
-    .alert-box strong { color: #8a0c0c; font-weight: 800; }
+    .alert-box p { margin: 0; color: #8a0c0c; font-size: 14px; }
+    .alert-box strong { color: #5c0707; font-weight: 800; }
+    .info-box {
+      background: #f8f9fa;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 18px 0;
+    }
+    .caps-box {
+      background: #fff8e1;
+      border-left: 4px solid #f9a825;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #5d4037;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      text-align: left;
+    }
+    th {
+      background-color: #f1f3f4;
+      font-weight: 700;
+      color: #202124;
+    }
     a {
       color: var(--primary);
       text-decoration: underline;
@@ -157,49 +206,120 @@
 
   <main>
     <div class="card">
-      <span class="badge">Legal Terms of Service</span>
-      <h1>Terms of Service for DawaLens AI</h1>
-      <p><strong>Effective Date:</strong> September 29, 2026<br>
-      <strong>Last Updated:</strong> September 29, 2026<br>
-      <strong>Application URL:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a><br>
-      <strong>Developer Contact:</strong> <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a></p>
+      <span class="badge">Legal Terms of Service &bull; Ref: DAWALENS-TOS-2026-V2.5</span>
+      <h1>Terms of Service &amp; Clinical Usage Agreement</h1>
+      <p><strong>Effective Date:</strong> October 3, 2026<br>
+      <strong>Last Revised:</strong> October 3, 2026<br>
+      <strong>Operating Developer &amp; Service Provider:</strong> MD NOOR HASSAN<br>
+      <strong>Contact Email:</strong> <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a><br>
+      <strong>Application Domains:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a> &bull; <a href="https://dawalensai.onrender.com">https://dawalensai.onrender.com</a><br>
+      <strong>Governing Law:</strong> Republic of India (Indian Contract Act 1872, DPDP Act 2023)<br>
+      <strong>Exclusive Jurisdiction:</strong> Competent Civil Courts in Kolkata, West Bengal, India</p>
 
-      <p>These Terms of Service govern your access to and use of the DawaLens AI digital medication tracking application and website located at <strong>https://dawalens.vercel.app</strong>. By accessing our application or utilizing our medication tracking and AI consultation tools, you agree to these terms.</p>
+      <p>This Terms of Service and Clinical Usage Agreement (&ldquo;Terms&rdquo;) is a binding legal contract between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;, or &ldquo;your&rdquo;) and <strong>MD NOOR HASSAN</strong> (&ldquo;Operating Developer&rdquo;, &ldquo;DawaLens AI&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;). By accessing our website, creating an account, or using our mobile application (Android Package: <code>in.dawalens.app</code>), you unconditionally agree to these Terms.</p>
 
+      <!-- 1. MEDICAL DISCLAIMER -->
       <div class="alert-box">
-        <p><strong>CRITICAL MEDICAL &amp; CLINICAL DISCLAIMER:</strong><br>
-        <strong>DawaLens AI is an educational and personal organizational utility ONLY. It is NOT a clinical tool, medical device, hospital diagnostic system, or licensed medical professional.</strong> Information provided through our features (including OCR packaging extraction, AI medication summaries, and drug-drug interaction screenings) is generated by artificial intelligence and is subject to potential errors. <strong>NEVER</strong> modify, stop, or initiate any prescription medication, medical treatment, or healthcare regimen without directly consulting your licensed physician, hospital doctor, or certified pharmacist. In a medical emergency, immediately contact your local emergency services (e.g. 911 / 112).</p>
+        <p><strong>CRITICAL MEDICAL &amp; CLINICAL DISCLAIMER (MANDATORY HEALTH DECLARATION):</strong><br><br>
+        <strong>1. NON-MEDICAL DEVICE DECLARATION:</strong> DAWALENS AI IS STRICTLY AN INFORMATIONAL, EDUCATIONAL, AND PERSONAL INVENTORY MANAGEMENT TOOL. IT IS <strong>NOT</strong> A CERTIFIED MEDICAL DEVICE, DIAGNOSTIC SOFTWARE, CLINICAL DECISION SUPPORT SYSTEM, OR PRESCRIPTION DISPENSING PLATFORM.<br><br>
+        <strong>2. NO DOCTOR-PATIENT RELATIONSHIP:</strong> No doctor-patient or healthcare provider relationship is formed. All interactions with the AI Pharmacist (&ldquo;Dr. DawaLens&rdquo;), optical scanners, and drug interaction screeners are automated and for reference only.<br><br>
+        <strong>3. CONSULT LICENSED PROFESSIONALS:</strong> Never disregard professional medical advice, alter drug dosages, or stop taking prescribed medication based on information displayed in the application. Always consult your licensed physician or certified pharmacist.<br><br>
+        <strong>4. MANDATORY PACKAGING VERIFICATION:</strong> Optical character recognition (OCR) and computer vision algorithms may misinterpret blurred, damaged, or shiny foil labels. You hold sole personal responsibility to visually verify all drug names, strengths, and expiration dates against the physical package before consuming any medicine.<br><br>
+        <strong>5. ACUTE MEDICAL EMERGENCIES:</strong> DawaLens AI is not an emergency triage service. If you suspect an overdose, severe allergic reaction, or acute medical emergency, immediately contact emergency services: <strong>112 / 108 (India)</strong>, <strong>911 (USA/Canada)</strong>, <strong>999 / 111 (UK)</strong>, or <strong>112 (EU)</strong>.</p>
       </div>
 
-      <h2>1. Description of Service</h2>
-      <p>DawaLens AI provides users with personal medication cataloging, dose scheduling, expiration date tracking, optical packaging scanning via camera, and AI-assisted educational medication information. These features are designed strictly for personal reference and inventory organization.</p>
-
-      <h2>2. User Responsibilities &amp; Data Verification</h2>
+      <!-- 2. AI & ARCHITECTURE DISCLOSURES -->
+      <h2>2. Artificial Intelligence &amp; Third-Party Services</h2>
+      <p>DawaLens AI incorporates a hybrid dual-layer artificial intelligence infrastructure:</p>
       <ul>
-        <li>You are solely responsible for verifying the accuracy of all medication names, strengths, expiration dates, and dosing instructions scanned or entered into your vault.</li>
-        <li>You agree not to use the Service for any unlawful, hazardous, or fraudulent purpose.</li>
-        <li>You are responsible for maintaining the confidentiality of your account credentials and ensuring the physical security of your logged-in device.</li>
+        <li><strong>Cloud Reasoning (Google AI Studio Gemini API):</strong> For complex drug interaction screening and consultation queries, data is transmitted over encrypted TLS 1.3 channels to Google AI Studio Gemini models (<code>gemini-2.5-flash</code>). All Personally Identifiable Information (PII) is stripped prior to transmission.</li>
+        <li><strong>On-Device Small Language Model (SLM &amp; CNN):</strong> For fast, offline clinical consultation, the app embeds a proprietary ~2.1M parameter clinical formulary model and CNN packaging classifier running in local device RAM. <strong>Strict Zero-Training Guarantee:</strong> User conversations and medication records are NEVER harvested, stored, or used for AI model training.</li>
+        <li><strong>Probabilistic Hallucination Warning:</strong> Large language models generate probabilistic responses and may occasionally contain factual errors or hallucinated contraindications. You agree to treat all AI advice as supplementary and uncertified.</li>
       </ul>
 
-      <h2>3. Privacy &amp; Data Handling</h2>
-      <p>Your privacy is protected under our <a href="/privacy">Privacy Policy</a>. In summary:</p>
+      <!-- 3. HARDWARE PERMISSIONS & ALARM SAFETY -->
+      <h2>3. Hardware Permissions &amp; Alarm Safety</h2>
       <ul>
-        <li>All camera photos captured during medicine scanning are processed on-device and stored exclusively in your browser's sandboxed local IndexedDB memory. Photos are never uploaded to remote servers.</li>
-        <li>Personal data received via Google Sign-In adheres strictly to the <strong>Google API Services User Data Policy</strong>, including the Limited Use requirements.</li>
-        <li>We do <strong>NOT</strong> sell your personal information or medical data to any third parties or advertisers.</li>
+        <li><strong>Exact Alarms (<code>USE_EXACT_ALARM</code> &amp; <code>SCHEDULE_EXACT_ALARM</code>):</strong> In compliance with Google Play Store Policies, exact alarm permissions are requested solely because minute-precise timing is mandatory for patient therapeutic adherence and life-safety. All alarms run locally via Android's native <code>AlarmManager</code>.</li>
+        <li><strong>Camera &amp; Local Storage Isolation:</strong> The camera is used solely to scan medicine labels. Saved photos are stored 100% locally in your physical device's sandboxed <strong>IndexedDB storage</strong> (<code>DawaLensLocalImages</code>) and are <strong>never</strong> uploaded to Firebase Storage or cloud databases.</li>
+        <li><strong>Push Notifications (<code>POST_NOTIFICATIONS</code>):</strong> Used solely for dose reminders and pharmaceutical expiration warnings. DawaLens AI never broadcasts advertisements or sponsored push alerts.</li>
       </ul>
 
-      <h2>4. Limitation of Liability</h2>
-      <p>To the maximum extent permitted by applicable law, DawaLens AI, its developers, and affiliates are provided on an strictly <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis without warranties of any kind, whether express or implied. Under no circumstances shall DawaLens AI or its developers be held liable for any adverse health complications, missed doses, adverse drug reactions, data inaccuracies, or indirect, incidental, or consequential damages resulting from the use or inability to use the application.</p>
+      <!-- 4. USER ELIGIBILITY & PROHIBITIONS -->
+      <h2>4. User Eligibility &amp; Prohibited Conduct</h2>
+      <p>You must be at least 18 years of age (or the legal age of majority in your jurisdiction) to use DawaLens AI independently. Minors aged 13 to 17 may use the service only under active parental or guardian supervision. Children under 13 are strictly prohibited.</p>
+      <p>You agree NOT to:</p>
+      <ul>
+        <li>Decompile, reverse engineer, or extract proprietary weights from our on-device Small Language Model (SLM).</li>
+        <li>Deploy automated scrapers, bots, or crawlers against our API endpoints.</li>
+        <li>Use DawaLens AI for unlicensed telemedicine, prescription fraud, or illicit pharmaceutical trade.</li>
+        <li>Circumvent or tamper with security controls, rate limits, or Firebase Firestore security rules.</li>
+      </ul>
 
-      <h2>5. Account Deletion and Termination</h2>
-      <p>You may terminate your account and permanently delete all your stored data at any time via the in-app profile menu or through our public <a href="/delete-account">Account Deletion Portal</a> (<a href="https://dawalens.vercel.app/delete-account">https://dawalens.vercel.app/delete-account</a>).</p>
+      <!-- 5. INTELLECTUAL PROPERTY & DATA -->
+      <h2>5. Intellectual Property &amp; Data Ownership</h2>
+      <p>All software code, brand assets, doctor logos, heuristics, and offline model weights are the exclusive intellectual property of <strong>MD NOOR HASSAN</strong>. You retain complete ownership of your personal health data and medication entries.</p>
+      <p>You may permanently delete your account and all associated cloud and local data at any time via in-app settings or via our dedicated web portal: <a href="https://dawalens.vercel.app/delete-account">https://dawalens.vercel.app/delete-account</a>.</p>
 
-      <h2>6. Governing Law &amp; Contact Inquiries</h2>
-      <p>For any questions or formal legal notices, contact our team directly at: <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a>.</p>
+      <!-- 6. DISCLAIMER OF WARRANTIES -->
+      <h2>6. Disclaimer of Warranties ("AS IS")</h2>
+      <div class="caps-box">
+        TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW:<br><br>
+        DAWALENS AI AND ALL ASSOCIATED SERVICES, APIS, ON-DEVICE OCR, AND AI PHARMACIST FEATURES ARE PROVIDED STRICTLY ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS, IMPLIED, OR STATUTORY.<br><br>
+        WE EXPRESSLY DISCLAIM ALL IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, FREEDOM FROM CODING DEFECTS, OR FREEDOM FROM ALARM LATENCY CAUSED BY HARDWARE BATTERY-OPTIMIZATION MODES.
+      </div>
+
+      <!-- 7. LIMITATION OF LIABILITY -->
+      <h2>7. Comprehensive Limitation of Liability</h2>
+      <p>Under no legal theory (contract, tort, negligence, or strict liability) shall MD NOOR HASSAN or DawaLens AI be liable for any personal injury, adverse drug event, allergic shock, missed dose, toxicity, death, or indirect damages resulting from your use of or reliance upon the application.</p>
+      <div class="info-box">
+        <strong>Financial Liability Cap:</strong> In no event shall our total aggregate liability for all claims arising out of or related to this Agreement exceed the total fees paid by you to DawaLens AI in the preceding 12 months, or the sum of <strong>₹4,200 INR (Four Thousand Two Hundred Rupees) / $50.00 USD</strong>, whichever is less.
+      </div>
+
+      <!-- 8. GOVERNING LAW & DISPUTES -->
+      <h2>8. Governing Law, Jurisdiction &amp; Class Action Waiver</h2>
+      <ul>
+        <li><strong>Governing Law:</strong> This Agreement shall be governed by and construed in accordance with the substantive laws of the <strong>Republic of India</strong> (including the Indian Contract Act, 1872 and the Digital Personal Data Protection Act, 2023).</li>
+        <li><strong>Exclusive Jurisdiction:</strong> You and MD NOOR HASSAN irrevocably agree that any dispute or judicial proceeding arising hereunder shall be subject to the exclusive personal and subject-matter jurisdiction of the <strong>Competent Civil Courts located in Kolkata, West Bengal, India</strong>.</li>
+        <li><strong>30-Day Informal Negotiation:</strong> Prior to filing any claim, you agree to submit written notice to <code>mdnoor4860@gmail.com</code> and negotiate in good faith for 30 calendar days.</li>
+        <li><strong>Class Action Waiver:</strong> ALL DISPUTES MUST BE RESOLVED ON AN INDIVIDUAL BASIS. YOU WAIVE ANY RIGHT TO BRING OR PARTICIPATE IN ANY CLASS ACTION, COLLECTIVE ACTION, OR REPRESENTATIVE PROCEEDING.</li>
+      </ul>
+
+      <!-- 9. STATUTORY GRIEVANCE REDRESSAL -->
+      <h2>9. Statutory Grievance Redressal &amp; Legal Contact</h2>
+      <p>In compliance with the Information Technology Rules, 2021 and the Digital Personal Data Protection Act, 2023, our legal and compliance contact details are:</p>
+      
+      <table>
+        <tbody>
+          <tr>
+            <th>Service Provider &amp; Developer</th>
+            <td><strong>MD NOOR HASSAN</strong></td>
+          </tr>
+          <tr>
+            <th>Designation</th>
+            <td>Operating Developer &amp; Data Protection Officer</td>
+          </tr>
+          <tr>
+            <th>Official Legal Email</th>
+            <td><a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a></td>
+          </tr>
+          <tr>
+            <th>Statutory Acknowledgment</th>
+            <td>Within 24 hours</td>
+          </tr>
+          <tr>
+            <th>Statutory Resolution SLA</th>
+            <td>Within 30 calendar days</td>
+          </tr>
+          <tr>
+            <th>Permanent Deletion Portal</th>
+            <td><a href="https://dawalens.vercel.app/delete-account">https://dawalens.vercel.app/delete-account</a></td>
+          </tr>
+        </tbody>
+      </table>
 
       <footer>
-        <p>&copy; 2026 DawaLens AI. All rights reserved.</p>
+        <p>&copy; 2026 DawaLens AI &bull; Ref: DAWALENS-TOS-2026-V2.5</p>
         <div class="footer-links">
           <a href="/">Home</a>
           <a href="/guide">User Guide</a>

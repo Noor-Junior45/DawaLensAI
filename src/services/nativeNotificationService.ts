@@ -17,6 +17,42 @@ function generateNotificationId(uniqueKey: string): number {
 }
 
 /**
+ * Explicitly requests native Android push notification permissions using the Capacitor Push Notifications API.
+ * Prompts the native Android POST_NOTIFICATIONS permission dialog and registers device with FCM.
+ */
+export async function requestNativePushPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
+
+  try {
+    // 1. Explicitly check and request native push permissions via Capacitor Push Notifications API
+    let pushPerm = await PushNotifications.checkPermissions();
+    if (pushPerm.receive !== 'granted') {
+      pushPerm = await PushNotifications.requestPermissions();
+    }
+
+    if (pushPerm.receive === 'granted') {
+      await PushNotifications.register().catch(e => console.warn('[FCM] Push registration warning:', e));
+
+      // 2. Also ensure Local Notification permissions are granted for Android heads-up alerts
+      try {
+        let localPerm = await LocalNotifications.checkPermissions();
+        if (localPerm.display !== 'granted') {
+          localPerm = await LocalNotifications.requestPermissions();
+        }
+      } catch {}
+
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Failed to request native push notification permissions:', error);
+    return false;
+  }
+}
+
+/**
  * Initializes native Android notification channels and requests permissions.
  * This ensures Android will wake the device and display notifications even when the app is closed.
  */

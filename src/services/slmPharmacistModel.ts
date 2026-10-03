@@ -679,220 +679,46 @@ export function getCachedUserSlmKnowledge(userId: string): SlmKnowledgeItem[] {
 }
 
 /**
- * Loads user-trained SLM knowledge from Firestore and caches locally
+ * Strict Zero User Data Policy:
+ * SLM knowledge is never collected, stored, or loaded from user conversations.
  */
-export async function loadUserSlmKnowledge(userId: string): Promise<SlmKnowledgeItem[]> {
-  try {
-    const q = query(collection(db, 'users', userId, 'slmKnowledge'), limit(100));
-    const snap = await getDocs(q);
-    const items: SlmKnowledgeItem[] = [];
-
-    snap.forEach(docSnap => {
-      const data = docSnap.data();
-      items.push({
-        id: docSnap.id,
-        userId,
-        type: data.type || 'user_profile',
-        topic: data.topic || 'Medical Note',
-        content: data.content || '',
-        source: data.source || 'slm_extracted',
-        queryPattern: data.queryPattern,
-        createdAt: data.createdAt || Date.now(),
-        updatedAt: data.updatedAt || Date.now()
-      });
-    });
-
-    slmKnowledgeMemoryCache.set(userId, items);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        localStorage.setItem(`dawalens_slm_knowledge_${userId}`, JSON.stringify(items));
-      } catch (e) {}
-    }
-
-    return items;
-  } catch (err) {
-    console.warn("Firestore SLM knowledge load falling back to cache:", err);
-    return getCachedUserSlmKnowledge(userId);
-  }
+export async function loadUserSlmKnowledge(_userId: string): Promise<SlmKnowledgeItem[]> {
+  return [];
 }
 
 /**
- * Self-Training Engine: Trains the SLM on user conversation data and saves to database
- * Extracts patient allergies, chronic conditions, and medication preferences
+ * STRICT ZERO USER DATA TRAINING POLICY:
+ * DawaLens AI does NOT train, distill, fine-tune, or retrain the on-device SLM
+ * on user conversation messages, clinical consultations, or personal health records.
+ * The model operates exclusively on pre-compiled, peer-reviewed pharmacological data.
  */
-export async function trainSlmOnUserData(userId: string, userMessage: string, assistantResponse: string): Promise<void> {
-  if (!userId || !userMessage.trim()) return;
-
-  const lower = userMessage.toLowerCase();
-  const learnedItems: Partial<SlmKnowledgeItem>[] = [];
-
-  // 1. Detect Patient Drug / Food Allergies
-  const allergyRegex = /(?:allergic\s*to|allergy\s*(?:hai|from|to)|reaction\s*from|mujhe\s*allergy\s*hai)\s*([a-zA-Z0-9\s,]+)/i;
-  const allergyMatch = lower.match(allergyRegex);
-  if (allergyMatch && allergyMatch[1]) {
-    const allergen = allergyMatch[1].trim().slice(0, 80);
-    learnedItems.push({
-      type: 'allergy',
-      topic: `Allergy: ${allergen.toUpperCase()}`,
-      content: `Patient has reported adverse reaction / allergy to: ${allergen}.`,
-      source: 'slm_extracted'
-    });
-  }
-
-  // 2. Detect Chronic Conditions (Diabetes, Hypertension, Asthma, Thyroid, Heart, GERD)
-  if (/diabetes|diabetic|sugar\s*ki\s*bimari/i.test(lower)) {
-    learnedItems.push({
-      type: 'chronic_condition',
-      topic: 'Chronic: Type 2 Diabetes',
-      content: 'Patient has self-identified as diabetic. Monitor sugar interactions and avoid sugary syrups.',
-      source: 'slm_extracted'
-    });
-  }
-  if (/hypertension|high\s*bp|blood\s*pressure/i.test(lower)) {
-    learnedItems.push({
-      type: 'chronic_condition',
-      topic: 'Chronic: Hypertension (High BP)',
-      content: 'Patient has high blood pressure. Caution with decongestants (Pseudoephedrine) and NSAIDs.',
-      source: 'slm_extracted'
-    });
-  }
-  if (/asthma|asthmatic|saans\s*phoolna|inhaler/i.test(lower)) {
-    learnedItems.push({
-      type: 'chronic_condition',
-      topic: 'Chronic: Asthma / Respiratory Sensitivity',
-      content: 'Patient has asthma / respiratory sensitivity. Avoid non-selective beta-blockers.',
-      source: 'slm_extracted'
-    });
-  }
-  if (/thyroid|hypothyroid/i.test(lower)) {
-    learnedItems.push({
-      type: 'chronic_condition',
-      topic: 'Chronic: Thyroid Condition',
-      content: 'Patient manages thyroid medication. Remind to take thyroxine on empty stomach.',
-      source: 'slm_extracted'
-    });
-  }
-
-  // 3. Detect Patient Schedule Preferences
-  if (/(?:subah|morning)\s*(\d{1,2}\s*(?:am|baje)?)/i.test(lower) || /wake\s*up\s*at\s*(\d{1,2})/i.test(lower)) {
-    learnedItems.push({
-      type: 'preference',
-      topic: 'Daily Routine: Morning Wake Time',
-      content: `Patient morning routine mentioned in chat: "${userMessage.slice(0, 100)}"`,
-      source: 'slm_extracted'
-    });
-  }
-
-  // Save new learned facts to Firestore
-  for (const item of learnedItems) {
-    try {
-      const docId = `learned_${item.type}_${crypto.randomUUID().slice(0, 8)}`;
-      const fullItem: SlmKnowledgeItem = {
-        id: docId,
-        userId,
-        type: item.type as any,
-        topic: item.topic || 'Patient Health Pattern',
-        content: item.content || '',
-        source: 'slm_extracted',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-
-      await setDoc(doc(db, 'users', userId, 'slmKnowledge', docId), fullItem, { merge: true });
-
-      // Update in-memory cache
-      const cached = getCachedUserSlmKnowledge(userId);
-      const updated = [fullItem, ...cached.filter(c => c.topic !== fullItem.topic)];
-      slmKnowledgeMemoryCache.set(userId, updated);
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(`dawalens_slm_knowledge_${userId}`, JSON.stringify(updated));
-      }
-      console.log(`[SLM CONTINUOUS LEARNING] Learned new patient insight: "${fullItem.topic}" stored in Firestore.`);
-    } catch (err) {
-      console.warn("Error saving trained SLM knowledge to Firestore:", err);
-    }
-  }
+export async function trainSlmOnUserData(
+  _userId: string, 
+  _userMessage: string, 
+  _assistantResponse: string
+): Promise<void> {
+  // STRICT ZERO-TRAINING: No user data is stored, extracted, or used for model training
+  return;
 }
 
 /**
- * Distillation Engine: Takes what work Gemini did on complex medical/hospital tasks
- * and teaches the SLM so the SLM can execute it in the future without asking Gemini!
+ * STRICT ZERO DISTILLATION POLICY:
+ * User queries and responses are NEVER distilled or saved into persistent model training sets.
  */
 export async function distillGeminiAnswerToSlm(
-  userId: string,
-  userQuery: string,
-  geminiAnswer: string
+  _userId: string,
+  _userQuery: string,
+  _geminiAnswer: string
 ): Promise<void> {
-  if (!userId || !userQuery.trim() || !geminiAnswer.trim()) return;
-
-  try {
-    // Generate clean query pattern (keywords with length >= 4)
-    const keywords = userQuery
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
-      .filter(w => w.length >= 4 && !['what', 'when', 'where', 'which', 'should', 'could', 'please', 'about', 'doctor'].includes(w));
-
-    if (keywords.length < 2) return;
-
-    const queryPattern = keywords.slice(0, 6).join(' ');
-    const docId = `task_${keywords.slice(0, 3).join('_')}_${crypto.randomUUID().slice(0, 6)}`;
-    const topic = userQuery.length > 60 ? userQuery.slice(0, 57) + '...' : userQuery;
-
-    const learnedTask: SlmKnowledgeItem = {
-      id: docId,
-      userId,
-      type: 'learned_task',
-      topic: `Learned Task: ${topic}`,
-      content: geminiAnswer.trim(),
-      source: 'gemini_distilled',
-      queryPattern,
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-
-    await setDoc(doc(db, 'users', userId, 'slmKnowledge', docId), learnedTask, { merge: true });
-
-    // Update memory cache so next query matches immediately
-    const cached = getCachedUserSlmKnowledge(userId);
-    const updated = [learnedTask, ...cached.filter(c => c.queryPattern !== queryPattern)];
-    slmKnowledgeMemoryCache.set(userId, updated);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem(`dawalens_slm_knowledge_${userId}`, JSON.stringify(updated));
-    }
-
-    console.log(`[SLM DISTILLATION] Successfully distilled Gemini clinical solution for "${topic}". Future similar queries will be answered by SLM on-device without Gemini!`);
-  } catch (err) {
-    console.warn("Failed to distill Gemini response into SLM knowledge:", err);
-  }
+  // STRICT ZERO-DISTILLATION: No model adaptation from user data
+  return;
 }
 
 /**
- * Compiles stored SLM knowledge to feed into Gemini API for enhanced clinical personalization
+ * Zero user data is compiled or forwarded for model training/distillation
  */
-export async function getLearnedSlmContextForGemini(userId: string): Promise<string> {
-  if (!userId) return "";
-
-  try {
-    const knowledge = await loadUserSlmKnowledge(userId);
-    if (knowledge.length === 0) return "";
-
-    const allergies = knowledge.filter(k => k.type === 'allergy').map(k => k.content).join('; ');
-    const chronic = knowledge.filter(k => k.type === 'chronic_condition').map(k => k.content).join('; ');
-    const preferences = knowledge.filter(k => k.type === 'preference').map(k => k.content).join('; ');
-    const learnedTasks = knowledge.filter(k => k.type === 'learned_task').slice(0, 3).map(k => `• ${k.topic}: ${k.content.slice(0, 160)}...`).join('\n');
-
-    let profileContext = `\n\n[PATIENT HEALTH PROFILE & SLM LEARNED KNOWLEDGE (Stored in DB):`;
-    if (allergies) profileContext += `\n- Known Allergies: ${allergies}`;
-    if (chronic) profileContext += `\n- Chronic Conditions: ${chronic}`;
-    if (preferences) profileContext += `\n- Patient Preferences: ${preferences}`;
-    if (learnedTasks) profileContext += `\n- Previously Resolved Tasks & Instructions:\n${learnedTasks}`;
-    profileContext += `\nUse this personal health profile to tailor hospital, medication, and pharmacy recommendations precisely.]\n`;
-
-    return profileContext;
-  } catch (err) {
-    return "";
-  }
+export async function getLearnedSlmContextForGemini(_userId: string): Promise<string> {
+  return "";
 }
 
 /**

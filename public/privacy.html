@@ -247,7 +247,7 @@
           <tr>
             <td><strong>Camera (CAMERA)</strong></td>
             <td>Allows scanning medicine boxes, blister packs, and prescription labels for text recognition (OCR) and visual packaging classification.</td>
-            <td><strong>100% On-Device:</strong> Image processing is executed locally on your device via Tesseract.js and on-device CNN algorithms. Images are cached locally in your browser's sandboxed <strong>IndexedDB storage</strong> and are <strong>NEVER</strong> uploaded to remote servers or third-party clouds.</td>
+            <td><strong>Hybrid Processing &amp; Local Vault:</strong> Medicine photos in your vault are stored 100% locally in sandboxed <strong>IndexedDB storage</strong> and are <strong>NEVER</strong> saved to Firebase Storage or cloud databases. During online scanning, photos are streamed over TLS 1.3 encrypted HTTPS to Google Gemini 2.5 Flash for multimodal OCR (zero PII attached, ephemeral memory processing, zero disk caching). In offline mode, OCR runs 100% on-device via Tesseract.js.</td>
           </tr>
           <tr>
             <td><strong>Notifications (POST_NOTIFICATIONS)</strong></td>
@@ -273,10 +273,10 @@
         <li><strong>Customer Support:</strong> To resolve technical issues or assist you with account deletion inquiries.</li>
       </ol>
 
-      <!-- 4. On-Device Image Processing & Privacy -->
-      <h2>4. On-Device Camera &amp; Prescription Photo Privacy</h2>
+      <!-- 4. Camera, Prescription Photo & Image Architecture -->
+      <h2>4. Camera, Prescription Photo &amp; Image Architecture</h2>
       <div class="notice-box">
-        <p><strong>Zero Cloud Image Uploads:</strong> When you photograph a medicine packaging or prescription label, the image data is processed entirely inside your local browser runtime. Optical Character Recognition (OCR) and convolutional neural network (CNN) feature analysis run on your device CPU/GPU. The resulting image is stored in your sandboxed local browser database (IndexedDB) and is <strong>never uploaded, stored, or transmitted to any external remote servers</strong>. Deleting a medication entry permanently purges the local image from your device.</p>
+        <p><strong>Hybrid Processing &amp; Sandboxed Local Storage:</strong> Medicine packaging photographs saved into your inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code style="font-family: monospace;">DawaLensLocalImages</code>) and are <strong>never uploaded to Firebase Storage, S3, or remote databases</strong>. During online scanning, photos are streamed over secure TLS 1.3 encrypted HTTPS to Google Gemini 2.5 Flash for multimodal OCR (zero PII attached, ephemeral memory processing, zero disk caching). In offline mode, OCR runs 100% locally via client-side Tesseract.js and on-device CNN. Deleting a medication entry or deleting your account permanently purges the local image from your device.</p>
       </div>
 
       <!-- 5. AI Consultation & Gemini API -->

@@ -7,10 +7,6 @@ import {
   generateOfflineSlmConsultation, 
   extractMedicineOfflineSlm,
   isNormalChat,
-  loadUserSlmKnowledge,
-  trainSlmOnUserData,
-  distillGeminiAnswerToSlm,
-  getLearnedSlmContextForGemini,
   PHARMA_KNOWLEDGE_BASE
 } from "./slmPharmacistModel";
 
@@ -516,51 +512,29 @@ export async function chatWithAI(
 ): Promise<AIChatResponse> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
 
-  // 1. Load user-trained SLM knowledge (allergies, chronic ailments, previously learned Gemini tasks)
-  const userKnowledge = userId ? await loadUserSlmKnowledge(userId) : [];
-
-  // 2. Dynamic Routing: If normal chat is going on, use SLM model directly!
-  const isNormal = isNormalChat(lastUserMsg, medicines || [], userKnowledge);
+  // 1. Dynamic Routing: If normal chat is going on, answer directly with On-Device SLM (Ross)
+  const isNormal = isNormalChat(lastUserMsg, medicines || []);
 
   if (isNormal) {
     console.log('[SLM ROUTER ACTIVE] Normal pharmacist chat turn. Answering directly with On-Device SLM (Ross)...');
-    const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
-
-    // Train SLM in background on user data to store learned patterns in database
-    if (userId) {
-      trainSlmOnUserData(userId, lastUserMsg, slmResponse).catch(err => console.warn(err));
-    }
+    const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
+    // STRICT ZERO-TRAINING: No user conversations are stored or used for model training
     return { content: slmResponse, provider: 'slm' };
   }
 
-  // 3. Complex Question (Hospital, clinical triage, or specialized pharmacy related):
-  // Leverage Gemini API (Jack), enriched with all user data stored by the SLM for deep personalized understanding!
-  console.log('[GEMINI ROUTER ACTIVE] Complex hospital/pharmacy question detected. Escalate to Gemini API (Jack) with SLM learned context...');
-  
-  const slmContext = userId ? await getLearnedSlmContextForGemini(userId) : '';
-  const enrichedMessages = messages.map((m, idx) => {
-    if (idx === messages.length - 1 && slmContext) {
-      return { ...m, content: m.content + slmContext };
-    }
-    return m;
-  });
+  // 2. Complex Question (Hospital, clinical triage, or specialized pharmacology):
+  console.log('[GEMINI ROUTER ACTIVE] Complex question detected. Escalate to Gemini API...');
 
   let geminiResponse = '';
   try {
-    geminiResponse = await chatWithGemini(enrichedMessages, userId, medicines);
+    geminiResponse = await chatWithGemini(messages, userId, medicines);
   } catch (geminiErr) {
     console.warn('Gemini complex question failed, falling back to SLM model (Ross):', geminiErr);
-    const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages, userKnowledge);
+    const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
     return { content: slmFallback, provider: 'slm' };
   }
 
-  // 4. Distill what work Gemini did so the SLM model learns it.
-  // In the future, if the same task appears, SLM can do it without asking Gemini!
-  if (userId && geminiResponse) {
-    distillGeminiAnswerToSlm(userId, lastUserMsg, geminiResponse).catch(err => console.warn(err));
-    trainSlmOnUserData(userId, lastUserMsg, geminiResponse).catch(err => console.warn(err));
-  }
-
+  // STRICT ZERO-TRAINING: No distillation or model retraining on user queries
   return { content: geminiResponse, provider: 'gemini' };
 }
 

@@ -231,11 +231,11 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
               Medicine Form
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {FORM_OPTIONS.map((formKey) => {
+              {FORM_OPTIONS.map((formKey, fIdx) => {
                 const isSelected = formData.form === formKey;
                 return (
                   <button
-                    key={formKey}
+                    key={`edit-form-${formKey}-${fIdx}`}
                     type="button"
                     onClick={() => updateField('form', formKey)}
                     className={`flex items-center gap-2 px-3 py-2.5 sm:py-3 rounded-2xl border text-xs sm:text-sm font-bold transition-all text-left ${
@@ -415,9 +415,9 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
 
             {/* Quick schedule preset pills */}
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              {SCHEDULE_PRESETS.map((preset) => (
+              {SCHEDULE_PRESETS.map((preset, pIdx) => (
                 <button
-                  key={preset}
+                  key={`edit-sched-${preset}-${pIdx}`}
                   type="button"
                   onClick={() => {
                     const current = formData.schedule || '';

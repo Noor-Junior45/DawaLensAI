@@ -19,7 +19,8 @@ import {
   registerUserExpirySchedule, 
   runBackgroundExpiryCheck,
   registerPushToken,
-  sendPushNotificationToUser
+  sendPushNotificationToUser,
+  purgeUserServerData
 } from "./server/expiryCron.ts";
 
 const app = express();
@@ -316,6 +317,21 @@ app.post("/api/sync-expiry-schedule", async (req, res) => {
     res.json({ success: true, count: Array.isArray(medicines) ? medicines.length : 0 });
   } catch (error: any) {
     console.error("Error syncing expiry schedule:", error);
+    res.status(500).json({ error: error.message || String(error) });
+  }
+});
+
+// Endpoint to permanently purge user's server-side schedule and push tokens on account deletion
+app.post("/api/user/purge-data", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+    await purgeUserServerData(userId);
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error purging user server data:", error);
     res.status(500).json({ error: error.message || String(error) });
   }
 });

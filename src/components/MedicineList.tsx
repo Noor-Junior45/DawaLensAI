@@ -359,7 +359,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return (
       <motion.div
         layout
-        key={`group-${group.groupKey}`}
+        key={`group-${group.groupKey || 'med'}-${index}`}
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ 
           opacity: 1, 
@@ -587,7 +587,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return (
       <motion.div
         layout
-        key={`expired-group-${group.groupKey}`}
+        key={`expired-group-${group.groupKey || 'med'}-${index}`}
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ 
           opacity: 0.85, 

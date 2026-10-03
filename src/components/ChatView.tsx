@@ -473,7 +473,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto w-full px-4">
                   {SUGGESTED_PROMPTS.map((item, idx) => (
                     <button
-                      key={idx}
+                      key={`prompt-sug-${idx}`}
                       onClick={() => handleSendMessage(item.prompt)}
                       className="flex items-center gap-2.5 p-3 rounded-2xl bg-white border border-slate-200/80 hover:border-[#0f9d58]/40 hover:bg-[#0f9d58]/5 text-left text-[12.5px] text-slate-700 font-medium transition-all active:scale-95 shadow-2xs hover:shadow-xs cursor-pointer"
                     >

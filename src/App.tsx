@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Download, Upload, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Bot, Stethoscope, Mail, Pill, BookOpen, Shield, Scale, LogIn, Eye, EyeOff, Lock, Check, ArrowRight, ChevronDown, RefreshCw } from 'lucide-react';
+import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
-import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getCanonicalCategory, getMedicineCategory, calculateDiffDays } from './constants';
+import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getMedicineCategory, calculateDiffDays } from './constants';
 import { CameraCapture } from './components/CameraCapture';
-import { MedicineForm } from './components/MedicineForm';
 import { MedicineList } from './components/MedicineList';
 import { SettingsModal } from './components/SettingsModal';
 import { ChatView } from './components/ChatView';
 import { MailboxModal } from './components/MailboxModal';
 import { extractMedicineData, checkDrugInteractions, InteractionResult, categorizeMedicinesWithAI } from './services/geminiService';
 import { 
-  auth, db, storage, googleProvider, signInWithPopup, signOut, onAuthStateChanged, 
-  collection, doc, setDoc, addDoc, deleteDoc, updateDoc, writeBatch, onSnapshot, query, where, orderBy, getDoc, getDocs, User,
+  auth, db, signOut, onAuthStateChanged, 
+  collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot, query, where, orderBy, getDocs, User,
   handleFirestoreError, OperationType, deleteField, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
-  ref, uploadBytes, getDownloadURL, deleteObject, serverTimestamp, uploadBytesResumable
+  serverTimestamp
 } from './firebase';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { 
@@ -36,12 +35,15 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { AccountDeletionPage } from './components/AccountDeletionPage';
 
-import { triggerLightHaptic, triggerMediumHaptic, triggerSuccessHaptic, triggerSelectionHaptic } from './utils/haptics';
+import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
-import { sendEmailAlert, getExpiryEmailHTML, getLowStockEmailHTML, syncExpiryScheduleWithServer } from './services/emailService';
+import { syncExpiryScheduleWithServer } from './services/emailService';
 import { trackEvent } from './utils/analytics';
 import { signInWithGoogleAdaptive, signOutAdaptive } from './services/nativeAuthService';
 import { setCrashReportingUser } from './services/crashReportingService';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { initNativePerformance, setNativeBackButtonHandler } from './services/nativePerformanceService';
 import { initNativeNotifications, scheduleNativeMedicineAlerts } from './services/nativeNotificationService';
 import { useEdgeSwipeBack, usePullToRefresh } from './utils/mobileGestures';
@@ -75,7 +77,6 @@ export default function App() {
   const [publicPage, setPublicPage] = useState<PublicPageType>(getInitialPublicPage);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMailboxOpen, setIsMailboxOpen] = useState(false);
@@ -193,7 +194,6 @@ export default function App() {
     selectedDetailsMedicine,
     activeSystemPage,
     isCameraOpen,
-    isFormOpen,
     isSettingsOpen,
     isEmailLoginOpen,
     isInteractionModalOpen,
@@ -215,7 +215,6 @@ export default function App() {
       selectedDetailsMedicine,
       activeSystemPage,
       isCameraOpen,
-      isFormOpen,
       isSettingsOpen,
       isEmailLoginOpen,
       isInteractionModalOpen,
@@ -235,7 +234,6 @@ export default function App() {
     selectedDetailsMedicine,
     activeSystemPage,
     isCameraOpen,
-    isFormOpen,
     isSettingsOpen,
     isEmailLoginOpen,
     isInteractionModalOpen,
@@ -298,15 +296,10 @@ export default function App() {
       return true;
     }
 
-    // 6. Camera & Manual Form
+    // 6. Camera
     if (s.isCameraOpen) {
       setIsCameraOpen(false);
       setExtractionError(null);
-      return true;
-    }
-    if (s.isFormOpen) {
-      setIsFormOpen(false);
-      setEditingMedicine(null);
       return true;
     }
 
@@ -376,7 +369,6 @@ export default function App() {
       publicPage ||
       activeSystemPage ||
       isCameraOpen ||
-      isFormOpen ||
       isSettingsOpen ||
       isChatOpen ||
       isMailboxOpen ||
@@ -395,7 +387,9 @@ export default function App() {
       const q = query(collection(db, 'medicines'), where('userId', '==', user.uid));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
-      setMedicines(data);
+      // Deduplicate by ID to prevent duplicate React keys
+      const uniqueMeds = Array.from(new Map(data.map(m => [m.id, m])).values());
+      setMedicines(uniqueMeds);
     } catch (e) {
       console.warn('Pull-to-refresh sync:', e);
     }
@@ -403,7 +397,7 @@ export default function App() {
 
   const { pullDistance, isRefreshing: isPullRefreshing } = usePullToRefresh({
     onRefresh: handleDashboardRefresh,
-    enabled: !publicPage && !activeSystemPage && !isCameraOpen && !isFormOpen && !isChatOpen && !isSettingsOpen && !activeFooterModal,
+    enabled: !publicPage && !activeSystemPage && !isCameraOpen && !isChatOpen && !isSettingsOpen && !activeFooterModal,
   });
 
   // Sync User Config from Firestore
@@ -535,20 +529,73 @@ export default function App() {
     applyThemeAndAccent();
   }, [accentColor]);
 
+  // Synchronize Notifications toggle state with Android / OS system notification permission
+  useEffect(() => {
+    const syncNotificationPermissionWithSystem = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const pushPerm = await PushNotifications.checkPermissions();
+          if (pushPerm.receive === 'denied') {
+            setBrowserNotificationsEnabled(false);
+          } else if (pushPerm.receive === 'granted') {
+            setBrowserNotificationsEnabled(true);
+          }
+          return;
+        } catch (e) {}
+      }
+
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'denied') {
+          // If closed in Android phone settings, show closed/off in the app
+          setBrowserNotificationsEnabled(false);
+        } else if (Notification.permission === 'granted') {
+          // If allowed in Android phone settings, show on in the app
+          setBrowserNotificationsEnabled(true);
+        }
+      }
+    };
+
+    // Run on mount
+    syncNotificationPermissionWithSystem();
+
+    // Check whenever user switches between Android settings and the app
+    window.addEventListener('focus', syncNotificationPermissionWithSystem);
+    document.addEventListener('visibilitychange', syncNotificationPermissionWithSystem);
+
+    // Listen to Permissions API change event if supported (Chrome on Android & desktop)
+    let permStatus: PermissionStatus | null = null;
+    if (typeof navigator !== 'undefined' && navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'notifications' as PermissionName }).then((status) => {
+        permStatus = status;
+        const onPermChange = () => {
+          if (status.state === 'denied') {
+            setBrowserNotificationsEnabled(false);
+            if (user?.uid) {
+              handleUpdateConfig({ browserNotificationsEnabled: false });
+            }
+          } else if (status.state === 'granted') {
+            setBrowserNotificationsEnabled(true);
+            if (user?.uid) {
+              handleUpdateConfig({ browserNotificationsEnabled: true });
+            }
+          }
+        };
+        status.addEventListener('change', onPermChange);
+      }).catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener('focus', syncNotificationPermissionWithSystem);
+      document.removeEventListener('visibilitychange', syncNotificationPermissionWithSystem);
+      if (permStatus) {
+        permStatus.onchange = null;
+      }
+    };
+  }, [user?.uid]);
+
   useEffect(() => {
     if (user) {
       const hasNotification = typeof window !== 'undefined' && 'Notification' in window && typeof Notification !== 'undefined';
-      // Request notification permission safely (handles browsers where requestPermission returns undefined or requires user gesture)
-      if (hasNotification && Notification.permission === 'default') {
-        try {
-          const permResult = Notification.requestPermission();
-          if (permResult && typeof permResult.catch === 'function') {
-            permResult.catch(() => {});
-          }
-        } catch (e) {
-          // Some mobile browsers throw TypeError if called without user gesture
-        }
-      }
 
       // Check for expiring medicines and notify
       const checkExpiring = () => {
@@ -709,8 +756,7 @@ export default function App() {
       setShowPassword(false);
       setIsSignUp(false);
       setIsCameraOpen(false);
-      setIsFormOpen(false);
-      setIsGuideOpen(false);
+      setActiveFooterModal(null);
     } catch (error) {
       console.error("Logout Error:", error);
     }
@@ -821,16 +867,6 @@ export default function App() {
 
   const handleEdit = async (medicine: Medicine) => {
     handleOpenDetails(medicine);
-  };
-
-  const base64ToBlob = (base64: string, mimeType: string) => {
-    const byteCharacters = atob(base64.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: mimeType });
   };
 
   const handleCheckInteractions = async () => {
@@ -1049,7 +1085,6 @@ export default function App() {
 
       triggerSuccessHaptic();
 
-      setIsFormOpen(false);
       setEditingMedicine(null);
       setExtractionWarning(null);
       if (activeSystemPage === 'add') {
@@ -1060,33 +1095,6 @@ export default function App() {
       setAlertMessage("Cloud sync failed. Please check your internet connection.");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!user) return;
-    try {
-      const medToDelete = medicines.find(m => m.id === id);
-      if (medToDelete?.imageUrl && medToDelete.imageUrl !== 'local') {
-        try {
-          const imageRef = ref(storage, medToDelete.imageUrl);
-          await deleteObject(imageRef);
-        } catch (storageError) {
-          console.error("Error deleting image from storage:", storageError);
-          // Continue with medicine deletion even if image deletion fails
-        }
-      }
-
-      await updateDoc(doc(db, 'medicines', id), {
-        isDeleted: true,
-        deletedAt: Date.now()
-      });
-      trackEvent('delete_medication', { name: medToDelete?.name || 'Unknown' });
-      setIsFormOpen(false);
-      setEditingMedicine(null);
-      setExtractionWarning(null);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'medicines');
     }
   };
 
@@ -1182,22 +1190,6 @@ export default function App() {
   };
 
   const [isCategorizing, setIsCategorizing] = useState(false);
-
-  const handleUpdateMedicineDirectly = async (medicineId: string, updates: Partial<Medicine>) => {
-    if (!user) return;
-    try {
-      const medRef = doc(db, 'medicines', medicineId);
-      await updateDoc(medRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
-      });
-      setSelectedDetailsMedicine(prev => prev && prev.id === medicineId ? { ...prev, ...updates } : prev);
-      setMedicines(prev => prev.map(m => m.id === medicineId ? { ...m, ...updates } : m));
-      triggerSuccessHaptic();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'medicines');
-    }
-  };
 
   const handleAutoCategorize = async () => {
     if (isCategorizing) return;
@@ -1518,8 +1510,6 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
-
   const deletedMedicines = medicines.filter(m => m.isDeleted);
 
   const handlePermanentDelete = async (id: string) => {
@@ -1658,7 +1648,7 @@ export default function App() {
 
     // Standard categories with accurate canonical counts
     MEDICINE_CATEGORIES.forEach(cat => {
-      seen.add(cat);
+      seen.add(cat.trim().toLowerCase());
       const style = getCategoryStyle(cat);
       items.push({
         category: cat,
@@ -1669,11 +1659,12 @@ export default function App() {
 
     // Check if any non-standard custom categories exist in user's medicines
     counts.forEach((count, cat) => {
-      if (!seen.has(cat)) {
-        seen.add(cat);
-        const style = getCategoryStyle(cat);
+      const cleanCat = (cat || '').trim();
+      if (cleanCat && !seen.has(cleanCat.toLowerCase())) {
+        seen.add(cleanCat.toLowerCase());
+        const style = getCategoryStyle(cleanCat);
         items.push({
-          category: cat,
+          category: cleanCat,
           count,
           accentColor: style.accent
         });
@@ -1702,26 +1693,91 @@ export default function App() {
   const handleFullAccountDeletion = async () => {
     if (!user) return;
     try {
-      // 1. Delete all user medicines from Firestore
-      const snap = await getDocs(query(collection(db, 'medicines'), where('userId', '==', user.uid)));
-      const deletePromises = snap.docs.map(d => deleteDoc(d.ref));
-      await Promise.all(deletePromises);
+      const currentUserId = user.uid;
 
-      // 2. Clear local device image caches and storage
+      // 1. Delete all user medicines AND their history subcollections from Firestore
+      const snap = await getDocs(query(collection(db, 'medicines'), where('userId', '==', currentUserId)));
+      for (const medDoc of snap.docs) {
+        try {
+          // In Firestore, subcollections must be deleted before deleting the parent document
+          const histSnap = await getDocs(collection(db, 'medicines', medDoc.id, 'history'));
+          await Promise.all(histSnap.docs.map(h => deleteDoc(h.ref)));
+        } catch (hErr) {
+          console.warn('Subcollection history cleanup notice:', hErr);
+        }
+        await deleteDoc(medDoc.ref);
+      }
+
+      // 2. Delete userConfigs document
+      try {
+        await deleteDoc(doc(db, 'userConfigs', currentUserId));
+      } catch (cfgErr) {
+        console.warn('userConfigs cleanup notice:', cfgErr);
+      }
+
+      // 3. Delete user settings
+      try {
+        await deleteDoc(doc(db, 'users', currentUserId, 'settings', 'appSettings'));
+      } catch (settingsErr) {
+        console.warn('appSettings cleanup notice:', settingsErr);
+      }
+
+      // 4. Delete user chats and messages subcollections
+      try {
+        const chatsSnap = await getDocs(collection(db, 'users', currentUserId, 'chats'));
+        for (const chatDoc of chatsSnap.docs) {
+          try {
+            const msgSnap = await getDocs(collection(db, 'users', currentUserId, 'chats', chatDoc.id, 'messages'));
+            await Promise.all(msgSnap.docs.map(m => deleteDoc(m.ref)));
+          } catch (mErr) {}
+          await deleteDoc(chatDoc.ref);
+        }
+      } catch (chatsErr) {
+        console.warn('chats cleanup notice:', chatsErr);
+      }
+
+      // 5. Purge any legacy SLM knowledge documents from user profile
+      try {
+        const slmSnap = await getDocs(collection(db, 'users', currentUserId, 'slmKnowledge'));
+        await Promise.all(slmSnap.docs.map(d => deleteDoc(d.ref)));
+      } catch (slmErr) {
+        console.warn('SLM knowledge cleanup notice:', slmErr);
+      }
+
+      // 6. Purge server-side expiry schedules and push tokens
+      try {
+        await fetch(getApiUrl('/api/user/purge-data'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        });
+      } catch (purgeErr) {
+        console.warn('Server data purge notice:', purgeErr);
+      }
+
+      // 7. Clear local physical device image caches and storage (IndexedDB + localStorage + sessionStorage)
+      try {
+        await localImageStorage.clearAll();
+      } catch (idbErr) {
+        console.warn('IndexedDB clear warning:', idbErr);
+      }
+
       try {
         localStorage.clear();
+        sessionStorage.clear();
       } catch (e) {}
 
-      // 3. Try deleting Firebase Auth user account
+      // 8. Delete Firebase Auth user account
       try {
         await user.delete();
-      } catch (authErr) {
+      } catch (authErr: any) {
         console.warn('user.delete() required recent login, signing out:', authErr);
         await signOut(auth);
       }
+
       setUser(null);
       setMedicines([]);
-      trackEvent('user_account_deleted', { userId: user.uid });
+      trackEvent('user_account_deleted', { userId: currentUserId });
     } catch (err: any) {
       console.error('Account deletion error:', err);
       throw err;
@@ -1769,21 +1825,6 @@ export default function App() {
         return;
       }
       setAuthStep('password');
-    };
-
-    const handleMagicLink = async () => {
-      if (!email || !email.trim()) {
-        setAlertMessage('Please enter your email address first to receive a magic sign-in link.');
-        return;
-      }
-      try {
-        await sendPasswordResetEmail(auth, email.trim());
-        setAlertMessage(`Magic sign-in link has been sent to ${email.trim()}. Please check your email inbox.`);
-        trackEvent('magic_link_sent');
-      } catch (err: any) {
-        console.warn('Magic link error:', err);
-        setAlertMessage(err.message || 'Failed to send magic link. Please check your email address.');
-      }
     };
 
     const handleAuthSubmit = async (e: React.FormEvent) => {
@@ -2339,11 +2380,11 @@ export default function App() {
                 </button>
 
                 {/* Categories with Number and Colour (no box or other design) */}
-                {categoryDropdownItems.map(({ category, count, accentColor }) => {
+                {categoryDropdownItems.map(({ category, count, accentColor }, cIdx) => {
                   const isSelected = selectedCategory.toLowerCase() === category.toLowerCase();
                   return (
                     <button
-                      key={category}
+                      key={`cat-item-${category}-${cIdx}`}
                       type="button"
                       onClick={() => {
                         const nextCat = isSelected ? 'ALL' : category;
@@ -2525,23 +2566,6 @@ export default function App() {
             extractionError={extractionError}
           />
         )}
-        
-        {isFormOpen && (
-          <MedicineForm 
-            medicine={editingMedicine}
-            allMedicines={medicines}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            extractionWarning={extractionWarning}
-            isSaving={isSaving}
-            globalLowQuantityThreshold={lowQuantityThreshold}
-            onClose={() => {
-              setIsFormOpen(false);
-              setEditingMedicine(null);
-              setExtractionWarning(null);
-            }}
-          />
-        )}
 
         {isChatOpen && (
           <ChatView 
@@ -2566,27 +2590,52 @@ export default function App() {
             setEmailNotificationsEnabled={(val) => handleUpdateConfig({ emailNotificationsEnabled: val })}
             browserNotificationsEnabled={browserNotificationsEnabled}
             setBrowserNotificationsEnabled={async (val) => {
+              setBrowserNotificationsEnabled(val);
+              handleUpdateConfig({ browserNotificationsEnabled: val });
+
               if (val) {
-                if (!isBrowserNotificationSupported()) {
-                  setAlertMessage('Notifications are not supported in this browser.');
-                  return;
-                }
-                const granted = await requestBrowserNotificationPermission();
-                if (granted) {
-                  handleUpdateConfig({ browserNotificationsEnabled: true });
+                if (Capacitor.isNativePlatform()) {
+                  scheduleNativeMedicineAlerts(medicines, alertThreshold).catch(() => {});
+                } else {
                   checkAndTriggerBrowserExpiryNotifications(medicines, alertThreshold).catch(() => {});
                   if (user?.uid) {
                     registerBrowserPushTokenWithServer(user.uid, `web_${user.uid}`).catch(() => {});
                   }
-                } else {
-                  setAlertMessage('Please allow notifications in your browser/Chrome settings to receive expiry alerts.');
-                  handleUpdateConfig({ browserNotificationsEnabled: false });
                 }
-              } else {
-                handleUpdateConfig({ browserNotificationsEnabled: false });
               }
             }}
             onTestNotification={async () => {
+              if (Capacitor.isNativePlatform()) {
+                try {
+                  await LocalNotifications.schedule({
+                    notifications: [
+                      {
+                        title: '🚨 DawaLens AI Test Alert',
+                        body: 'Native Android notifications are active! You will receive automated medicine alerts.',
+                        id: Math.floor(Math.random() * 1000000) + 1,
+                        schedule: { at: new Date(Date.now() + 100) },
+                        channelId: 'medicine_alerts',
+                        smallIcon: 'ic_launcher'
+                      }
+                    ]
+                  });
+                } catch (e) {
+                  console.warn('Native test notification error:', e);
+                }
+                if (user?.uid) {
+                  fetch(getApiUrl('/api/notifications/send-test'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.uid,
+                      title: '🚨 DawaLens AI Server Alert',
+                      body: 'Native push notification reached your device successfully!'
+                    })
+                  }).catch(() => {});
+                }
+                return;
+              }
+
               if (!isBrowserNotificationSupported()) {
                 setAlertMessage('Notifications are not supported in this browser.');
                 return;

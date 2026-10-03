@@ -8,7 +8,15 @@ import {
   Bell, 
   Lock, 
   Mail,
-  Sparkles
+  Sparkles,
+  Pill,
+  CheckCircle2,
+  Clock,
+  ShieldAlert,
+  FileText,
+  Database,
+  Cpu,
+  ExternalLink
 } from 'lucide-react';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
 import { triggerLightHaptic } from '../utils/haptics';
@@ -20,137 +28,363 @@ interface UserGuidePageProps {
 
 export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
   useEdgeSwipeBack({ onBack });
+
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
-      {/* Minimal Sticky Header (No Description) */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 sm:px-8 py-3.5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-[#fbf9f4] text-[#2c2824] font-sans selection:bg-[#0f9d58] selection:text-white flex flex-col">
+      {/* Sticky Clean Header with soft document tone */}
+      <header className="sticky top-0 z-30 bg-[#faf6ee]/95 backdrop-blur-md border-b border-[#e7e0d2] px-3.5 sm:px-8 py-3.5">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
                 triggerLightHaptic();
                 onBack();
               }}
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600 active:scale-95 cursor-pointer"
+              className="p-2 hover:bg-[#ede5d6] rounded-full transition-colors text-[#57534e] active:scale-95 cursor-pointer"
               title="Back"
+              aria-label="Back"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={20} />
             </button>
-            <div className="flex items-center gap-2">
-              <BookOpen size={18} className="text-[#0f9d58]" />
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-                User Guide & Manual
+            <div className="flex items-center gap-2.5">
+              <BookOpen size={22} className="text-[#0f9d58] shrink-0" />
+              <h1 className="text-base sm:text-lg font-bold text-[#1c1917] tracking-tight">
+                User Guide &amp; Operating Manual
               </h1>
             </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs font-semibold text-[#57534e]">
+            <a href="/privacy" className="hover:text-[#0f9d58] transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="/terms" className="hover:text-[#0f9d58] transition-colors">Terms</a>
+            <span>•</span>
+            <a href="/delete-account" className="hover:text-rose-600 transition-colors">Delete Account</a>
           </div>
         </div>
       </header>
 
-      {/* Main Minimal Document */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-8 py-8 sm:py-12 space-y-10">
-        {/* Title */}
-        <div className="border-b border-slate-100 pb-6 space-y-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-[#0f9d58]">
-            <Sparkles size={11} /> Official Documentation
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            DawaLens AI Operating Guide
-          </h2>
-          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            Your personal digital pharmacy manager. Safely track expiration dates, scan prescriptions using AI camera vision, receive automated email alerts, and check dangerous drug-drug interactions.
-          </p>
-        </div>
+      {/* Main Document Content */}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 md:px-8 py-6 sm:py-10 space-y-8 sm:space-y-12">
+        {/* Title Header */}
+        <section className="space-y-4 sm:space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-[#e5decb] pb-4 sm:pb-5 gap-2">
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#0f9d58] border border-emerald-200">
+                <Sparkles size={13} /> Official Documentation &bull; Version 2.5
+              </span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1c1917] tracking-tight leading-tight mt-2.5">
+                DawaLens AI Operating Guide
+              </h2>
+            </div>
+            <div className="text-xs sm:text-sm text-[#78716c] font-medium sm:text-right shrink-0">
+              <div>Ref: DAWALENS-GUIDE-2026-V2.5</div>
+              <div>Updated: October 3, 2026</div>
+            </div>
+          </div>
 
-        {/* 1. Adding Medications */}
-        <section className="space-y-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Camera size={16} className="text-[#0f9d58]" />
-            1. Adding & Scanning Medications
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            DawaLens AI offers two fast methods to input your medication inventory into your cloud vault:
+          <p className="text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            Welcome to <strong>DawaLens AI</strong>, your personal medication inventory vault, expiration monitoring companion, and personal digital pharmacist. This comprehensive manual details all scanning techniques, batch inventory rules, alarm configurations, and AI safety tools.
           </p>
-          <ul className="list-disc pl-5 space-y-2 text-sm text-slate-600">
-            <li>
-              <strong className="text-slate-800">AI Prescription & Box Scanner:</strong> Tap the <strong className="text-[#0f9d58]">Scan</strong> button on the bottom navigation bar. Point your camera at any medication label, box, or blister strip. Our on-device vision model extracts medicine name, dosage strength, and expiration date automatically.
-            </li>
-            <li>
-              <strong className="text-slate-800">Manual Entry with Suggestions:</strong> Tap <strong className="text-[#0f9d58]">Manual</strong> on the home view. Type the medicine name to see instant auto-fill suggestions. Select your dosage form (Tablet, Capsule, Syrup, Ampule, etc.), remaining quantity, and expiration date.
-            </li>
-          </ul>
         </section>
 
-        {/* 2. Batch Management */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Layers size={16} className="text-[#0f9d58]" />
-            2. Batch Tracking & Multiple Expirations
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            If you purchase multiple packs of the same medication over time with different expiry dates, DawaLens AI automatically groups them under a single card while tracking each batch individually:
-          </p>
-          <ul className="list-disc pl-5 space-y-2 text-sm text-slate-600">
-            <li><strong className="text-slate-800">FIFO Order (First In, First Out):</strong> The card displays the nearest expiring batch first so you know which one to use first.</li>
-            <li><strong className="text-slate-800">Quick Deduct (-1):</strong> Tapping the minus button deducts from the nearest expiring batch automatically.</li>
-            <li><strong className="text-slate-800">Expired Separation:</strong> Batches past their expiry date are moved into the dedicated Expired/Empty archive section.</li>
-          </ul>
-        </section>
-
-        {/* 3. Drug Interactions */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <AlertTriangle size={16} className="text-[#0f9d58]" />
-            3. Drug Interactions & Clinical Assistant
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Tap the <strong className="text-slate-800">Assistant</strong> tab on your navigation bar to chat with our AI pharmacology assistant. Whenever you have 2 or more active medications, you can run the <strong>Check Interactions</strong> tool to screen for adverse contraindications, food-drug warnings, or duplicate therapies.
-          </p>
-
-          {/* Highlight Callout (Only where required) */}
-          <div className="p-3.5 bg-amber-50/70 border-l-4 border-amber-500 rounded-r-xl text-xs text-amber-900 space-y-1">
-            <span className="font-bold uppercase tracking-wider block">Important Clinical Notice</span>
-            <p>AI interaction warnings and advice are for educational reference only. Never alter prescribed therapies without direct consultation with a licensed physician or pharmacist.</p>
+        {/* Quick Table of Contents / Index */}
+        <section className="bg-[#f4eee1] border border-[#e2d9c8] rounded-xl p-4 sm:p-5 space-y-3">
+          <div className="flex items-center gap-2 font-bold text-[#1c1917] text-xs sm:text-sm uppercase tracking-wider">
+            <BookOpen size={17} className="text-[#0f9d58]" />
+            Operating Guide Index
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm font-semibold text-[#2c2824]">
+            <a href="#guide-scanning" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-emerald-100 text-[#0f9d58] text-[10px] font-black flex items-center justify-center shrink-0">1</span>
+              <span className="truncate">1. AI Camera Scanning &amp; OCR</span>
+            </a>
+            <a href="#guide-manual" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center shrink-0">2</span>
+              <span className="truncate">2. Manual Entry &amp; Dosage Forms</span>
+            </a>
+            <a href="#guide-batch" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-black flex items-center justify-center shrink-0">3</span>
+              <span className="truncate">3. FIFO Batch Inventory &amp; Vault</span>
+            </a>
+            <a href="#guide-alerts" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
+              <span className="truncate">4. Expiration Alerts &amp; Safe Disposal</span>
+            </a>
+            <a href="#guide-alarms" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-emerald-100 text-[#0f9d58] text-[10px] font-black flex items-center justify-center shrink-0">5</span>
+              <span className="truncate">5. Android Exact Dose Alarms</span>
+            </a>
+            <a href="#guide-interactions" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black flex items-center justify-center shrink-0">6</span>
+              <span className="truncate">6. Drug Interaction Screener</span>
+            </a>
+            <a href="#guide-assistant" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 text-[10px] font-black flex items-center justify-center shrink-0">7</span>
+              <span className="truncate">7. AI Pharmacist ("Dr. DawaLens")</span>
+            </a>
+            <a href="#guide-privacy" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
+              <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 text-[10px] font-black flex items-center justify-center shrink-0">8</span>
+              <span className="truncate">8. Data Privacy &amp; Account Deletion</span>
+            </a>
           </div>
         </section>
 
-        {/* 4. Expiry Notifications */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Bell size={16} className="text-[#0f9d58]" />
-            4. Expiry Notifications & Low Stock Alerts
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Never let medicines expire in your cabinet unnoticed. Configure automated alert schedules in your Profile Settings:
-          </p>
-          <ul className="list-disc pl-5 space-y-1.5 text-sm text-slate-600">
-            <li><strong className="text-slate-800">30 Days Warning:</strong> Early reminder for upcoming monthly refills.</li>
-            <li><strong className="text-slate-800">60 Days Warning:</strong> Standard lead time for doctor appointments and renewals.</li>
-            <li><strong className="text-slate-800">90 Days Warning:</strong> Quarterly audit for household emergency first-aid supplies.</li>
-          </ul>
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 1. SCANNING */}
+        <section id="guide-scanning" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-[#0f9d58] text-xs sm:text-sm font-black shrink-0">1.0</span>
+            <h3 className="tracking-tight">Adding Medications via AI Camera Scanning</h3>
+          </div>
+
+          <div className="border-l-4 border-[#0f9d58] bg-[#f5f8f5] border border-[#d2e7d7] p-4 sm:p-5 rounded-r-xl space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <div className="flex items-center gap-2 font-bold text-[#1c1917]">
+              <Camera size={18} className="text-[#0f9d58] shrink-0" />
+              Scanning Best Practices for Accurate Label Extraction
+            </div>
+            <p>
+              DawaLens AI features an advanced multi-tier vision and OCR pipeline capable of reading printed cartons, syrup bottles, and shiny embossed foil blister packs:
+            </p>
+            <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-[#44403c]">
+              <li>
+                <strong>Foil Blister Packs:</strong> Tilt the foil strip at a slight 45-degree angle under lighting so shadows highlight embossed expiry digits (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">EXP</code>, <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">BB</code>, or <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">B.No</code>). Our in-memory contrast filter suppresses glare automatically.
+              </li>
+              <li>
+                <strong>Bottles &amp; Syrups:</strong> Position the front trade label inside the viewfinder rectangle so the brand name (e.g. <em>Augmentin 625 Duo</em>, <em>Calpol 250</em>) and volume (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">100ml</code>) are clear.
+              </li>
+              <li>
+                <strong>Automatic Recognition:</strong> The camera detects the medicine brand name, dosage strength, normalized expiration date (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">YYYY-MM-01</code>), and pack quantity (using blister cell detection).
+              </li>
+              <li>
+                <strong>100% Offline Capability:</strong> If you are offline, scanning falls back seamlessly to client-side <strong>Tesseract.js (Wasm)</strong> and our on-device Small Language Model without requiring any internet connection.
+              </li>
+            </ul>
+          </div>
         </section>
 
-        {/* 5. Privacy & Storage */}
-        <section className="space-y-3 pt-4 border-t border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Lock size={16} className="text-[#0f9d58]" />
-            5. Data Privacy & Local Image Storage
-          </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Prescription packaging images captured via your camera are stored strictly on-device in your browser's local IndexedDB cache and are never uploaded to remote servers. Account records are stored in your secure Firebase cloud vault and can be permanently deleted at any time via the <a href="/delete-account" className="text-[#0f9d58] font-semibold underline">Delete Account</a> page.
-          </p>
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 2. MANUAL ENTRY */}
+        <section id="guide-manual" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-900 text-xs sm:text-sm font-black shrink-0">2.0</span>
+            <h3 className="tracking-tight">Manual Medicine Entry &amp; Dosage Forms</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              If your medication packaging is damaged or you prefer direct entry:
+            </p>
+            <ol className="list-decimal pl-5 space-y-2 text-[#44403c]">
+              <li>Tap the green <strong>+ Add Medicine</strong> button on the home screen.</li>
+              <li>
+                <strong>Clinical Autocomplete:</strong> Type the first few letters of the trade or generic salt name. The app queries a built-in compendium of 150+ standard formulations in real-time.
+              </li>
+              <li>
+                <strong>Dosage Form Classification:</strong> Select the accurate formulation form:
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 font-mono text-xs text-[#1c1917]">
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">💊 Tablet</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">💊 Capsule</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">🧴 Syrup / Liquid</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">💉 Ampule / Vial</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">📦 Powder / ORS</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">🩹 Tape / Patch</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">💧 Topical Wash</div>
+                  <div className="bg-[#ede5d6]/60 p-2 rounded text-center">🌿 Other (Drops/Ointment)</div>
+                </div>
+              </li>
+              <li>Enter the remaining unit quantity and set the expiration date.</li>
+              <li>Enable custom <strong>Low-Stock Alert</strong> thresholds and email alert toggles as desired.</li>
+            </ol>
+          </div>
         </section>
 
-        {/* 6. Support & Contact */}
-        <section className="pt-4 border-t border-slate-100 space-y-2">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Mail size={16} className="text-[#0f9d58]" />
-            6. Support & Inquiries
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 3. BATCH & FIFO */}
+        <section id="guide-batch" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-900 text-xs sm:text-sm font-black shrink-0">3.0</span>
+            <h3 className="tracking-tight">FIFO Batch Tracking &amp; Vault Management</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <div className="border-l-4 border-purple-600 bg-[#f9f5fc] border border-purple-200/80 p-4 rounded-r-xl space-y-2">
+              <div className="font-bold text-purple-950 flex items-center gap-2">
+                <Layers size={18} className="text-purple-600" />
+                First-In, First-Out (FIFO) Batch Deduction
+              </div>
+              <p className="text-[#44403c]">
+                When you buy multiple packs of the same medication over time with different expiry dates, DawaLens AI groups them under one unified card while tracking each batch separately. Tapping the <strong>-1 button</strong> automatically deducts pills from the nearest expiring batch first so earlier stock is consumed before opening fresh packs.
+              </p>
+            </div>
+
+            <p>
+              <strong>Category Filters:</strong> Use the top category selector to filter your inventory by clinical department: <em>Heart, Pain Relief, Antibiotics, Diabetes, Vitamins, Digestive, Allergy, Respiratory, Mental Health, Skin Care, or Eye &amp; Ear</em>.
+            </p>
+          </div>
+        </section>
+
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 4. EXPIRY & SAFE DISPOSAL */}
+        <section id="guide-alerts" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-xs sm:text-sm font-black shrink-0">4.0</span>
+            <h3 className="tracking-tight text-amber-950">Expiration Alert Lifecycle &amp; Safe Chemical Disposal</h3>
+          </div>
+
+          <div className="space-y-4 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              DawaLens AI runs an automated background cron worker 24/7 on the server to dispatch time-critical safety warnings directly to your verified email:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-[#fffbeb] border border-[#fde68a] p-3.5 rounded-xl space-y-1">
+                <span className="font-bold text-[#b45309] text-xs uppercase block">Stage 1: 1 Month Notice</span>
+                <p className="text-xs text-[#78350f]">Dispatched 30–31 days before expiration. Gives advance notice to plan renewals or schedule clinic appointments.</p>
+              </div>
+              <div className="bg-[#fff7ed] border border-[#fdba74] p-3.5 rounded-xl space-y-1">
+                <span className="font-bold text-[#c2410c] text-xs uppercase block">Stage 2: 7 Days Warning</span>
+                <p className="text-xs text-[#7c2d12]">Dispatched exactly 7 days before expiry. Urgent alert to finish therapy or obtain fresh refills.</p>
+              </div>
+              <div className="bg-[#fef2f2] border border-[#fca5a5] p-3.5 rounded-xl space-y-1">
+                <span className="font-bold text-[#b91c1c] text-xs uppercase block">Stage 3: Expired Advisory</span>
+                <p className="text-xs text-[#7f1d1d]">Dispatched on or immediately after expiry. <strong>DO NOT CONSUME.</strong> Includes safe disposal steps.</p>
+              </div>
+            </div>
+
+            <div className="border-l-4 border-amber-600 bg-[#fef8eb] border border-amber-200 p-4 rounded-r-xl text-xs sm:text-sm text-amber-950 space-y-1">
+              <span className="font-bold uppercase tracking-wider flex items-center gap-1.5 text-amber-900">
+                <AlertTriangle size={15} /> Safe Chemical Disposal Guidelines
+              </span>
+              <p>
+                Never flush expired antibiotics or hormones down toilets or sinks, as they contaminate municipal waterways. Participate in pharmacy take-back drop-off programs, or mix unwanted pills with coffee grounds or soil in a sealed pouch before household disposal.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 5. EXACT ALARMS */}
+        <section id="guide-alarms" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-[#0f9d58] text-xs sm:text-sm font-black shrink-0">5.0</span>
+            <h3 className="tracking-tight">Daily Dose Reminders &amp; Android Exact Alarms</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              On Android 13+ and 14+, DawaLens AI requests <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">USE_EXACT_ALARM</code> to ensure minute-precise notification delivery:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
+              <li>
+                <strong>Local Hardware Execution:</strong> Alarms are registered with the Android operating system&apos;s native <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">AlarmManager</code>. They fire 100% offline, even without an active internet connection.
+              </li>
+              <li>
+                <strong>Battery Optimization Advice:</strong> To prevent Android OEM battery cleaners (e.g. on Samsung, Xiaomi, OnePlus) from killing dose reminders, open your phone&apos;s <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 6. DRUG INTERACTIONS */}
+        <section id="guide-interactions" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-rose-100 text-rose-900 text-xs sm:text-sm font-black shrink-0">6.0</span>
+            <h3 className="tracking-tight text-rose-950">Drug-Drug Interaction Checker</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              When taking two or more medications simultaneously, select <strong>Check Interactions</strong> in the navigation bar:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
+              <li>
+                <strong>Severity Ratings:</strong> Interaction reports classify conflicts into 🟢 Low, 🟡 Moderate, or 🔴 High clinical severity.
+              </li>
+              <li>
+                <strong>Clinical Mechanism &amp; Action Plan:</strong> Explains the biological conflict (e.g., increased bleeding risk with blood thinners, competing liver enzymes) and provides talking points to bring to your doctor.
+              </li>
+            </ul>
+            <div className="p-3.5 bg-rose-50 border-l-4 border-rose-500 rounded-r-xl text-xs text-rose-950 font-medium">
+              <strong>Clinical Advisory:</strong> AI interaction warnings are for personal education only. Never discontinue essential maintenance therapies without direct medical authorization.
+            </div>
+          </div>
+        </section>
+
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 7. AI PHARMACIST */}
+        <section id="guide-assistant" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-stone-200 text-stone-800 text-xs sm:text-sm font-black shrink-0">7.0</span>
+            <h3 className="tracking-tight">AI Pharmacist ("Dr. DawaLens")</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              Tap the <strong>Assistant</strong> tab anytime for 24/7 empathetic, evidence-based medication guidance:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
+              <li>
+                <strong>Vault Awareness:</strong> When you ask <em>"What do I have for a headache?"</em>, Dr. DawaLens checks your actual stored medicines before recommending standard alternatives.
+              </li>
+              <li>
+                <strong>Native Hinglish Support:</strong> Dr. DawaLens natively speaks and understands Hinglish (e.g. <em>"Aapko ye Paracetamol din mein do baar khana khane ke baad leni hai"</em>).
+              </li>
+              <li>
+                <strong>Consultation Reports:</strong> Tap <strong>Send Consultation Report</strong> to dispatch a structured summary of your consultation and active medicine list directly to your verified email and in-app Treatment Mailbox.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <div className="border-t border-[#e5decb]" />
+
+        {/* 8. PRIVACY & DELETION */}
+        <section id="guide-privacy" className="space-y-4 scroll-mt-20">
+          <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
+            <span className="px-2.5 py-0.5 rounded-md bg-stone-200 text-stone-800 text-xs sm:text-sm font-black shrink-0">8.0</span>
+            <h3 className="tracking-tight">Data Privacy, Local Storage &amp; Account Erasure</h3>
+          </div>
+
+          <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
+            <p>
+              DawaLens AI follows a strict privacy-first architecture under the India DPDP Act 2023 and GDPR:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
+              <li>
+                <strong>Zero Cloud Photos:</strong> Camera images saved in your vault are stored 100% locally in your physical device&apos;s sandboxed <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">IndexedDB</code> and are NEVER uploaded to cloud storage buckets.
+              </li>
+              <li>
+                <strong>Soft Delete Recovery:</strong> Deleting a medicine keeps it in <em>Recently Deleted</em> for 15 days so you can restore accidental deletions.
+              </li>
+              <li>
+                <strong>Permanent Account Erasure:</strong> To purge all cloud documents, push tokens, server schedules, and local device image caches, go to <strong>Settings &rarr; Danger Zone &rarr; Delete Account &amp; All Data</strong>, or visit our statutory web portal at{' '}
+                <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline">
+                  https://dawalens.vercel.app/delete-account <ExternalLink size={13} className="inline" />
+                </a>.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Support Card */}
+        <section className="pt-6 border-t border-[#e5decb] space-y-2">
+          <h3 className="text-lg font-bold text-[#1c1917] flex items-center gap-2">
+            <Mail size={18} className="text-[#0f9d58]" />
+            Official Support Desk &amp; Developer Contact
           </h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            For technical support, feature suggestions, or account assistance, email us at{' '}
+          <p className="text-sm text-[#44403c] leading-relaxed">
+            Need help or have a feature recommendation? Contact Operating Developer <strong>MD NOOR HASSAN</strong> directly at{' '}
             <a 
-              href="mailto:mdnoor4860@gmail.com?subject=DawaLens%20AI%20Support" 
-              className="text-[#0f9d58] font-bold hover:underline"
+              href="mailto:mdnoor4860@gmail.com?subject=DawaLens%20AI%20Support%20Request" 
+              className="text-[#0f9d58] font-bold underline"
             >
               mdnoor4860@gmail.com
             </a>.
@@ -158,11 +392,13 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
         </section>
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-slate-100 py-6 px-4 sm:px-8 mt-12 text-xs text-slate-500">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI. Registered Domain: https://dawalens.vercel.app</div>
+      {/* Footer */}
+      <footer className="border-t border-[#e5decb] bg-[#faf6ee] py-6 px-4 sm:px-8 mt-12 text-xs text-[#78716c]">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>&copy; 2026 DawaLens AI &bull; Ref: DAWALENS-GUIDE-2026-V2.5</div>
           <div className="flex items-center gap-4">
+            <a href="/" className="hover:text-[#0f9d58] font-semibold transition-colors">Home</a>
+            <span>•</span>
             <a href="/privacy" className="hover:text-[#0f9d58] font-semibold transition-colors">Privacy Policy</a>
             <span>•</span>
             <a href="/terms" className="hover:text-[#0f9d58] font-semibold transition-colors">Terms of Service</a>

@@ -2,6 +2,9 @@ import React from 'react';
 import { X, Trash2, Bell, Palette, ShieldAlert, LogOut, Mail, RotateCcw, AlertTriangle, Key, Copy, Check, ChevronDown, ChevronUp, FileText, Smartphone, Globe, HelpCircle, Pill, Camera, Zap, Info, Upload, Download, Heart, ListTodo, Settings, User, Rss, Newspaper, UserPlus, BookOpen, Shield, Scale, Cookie } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Medicine } from '../types';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -130,6 +133,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const handleNotificationToggle = async () => {
+    const nextVal = !browserNotificationsEnabled;
+
+    if (!nextVal) {
+      setBrowserNotificationsEnabled(false);
+      return;
+    }
+
+    // Explicitly request native push notification permissions using Capacitor Push Notifications API
+    try {
+      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('PushNotifications')) {
+        // Direct native system dialog via Capacitor Push Notifications API
+        const permStatus = await PushNotifications.requestPermissions();
+        const isGranted = permStatus.receive === 'granted';
+
+        if (isGranted) {
+          // Register device with FCM to receive native push notifications
+          await PushNotifications.register().catch((err) => {
+            console.warn('[FCM] Native register warning:', err);
+          });
+
+          // Also ensure Local Notifications permissions are requested for high-priority alerts
+          try {
+            if (Capacitor.isPluginAvailable('LocalNotifications')) {
+              await LocalNotifications.requestPermissions();
+            }
+          } catch {}
+        }
+
+        // Sync the user configuration state to reflect the status returned by the system
+        setBrowserNotificationsEnabled(isGranted);
+        return;
+      }
+    } catch (err) {
+      console.warn('Capacitor PushNotifications.requestPermissions error, attempting web fallback:', err);
+    }
+
+    // Direct Web / Chrome system dialog fallback (no alert-based flow)
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const result = await Notification.requestPermission();
+        setBrowserNotificationsEnabled(result === 'granted');
+      } catch {
+        setBrowserNotificationsEnabled(false);
+      }
+    } else {
+      setBrowserNotificationsEnabled(false);
+    }
+  };
+
   // Derive human friendly name from email
   const displayName = React.useMemo(() => {
     if (!userEmail) return 'X GAMER';
@@ -244,12 +297,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <div>
                   <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Email Alerts</span>
-                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Automated alerts at 1 month, 7 days & on expiration</span>
                 </div>
               </div>
               <button 
                 onClick={() => setEmailNotificationsEnabled(!emailNotificationsEnabled)}
                 className={`w-10 h-5.5 rounded-full transition-all relative shrink-0 ${emailNotificationsEnabled ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
+                aria-label="Toggle Email Alerts"
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${emailNotificationsEnabled ? 'left-5' : 'left-0.5'}`} 
@@ -257,32 +310,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
 
-            {/* Browser Push Switch */}
+            {/* Notifications Switch */}
             <div className="flex items-center justify-between px-1 pt-2 border-t border-slate-100 gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-3xs border border-amber-100">
                   <Bell size={15} />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Push &amp; Chrome Alerts</span>
-                    {browserNotificationsEnabled && onTestNotification && (
-                      <button
-                        type="button"
-                        onClick={onTestNotification}
-                        className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded font-bold transition-colors cursor-pointer border border-amber-200"
-                        title="Send test Chrome notification"
-                      >
-                        Send Test
-                      </button>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Chrome desktop &amp; native mobile expiry alerts</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Notifications</span>
+                  {browserNotificationsEnabled && onTestNotification && (
+                    <button
+                      type="button"
+                      onClick={onTestNotification}
+                      className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded font-bold transition-colors cursor-pointer border border-amber-200"
+                      title="Send test notification"
+                    >
+                      Send Test
+                    </button>
+                  )}
                 </div>
               </div>
               <button 
-                onClick={() => setBrowserNotificationsEnabled(!browserNotificationsEnabled)}
+                onClick={handleNotificationToggle}
                 className={`w-10 h-5.5 rounded-full transition-all relative shrink-0 ${browserNotificationsEnabled ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
+                aria-label="Toggle Notifications"
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${browserNotificationsEnabled ? 'left-5' : 'left-0.5'}`} 
@@ -298,7 +349,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
                 <div>
                   <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Cookies & Analytics</span>
-                  <span className="text-[10px] text-[#5f6368] block mt-0.5 leading-none">Anonymous feedback support</span>
                 </div>
               </div>
               <button 
@@ -312,6 +362,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }
                 }}
                 className={`w-10 h-5.5 rounded-full transition-all relative shrink-0 ${cookieConsent ? 'bg-[#0f9d58]' : 'bg-[#e3e2e0]'}`}
+                aria-label="Toggle Cookies and Analytics"
               >
                 <div 
                   className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full transition-all shadow-sm ${cookieConsent ? 'left-5' : 'left-0.5'}`} 
@@ -323,9 +374,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-1.5 pt-3 border-t border-slate-100 px-1">
               <span className="text-[9px] font-bold text-[#5f6368] block uppercase">Expiry Warning Window</span>
               <div className="grid grid-cols-3 gap-1.5">
-                {[30, 60, 90].map((days) => (
+                {[30, 60, 90].map((days, dIdx) => (
                   <button
-                    key={days}
+                    key={`days-opt-${days}-${dIdx}`}
                     onClick={() => setAlertThreshold(days)}
                     className={`py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                       alertThreshold === days 
@@ -363,9 +414,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-1.5 px-1">
               <span className="text-[9px] font-bold text-[#5f6368] block uppercase mb-1.5">Accent Color</span>
               <div className="flex gap-2 flex-wrap">
-                {colors.map((color) => (
+                {colors.map((color, cIdx) => (
                   <button
-                    key={color.value}
+                    key={`color-opt-${color.value}-${cIdx}`}
                     onClick={() => setAccentColor(color.value)}
                     className={`w-6 h-6 rounded-full border transition-all flex items-center justify-center shadow-xs ${
                       accentColor === color.value ? 'border-slate-800 scale-110 ring-2 ring-[#0f9d58]/10' : 'border-transparent opacity-75 hover:opacity-100'

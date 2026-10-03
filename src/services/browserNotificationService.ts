@@ -1,15 +1,23 @@
 import { Medicine } from '../types';
 import { getApiUrl } from '../utils/apiConfig';
+import { Capacitor } from '@capacitor/core';
+import { initNativeNotifications } from './nativeNotificationService';
 
 /**
  * Service to manage Chrome and browser native desktop/mobile notifications for medication expiries.
  */
 
 export function isBrowserNotificationSupported(): boolean {
+  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+    return true;
+  }
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 
 export function getBrowserNotificationPermission(): NotificationPermission | 'unsupported' {
+  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+    return 'granted';
+  }
   if (!isBrowserNotificationSupported()) {
     return 'unsupported';
   }
@@ -17,29 +25,41 @@ export function getBrowserNotificationPermission(): NotificationPermission | 'un
 }
 
 /**
- * Requests permission from the user in Chrome / Browser.
+ * Requests permission from the user in Chrome / Browser or native Android App.
+ * Directly triggers the system permission dialog.
  * Resolves to true if granted, false otherwise.
  */
 export async function requestBrowserNotificationPermission(): Promise<boolean> {
-  if (!isBrowserNotificationSupported()) {
-    return false;
+  // 1. If running as native Android app (Capacitor APK)
+  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+    try {
+      const nativeGranted = await initNativeNotifications();
+      return nativeGranted;
+    } catch (e) {
+      console.warn('Native notification permission error:', e);
+    }
   }
 
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      // Show an immediate confirmation notification so the user knows it's working
-      await showBrowserNotification('✅ Expiry Notifications Enabled', {
-        body: 'DawaLens AI will alert you when your medicines are nearing expiration or need refills.',
-        tag: 'dawalens-welcome'
-      });
-      return true;
+  // 2. If running in Chrome / Browser / PWA
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Show an immediate confirmation notification so the user knows it's working
+        await showBrowserNotification('✅ Expiry Notifications Enabled', {
+          body: 'DawaLens AI will alert you when your medicines are nearing expiration or need refills.',
+          tag: 'dawalens-welcome'
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.warn('Failed to request browser notification permission:', error);
+      return false;
     }
-    return false;
-  } catch (error) {
-    console.warn('Failed to request browser notification permission:', error);
-    return false;
   }
+
+  return false;
 }
 
 interface NotificationOptionsExtended extends NotificationOptions {
