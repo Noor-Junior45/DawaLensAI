@@ -48,6 +48,7 @@ interface GroupedMedicine {
   totalActiveQuantity: number;
   totalExpiredQuantity: number;
   hasActiveQuantities: boolean;
+  hasExpiredQuantities: boolean;
   nearestActiveBatch?: Medicine;
   earliestExpiredBatch?: Medicine;
   allBatches: Medicine[];
@@ -234,6 +235,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
           totalActiveQuantity: 0,
           totalExpiredQuantity: 0,
           hasActiveQuantities: false,
+          hasExpiredQuantities: false,
           allBatches: []
         };
         map.set(groupKey, group);
@@ -271,22 +273,33 @@ export const MedicineList: React.FC<MedicineListProps> = ({
 
       if (isInactive) {
         group.expiredOrEmptyBatches.push(med);
-        if (med.quantity !== undefined && med.quantity > 0) {
-          group.totalExpiredQuantity += med.quantity;
+        if (med.quantity !== undefined) {
+          group.totalExpiredQuantity += Math.max(0, med.quantity);
+          group.hasExpiredQuantities = true;
         }
       } else {
         group.activeBatches.push(med);
         if (med.quantity !== undefined) {
-          group.totalActiveQuantity += med.quantity;
+          group.totalActiveQuantity += Math.max(0, med.quantity);
           group.hasActiveQuantities = true;
         }
       }
     });
 
-    // Sort active batches by nearest expiration date (ascending diffDays)
+    // Sort batches within each group
     map.forEach(group => {
+      // Sort active batches by nearest expiration date (ascending diffDays: nearest expiring first)
       group.activeBatches.sort((a, b) => getDiffDays(a.expirationDate) - getDiffDays(b.expirationDate));
-      group.expiredOrEmptyBatches.sort((a, b) => getDiffDays(b.expirationDate) - getDiffDays(a.expirationDate));
+
+      // In expiredOrEmptyBatches: separate genuinely expired (diffDays < 0) from empty/inactive
+      const genuinelyExpired = group.expiredOrEmptyBatches.filter(b => getDiffDays(b.expirationDate) < 0);
+      const otherInactive = group.expiredOrEmptyBatches.filter(b => getDiffDays(b.expirationDate) >= 0);
+
+      // Sort expired batches so the most relevant expired batch comes first
+      genuinelyExpired.sort((a, b) => getDiffDays(a.expirationDate) - getDiffDays(b.expirationDate));
+      otherInactive.sort((a, b) => getDiffDays(a.expirationDate) - getDiffDays(b.expirationDate));
+
+      group.expiredOrEmptyBatches = [...genuinelyExpired, ...otherInactive];
 
       if (group.activeBatches.length > 0) {
         group.nearestActiveBatch = group.activeBatches[0];
@@ -317,6 +330,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   };
 
   // Separate active groups and expired groups with filtering applied
+  // If a medicine has both safe and expired batches, show safe in activeGroups and expired in expiredGroups
   const activeGroups = Array.from(groupedMedicinesMap.values())
     .filter(g => g.activeBatches.length > 0)
     .filter(matchesFilter)
@@ -329,7 +343,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     });
 
   const expiredGroups = Array.from(groupedMedicinesMap.values())
-    .filter(g => g.activeBatches.length === 0 && g.expiredOrEmptyBatches.length > 0)
+    .filter(g => g.expiredOrEmptyBatches.length > 0)
     .filter(matchesFilter)
     .sort((a, b) => {
       if (a.liked && !b.liked) return -1;
@@ -352,8 +366,8 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     const isLowQuantity = isAlertEnabled && group.hasActiveQuantities && group.totalActiveQuantity <= threshold;
     const needsAttention = isExpiringSoon || isExpiringAlert || isLowQuantity;
 
-    const groupBatchIds = group.allBatches.map(b => b.id);
-    const allGroupSelected = groupBatchIds.length > 0 && groupBatchIds.every(id => selectedIds.has(id));
+    const activeBatchIds = group.activeBatches.map(b => b.id);
+    const allActiveSelected = activeBatchIds.length > 0 && activeBatchIds.every(id => selectedIds.has(id));
     const isExpanded = expandedGroupKeys.has(group.groupKey) || group.allBatches.length > 1;
 
     return (
@@ -363,9 +377,9 @@ export const MedicineList: React.FC<MedicineListProps> = ({
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ 
           opacity: 1, 
-          scale: 1,
+          scale: 1, 
           y: 0,
-          ...(needsAttention && !allGroupSelected ? {
+          ...(needsAttention && !allActiveSelected ? {
             boxShadow: isExpiringSoon 
               ? ['0px 0px 0px rgba(249,115,22,0)', '0px 0px 15px rgba(249,115,22,0.15)', '0px 0px 0px rgba(249,115,22,0)']
               : isExpiringAlert || isLowQuantity
@@ -385,12 +399,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
         }}
         transition={{ 
           delay: index * 0.03,
-          ...(needsAttention && !allGroupSelected ? {
+          ...(needsAttention && !allActiveSelected ? {
             boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
           } : {})
         }}
         className={`w-full text-left relative overflow-hidden border-2 rounded-3xl p-5 transition-all shadow-sm ${
-          allGroupSelected ? 'bg-white border-[#0f9d58] shadow-[0_12px_40px_rgba(15,157,88,0.06)]' :
+          allActiveSelected ? 'bg-white border-[#0f9d58] shadow-[0_12px_40px_rgba(15,157,88,0.06)]' :
           isExpiringSoon ? 'bg-white border-orange-500 hover:border-orange-600 hover:bg-orange-50/20' :
           isExpiringAlert ? 'bg-white border-purple-500 hover:border-purple-600 hover:bg-purple-50/20' :
           isLowQuantity ? 'bg-white border-amber-500 hover:border-amber-600 hover:bg-amber-50/20' :
@@ -434,10 +448,10 @@ export const MedicineList: React.FC<MedicineListProps> = ({
             {isSelectionMode && (
               <button 
                 type="button"
-                onClick={() => toggleSelectGroup(group.allBatches)}
+                onClick={() => toggleSelectGroup(group.activeBatches)}
                 className="mt-1 text-slate-400 shrink-0 hover:text-[#0f9d58] transition-colors"
               >
-                {allGroupSelected ? <CheckSquare size={18} className="text-[#0f9d58]" /> : <Square size={18} />}
+                {allActiveSelected ? <CheckSquare size={18} className="text-[#0f9d58]" /> : <Square size={18} />}
               </button>
             )}
             
@@ -446,7 +460,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
               onClick={() => {
                 triggerLightHaptic();
                 if (isSelectionMode) {
-                  toggleSelectGroup(group.allBatches);
+                  toggleSelectGroup(group.activeBatches);
                 } else if (nearestBatch) {
                   onEdit(nearestBatch);
                 }
@@ -634,6 +648,12 @@ export const MedicineList: React.FC<MedicineListProps> = ({
               <h3 className="font-bold text-base sm:text-lg tracking-tight text-slate-600 flex items-center gap-1.5 truncate">
                 <span className="line-through">{group.name}</span>
                 <span className="shrink-0 scale-90 sm:scale-100">{group.form && MEDICINE_FORM_ICONS[group.form]}</span>
+                {group.expiredOrEmptyBatches.length > 1 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-100">
+                    <Layers size={10} />
+                    {group.expiredOrEmptyBatches.length} Expired Batches
+                  </span>
+                )}
               </h3>
 
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -687,11 +707,16 @@ export const MedicineList: React.FC<MedicineListProps> = ({
         <div className={`flex items-center justify-between mt-2 pt-2 border-t border-slate-100 ${isSelectionMode ? 'ml-7' : ''}`}>
           <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-mono font-medium">
             <Calendar size={13} className="text-slate-400" />
-            <span>Expired: {formatDisplayDate(earliestBatch?.expirationDate)}</span>
+            <span>
+              {getDiffDays(earliestBatch?.expirationDate) < 0 ? 'Expired: ' : 'Finished: '}
+              <strong className="text-rose-600 font-bold">{formatDisplayDate(earliestBatch?.expirationDate)}</strong>
+            </span>
           </div>
 
           <div className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-[#ea4335]">
-            {group.totalExpiredQuantity > 0 ? `${group.totalExpiredQuantity} EXPIRED` : 'EXPIRED'}
+            {getDiffDays(earliestBatch?.expirationDate) < 0
+              ? (group.hasExpiredQuantities || group.totalExpiredQuantity > 0 ? `${group.totalExpiredQuantity} EXPIRED` : 'EXPIRED')
+              : 'OUT OF STOCK'}
           </div>
         </div>
       </motion.div>

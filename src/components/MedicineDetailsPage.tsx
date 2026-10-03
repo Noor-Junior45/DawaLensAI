@@ -86,8 +86,11 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
   const batchesToShow = relatedBatches.length > 0 ? relatedBatches : [medicine];
   const totalStock = batchesToShow.reduce((acc, b) => acc + (b.quantity || 0), 0);
   const activeBatches = batchesToShow.filter(b => !b.taken && getDiffDays(b.expirationDate) >= 0);
-  const nearestActive = activeBatches.length > 0 ? activeBatches[0] : batchesToShow[0];
-  const nearestDiffDays = getDiffDays(nearestActive?.expirationDate);
+  
+  // If the user selected an expired batch, focus on that batch; otherwise focus on the nearest active batch
+  const isSelectedMedicineExpired = getDiffDays(medicine.expirationDate) < 0;
+  const targetBatch = isSelectedMedicineExpired ? medicine : (activeBatches.length > 0 ? activeBatches[0] : batchesToShow[0]);
+  const nearestDiffDays = getDiffDays(targetBatch?.expirationDate);
 
   // Low stock settings
   const isAlertEnabled = medicine.enableLowStockAlert !== false;
@@ -324,7 +327,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
                   Expired Medication Notice
                 </div>
                 <p className="text-sm text-rose-900 leading-snug mt-0.5">
-                  {medicine.quantity ?? 0} units expired <strong>{Math.abs(nearestDiffDays)} days ago</strong> on {formatDateFormal(nearestActive?.expirationDate)}.
+                  {targetBatch.quantity ?? 0} units expired <strong>{Math.abs(nearestDiffDays)} days ago</strong> on {formatDateFormal(targetBatch?.expirationDate)}.
                 </p>
               </div>
             </div>
@@ -336,7 +339,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
                   Expiring Today Notice
                 </div>
                 <p className="text-sm text-amber-900 leading-snug mt-0.5">
-                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> expire today ({formatDateFormal(nearestActive?.expirationDate)}).
+                  <strong>{targetBatch?.quantity ?? 0} unit(s)</strong> expire today ({formatDateFormal(targetBatch?.expirationDate)}).
                 </p>
               </div>
             </div>
@@ -348,7 +351,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
                   Expiring Soon Notice
                 </div>
                 <p className="text-sm text-orange-900 leading-snug mt-0.5">
-                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> have <strong>{nearestDiffDays} day(s) left</strong> to expire on {formatDateFormal(nearestActive?.expirationDate)}.
+                  <strong>{targetBatch?.quantity ?? 0} unit(s)</strong> have <strong>{nearestDiffDays} day(s) left</strong> to expire on {formatDateFormal(targetBatch?.expirationDate)}.
                 </p>
               </div>
             </div>
@@ -360,7 +363,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
                   Upcoming Expiration Notice
                 </div>
                 <p className="text-sm text-purple-900 leading-snug mt-0.5">
-                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(nearestActive?.expirationDate)}.
+                  <strong>{targetBatch?.quantity ?? 0} unit(s)</strong> with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(targetBatch?.expirationDate)}.
                 </p>
               </div>
             </div>
@@ -372,7 +375,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
                   Active Stock Notice
                 </div>
                 <p className="text-sm text-emerald-900 leading-snug mt-0.5">
-                  <strong>{nearestActive?.quantity ?? 0} unit(s)</strong> available with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(nearestActive?.expirationDate)}.
+                  <strong>{targetBatch?.quantity ?? 0} unit(s)</strong> available with <strong>{nearestDiffDays} days left</strong> until {formatDateFormal(targetBatch?.expirationDate)}.
                 </p>
               </div>
             </div>
