@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential, reauthenticateWithPopup, reauthenticateWithCredential } from 'firebase/auth';
 import { initializeFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocFromServer, writeBatch, deleteField, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
@@ -37,6 +37,8 @@ export {
   createUserWithEmailAndPassword, 
   sendPasswordResetEmail, 
   signInWithCredential,
+  reauthenticateWithPopup,
+  reauthenticateWithCredential,
   GoogleAuthProvider,
   ref, 
   uploadBytes, 
@@ -45,6 +47,25 @@ export {
   uploadBytesResumable 
 };
 export type { User };
+
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken();
+    }
+  } catch (err) {
+    console.warn('Failed to obtain Firebase ID token:', err);
+  }
+  return null;
+}
+
+export async function getAuthHeader(): Promise<Record<string, string>> {
+  const token = await getAuthToken();
+  if (token) {
+    return { 'Authorization': `Bearer ${token}` };
+  }
+  return {};
+}
 
 export enum OperationType {
   CREATE = 'create',

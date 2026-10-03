@@ -225,7 +225,7 @@
       <ul>
         <li><strong>Foil Blister Packs:</strong> Position the foil side under lighting at a 45-degree angle. Our in-memory pre-processor automatically applies an adaptive contrast filter to eliminate shiny foil glare and detect embossed expiration dates (<code>EXP</code>, <code>BB</code>, or <code>B.No</code>).</li>
         <li><strong>Bottles &amp; Cartons:</strong> Align the trade name label inside the viewfinder rectangle so the brand name (e.g. <em>Augmentin 625</em>, <em>Calpol 250</em>) and bottle volume (<code>100ml</code>) are clearly captured.</li>
-        <li><strong>Automatic Extraction:</strong> The camera detects the medicine brand name, dosage strength (e.g. <code>500mg</code>), standardized expiration date (<code>YYYY-MM-01</code>), and pack quantity (via blister cell detection).</li>
+        <li><strong>Automatic Extraction:</strong> The camera detects the medicine brand name, dosage strength (e.g. <code>500mg</code>), standardized expiration date (<code>YYYY-MM-01</code>), and pack quantity (via packaging analysis).</li>
         <li><strong>100% Offline Capability:</strong> If you are offline, scanning falls back to client-side <strong>Tesseract.js (Wasm)</strong> and our on-device Small Language Model without requiring any cloud connection.</li>
       </ul>
 
@@ -283,12 +283,12 @@
         Never flush expired antibiotics or hormones down household sinks or toilets. Participate in pharmacy take-back drop-off programs, or mix unwanted pills with coffee grounds or soil in a sealed pouch before household trash disposal.
       </div>
 
-      <!-- 5. EXACT ALARMS -->
-      <h2>5. Daily Dose Alarms &amp; Android Exact Timers</h2>
-      <p>On Android 13+ and 14+, DawaLens AI utilizes <code>USE_EXACT_ALARM</code> to ensure minute-precise notification delivery:</p>
+      <!-- 5. SCHEDULED NOTIFICATIONS -->
+      <h2>5. Scheduled Expiry &amp; Dose Notifications</h2>
+      <p>DawaLens AI delivers timely medication alerts on Android and modern web browsers without requiring restricted exact alarm permissions:</p>
       <ul>
-        <li><strong>Local Hardware Alarms:</strong> Alarms are registered with the Android operating system's native <code>AlarmManager</code>. They fire 100% offline, even without an active internet connection.</li>
-        <li><strong>Battery Optimization Advice:</strong> To prevent phone battery savers from delaying alarms, go to your phone's <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.</li>
+        <li><strong>Multi-Stage Expiration Alerts:</strong> Automatic alerts are scheduled on your device at 30 days before expiration, 7 days before expiration, and on the expiration day itself.</li>
+        <li><strong>Battery Optimization Advice:</strong> To prevent phone battery savers from delaying notifications, go to your phone's <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.</li>
       </ul>
 
       <!-- 6. DRUG INTERACTIONS -->

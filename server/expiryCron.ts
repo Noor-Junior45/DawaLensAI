@@ -10,6 +10,8 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 import { sendEmailDirectServer, getExpiryEmailHTMLServer, ExpiryStage } from "./emailTemplates.ts";
+import { getAdminApp, hasServiceAccountConfigured } from "./firebaseAdmin.ts";
+import { getMessaging } from 'firebase-admin/messaging';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = initializeFirestore(app, {
@@ -77,7 +79,7 @@ export async function sendPushNotificationToUser(
   title: string, 
   body: string, 
   data: Record<string, any> = {}
-): Promise<{ sent: number }> {
+): Promise<{ sent: number; error?: string }> {
   const tokens = new Set<string>(userPushTokens.get(userId) || []);
 
   try {
@@ -89,48 +91,60 @@ export async function sendPushNotificationToUser(
       }
     });
   } catch {
-    // Non-fatal
+    // Non-fatal fallback
   }
 
   if (tokens.size === 0) {
     return { sent: 0 };
   }
 
-  let sent = 0;
-  const fcmKey = process.env.FCM_SERVER_KEY || 'AIzaSyA0ZW1Xda-doqe5QxINvfvyFmbxMuBwKkM';
-
-  for (const token of tokens) {
-    try {
-      const res = await fetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `key=${fcmKey}`
-        },
-        body: JSON.stringify({
-          to: token,
-          notification: {
-            title,
-            body,
-            icon: '/logo.png',
-            sound: 'default'
-          },
-          data: {
-            ...data,
-            title,
-            body
-          }
-        })
-      });
-      if (res.ok) {
-        sent++;
-      }
-    } catch (e) {
-      console.warn('[FCM SEND ERROR]:', e);
-    }
+  if (!hasServiceAccountConfigured()) {
+    const err = 'FIREBASE_SERVICE_ACCOUNT_KEY is required in environment variables for FCM HTTP v1 push notifications.';
+    console.warn(`[FCM HTTP v1 WARNING] ${err}`);
+    return { sent: 0, error: err };
   }
 
-  return { sent };
+  try {
+    const adminApp = getAdminApp();
+    const messaging = getMessaging(adminApp);
+    const tokenArray = Array.from(tokens);
+    const serializedData: Record<string, string> = {
+      title,
+      body,
+    };
+    for (const [key, value] of Object.entries(data)) {
+      serializedData[key] = typeof value === 'string' ? value : JSON.stringify(value);
+    }
+
+    const response = await messaging.sendEachForMulticast({
+      tokens: tokenArray,
+      notification: {
+        title,
+        body,
+      },
+      data: serializedData,
+      android: {
+        priority: 'high',
+        notification: {
+          icon: 'ic_launcher',
+          color: '#0f9d58',
+          sound: 'default',
+        }
+      },
+      webpush: {
+        notification: {
+          icon: '/logo.png',
+          badge: '/logo.png',
+        }
+      }
+    });
+
+    console.log(`[FCM HTTP v1 SUCCESS] Sent ${response.successCount}/${tokenArray.length} notifications to user ${userId}`);
+    return { sent: response.successCount };
+  } catch (e: any) {
+    console.error('[FCM HTTP v1 ERROR]:', e);
+    return { sent: 0, error: e?.message || String(e) };
+  }
 }
 
 /**

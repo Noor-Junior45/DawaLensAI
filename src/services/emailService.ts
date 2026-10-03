@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db, getAuthHeader } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getApiUrl, getDirectRenderUrl } from '../utils/apiConfig';
 
@@ -48,11 +48,15 @@ export async function syncExpiryScheduleWithServer(
   });
 
   try {
+    const authHeaders = await getAuthHeader();
     let res: Response | null = null;
     try {
       res = await fetch(getApiUrl('/api/sync-expiry-schedule'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: payload
       });
     } catch (e) {}
@@ -61,7 +65,10 @@ export async function syncExpiryScheduleWithServer(
       try {
         await fetch(getDirectRenderUrl('/api/sync-expiry-schedule'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
           body: payload
         });
       } catch (err) {}
@@ -77,13 +84,15 @@ export async function syncExpiryScheduleWithServer(
  */
 export async function sendEmailAlert(params: EmailParams): Promise<{ success: boolean; simulated?: boolean; message?: string }> {
   try {
+    const authHeaders = await getAuthHeader();
     // 1. Call our custom Express nodemailer API (proxied to Render or direct Render)
     let response: Response | null = null;
     try {
       response = await fetch(getApiUrl('/api/send-email'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...authHeaders
         },
         body: JSON.stringify(params)
       });
@@ -93,7 +102,10 @@ export async function sendEmailAlert(params: EmailParams): Promise<{ success: bo
       try {
         response = await fetch(getDirectRenderUrl('/api/send-email'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
           body: JSON.stringify(params)
         });
       } catch (e) {}

@@ -112,7 +112,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
             </a>
             <a href="#guide-alarms" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-emerald-100 text-[#0f9d58] text-[10px] font-black flex items-center justify-center shrink-0">5</span>
-              <span className="truncate">5. Android Exact Dose Alarms</span>
+              <span className="truncate">5. Expiry &amp; Dose Notifications</span>
             </a>
             <a href="#guide-interactions" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 text-[10px] font-black flex items-center justify-center shrink-0">6</span>
@@ -154,7 +154,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                 <strong>Bottles &amp; Syrups:</strong> Position the front trade label inside the viewfinder rectangle so the brand name (e.g. <em>Augmentin 625 Duo</em>, <em>Calpol 250</em>) and volume (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">100ml</code>) are clear.
               </li>
               <li>
-                <strong>Automatic Recognition:</strong> The camera detects the medicine brand name, dosage strength, normalized expiration date (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">YYYY-MM-01</code>), and pack quantity (using blister cell detection).
+                <strong>Automatic Recognition:</strong> The camera detects the medicine brand name, dosage strength, normalized expiration date (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">YYYY-MM-01</code>), and pack quantity (using packaging analysis).
               </li>
               <li>
                 <strong>100% Offline Capability:</strong> If you are offline, scanning falls back seamlessly to client-side <strong>Tesseract.js (Wasm)</strong> and our on-device Small Language Model without requiring any internet connection.
@@ -268,23 +268,23 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
 
         <div className="border-t border-[#e5decb]" />
 
-        {/* 5. EXACT ALARMS */}
+        {/* 5. SCHEDULED NOTIFICATIONS */}
         <section id="guide-alarms" className="space-y-4 scroll-mt-20">
           <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
             <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-[#0f9d58] text-xs sm:text-sm font-black shrink-0">5.0</span>
-            <h3 className="tracking-tight">Daily Dose Reminders &amp; Android Exact Alarms</h3>
+            <h3 className="tracking-tight">Scheduled Expiry &amp; Dose Notifications</h3>
           </div>
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              On Android 13+ and 14+, DawaLens AI requests <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">USE_EXACT_ALARM</code> to ensure minute-precise notification delivery:
+              DawaLens AI delivers timely medication alerts on Android and modern web browsers without requiring restricted exact alarm permissions:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
               <li>
-                <strong>Local Hardware Execution:</strong> Alarms are registered with the Android operating system&apos;s native <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">AlarmManager</code>. They fire 100% offline, even without an active internet connection.
+                <strong>Multi-Stage Expiration Alerts:</strong> Automatic alerts are scheduled on your device at 30 days before expiration, 7 days before expiration, and on the expiration day itself.
               </li>
               <li>
-                <strong>Battery Optimization Advice:</strong> To prevent Android OEM battery cleaners (e.g. on Samsung, Xiaomi, OnePlus) from killing dose reminders, open your phone&apos;s <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.
+                <strong>Battery Optimization Advice:</strong> To prevent Android battery cleaners from delaying notification delivery, open your phone&apos;s <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.
               </li>
             </ul>
           </div>

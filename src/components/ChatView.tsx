@@ -4,7 +4,7 @@ import {
   MessageSquare, Calendar, Clock, 
   History, Search, Trash2, ShieldCheck, Stethoscope,
   AlertCircle, Pill, Info, Mail, ArrowLeft, Check, CheckCheck,
-  Camera, Mic, Languages
+  Camera, Mic, Languages, Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -41,6 +41,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showMedicalDisclaimerBanner, setShowMedicalDisclaimerBanner] = useState<boolean>(true);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerTimeLeft, setDisclaimerTimeLeft] = useState(30);
   const [activeProvider] = useState<AIProvider>('gemini');
@@ -52,6 +53,60 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
   const [chatCount, setChatCount] = useState<number>(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Safety & Guardrails: Reporting AI Response State (Stored anonymously without PII)
+  const [reportingMessage, setReportingMessage] = useState<ChatMessage | null>(null);
+  const [reportCategory, setReportCategory] = useState<string>('Inaccurate medical information');
+  const [reportComment, setReportComment] = useState<string>('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
+  const [reportSuccess, setReportSuccess] = useState<boolean>(false);
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportingMessage) return;
+    setIsSubmittingReport(true);
+    try {
+      const snippet = reportingMessage.content.slice(0, 500);
+      const reportPayload = {
+        category: reportCategory,
+        comment: reportComment,
+        responseSnippet: snippet,
+        provider: reportingMessage.provider || 'gemini'
+      };
+
+      try {
+        await fetch(getApiUrl('/api/ai/report'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reportPayload)
+        });
+      } catch (err) {
+        console.warn('API report call error, falling back to direct Firestore:', err);
+      }
+
+      try {
+        const reportId = crypto.randomUUID();
+        await setDoc(doc(db, 'aiReports', reportId), {
+          id: reportId,
+          ...reportPayload,
+          timestamp: Date.now()
+        });
+      } catch (fsErr) {
+        console.warn('Firestore report write error:', fsErr);
+      }
+
+      setReportSuccess(true);
+      setTimeout(() => {
+        setReportSuccess(false);
+        setReportingMessage(null);
+        setReportComment('');
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to submit report:', err);
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
 
   useEffect(() => {
     const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
@@ -211,6 +266,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
     setInput('');
     setIsLoading(true);
+    setShowMedicalDisclaimerBanner(false); // Hide medical disclaimer after one chat to maximize screen space
 
     try {
       // Build history
@@ -334,6 +390,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
       const batch = snap.docs.map(d => deleteDoc(d.ref));
       await Promise.all(batch);
       setMessages([]);
+      setShowMedicalDisclaimerBanner(true);
     } catch (err) {
       console.error("Error clearing chat messages:", err);
     } finally {
@@ -437,10 +494,20 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           </div>
 
           <div className="flex items-center gap-2">
+            {!showMedicalDisclaimerBanner && (
+              <button
+                onClick={() => setShowMedicalDisclaimerBanner(true)}
+                className="flex items-center gap-1 text-[11px] text-white/90 hover:text-white bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-full transition-all font-semibold shadow-3xs cursor-pointer active:scale-95"
+                title="Show Medical Disclaimer"
+              >
+                <AlertCircle size={12} className="text-amber-300" />
+                <span>Disclaimer</span>
+              </button>
+            )}
             {/* Red delete button with NO circular background */}
             <button
               onClick={handleClearChat}
-              className="flex items-center justify-center text-red-500 hover:text-red-400 active:scale-95 transition-all p-2 bg-transparent border-none"
+              className="flex items-center justify-center text-red-500 hover:text-red-400 active:scale-95 transition-all p-2 bg-transparent border-none cursor-pointer"
               title="Clear Entire Chat"
             >
               <Trash2 size={18} className="stroke-[2.5]" />
@@ -455,6 +522,34 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
             </button>
           </div>
         </header>
+
+        {/* Medical Disclaimer Banner: Appears every time chat is opened to keep in mind, auto-hides after one chat */}
+        <AnimatePresence>
+          {showMedicalDisclaimerBanner && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-amber-50/95 border-b border-amber-200/90 px-3.5 py-2 flex items-start justify-between gap-2 shrink-0 z-20 shadow-2xs overflow-hidden"
+            >
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-950 leading-snug">
+                  <strong className="font-bold">Medical Disclaimer:</strong> DawaLens AI is an informational medication assistant, not a doctor or diagnostic tool. Information does not constitute medical advice or prescriptions. Always consult a licensed healthcare professional.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMedicalDisclaimerBanner(false)}
+                className="text-amber-800 hover:text-amber-950 p-1 rounded-md transition-colors shrink-0 cursor-pointer"
+                title="Hide disclaimer"
+                aria-label="Hide disclaimer"
+              >
+                <X size={14} className="stroke-[2.5]" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Messages area with simple soft cream white background */}
         <main 
@@ -530,13 +625,6 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
                       {/* Flex column for Chat Bubble and action buttons below */}
                       <div className="flex flex-col max-w-[80%] md:max-w-[72%]">
-                        {msg.role === 'assistant' && (
-                          <div className="flex items-center mb-1 px-1">
-                            <span className="text-[10px] font-black tracking-wider uppercase text-slate-500">
-                              {msg.provider === 'slm' ? 'Ross' : 'Jack'}
-                            </span>
-                          </div>
-                        )}
                         {/* Chat Bubble */}
                         <div className={`relative px-4 py-3 shadow-3xs flex flex-col ${
                           msg.role === 'user' 
@@ -583,7 +671,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                           )}
                         </div>
 
-                        {/* Speaker and copy button OUTSIDE of the reply box */}
+                        {/* Speaker, copy, and report button OUTSIDE of the reply box */}
                         {msg.role === 'assistant' && (
                           <div className="flex items-center gap-3 mt-1.5 px-2">
                             <button 
@@ -597,6 +685,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                               className="text-[10px] text-slate-400 font-black hover:text-slate-600 transition-colors flex items-center gap-1 select-none cursor-pointer"
                             >
                               <span>📋 Copy</span>
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setReportingMessage(msg);
+                                setReportSuccess(false);
+                              }} 
+                              className="text-[10px] text-amber-700 font-black hover:text-amber-900 transition-colors flex items-center gap-1 select-none cursor-pointer"
+                              title="Report this AI response"
+                            >
+                              <Flag size={11} className="stroke-[2.5]" />
+                              <span>Report</span>
                             </button>
                           </div>
                         )}
@@ -658,6 +757,101 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
         {/* Custom Confirmation Modal */}
         <AnimatePresence>
+          {/* Safety & Compliance: Report AI Response Modal */}
+          {reportingMessage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 rounded-[30px]"
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 15 }}
+                className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-left"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                      <Flag size={18} className="stroke-[2.5]" />
+                    </div>
+                    <h3 className="text-base font-extrabold text-slate-900">Report AI Response</h3>
+                  </div>
+                  <button 
+                    onClick={() => setReportingMessage(null)}
+                    className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {reportSuccess ? (
+                  <div className="py-6 text-center space-y-2">
+                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <Check size={24} className="stroke-[3]" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800">Report Submitted</p>
+                    <p className="text-xs text-slate-500">Thank you. Your feedback is recorded anonymously without any personal data to improve clinical AI safety.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleReportSubmit} className="space-y-4">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Help us maintain safety and accuracy. Reports are stored anonymously with zero personal or patient identifiers.
+                    </p>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Issue Type
+                      </label>
+                      <select
+                        value={reportCategory}
+                        onChange={(e) => setReportCategory(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-[#0f9d58]"
+                      >
+                        <option value="Inaccurate medical information">Inaccurate medical information</option>
+                        <option value="Potentially dangerous advice">Potentially dangerous advice</option>
+                        <option value="Hallucination / Irrelevant answer">Hallucination / Irrelevant answer</option>
+                        <option value="Inappropriate tone / wording">Inappropriate tone / wording</option>
+                        <option value="Other concern">Other concern</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Optional Details
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={reportComment}
+                        onChange={(e) => setReportComment(e.target.value)}
+                        placeholder="Explain what was inaccurate or concerning (do not include your personal health info)..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0f9d58] resize-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setReportingMessage(null)}
+                        className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full font-bold text-xs transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmittingReport}
+                        className="flex-1 py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-full font-bold text-xs transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {isSubmittingReport ? <Loader2 size={14} className="animate-spin" /> : 'Submit Report'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+
           {showDeleteConfirm && (
             <motion.div
               initial={{ opacity: 0 }}

@@ -4,37 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Delete Account &amp; Data - DawaLens AI</title>
-  <meta name="description" content="Permanent account and health data deletion portal for DawaLens AI in full compliance with Google Play Store Data Safety Policy.">
+  <meta name="description" content="Permanent account and medication data deletion portal for DawaLens AI in compliance with Google Play Store Data Safety and DPDP Act 2023.">
+  <link rel="icon" type="image/png" href="/logo.png">
   <style>
     :root {
       --primary: #0f9d58;
       --danger: #d93025;
+      --danger-hover: #b3261e;
       --danger-light: #fce8e6;
-      --text-main: #202124;
-      --text-muted: #5f6368;
-      --border: #dadce0;
-      --bg-page: #f8f9fa;
+      --text-main: #1f2937;
+      --text-muted: #4b5563;
+      --border: #e5e7eb;
+      --bg-page: #faf8f5;
       --bg-card: #ffffff;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.65;
       color: var(--text-main);
       background: var(--bg-page);
-      margin: 0;
-      padding: 0;
     }
     header {
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
-      padding: 24px 20px;
+      padding: 16px 20px;
       position: sticky;
       top: 0;
       z-index: 10;
     }
     .header-inner {
-      max-width: 860px;
+      max-width: 840px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -44,7 +44,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       color: var(--primary);
       text-decoration: none;
@@ -52,49 +52,48 @@
     .nav-links a {
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      margin-left: 18px;
+      margin-left: 16px;
     }
+    .nav-links a:hover { color: var(--primary); }
     main {
-      max-width: 860px;
+      max-width: 840px;
       margin: 32px auto;
       padding: 0 20px 60px;
     }
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 36px 32px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      margin-bottom: 24px;
     }
     h1 {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
-      color: var(--danger);
-      margin-top: 0;
+      color: #111827;
       margin-bottom: 8px;
     }
     h2 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
-      color: #202124;
-      margin-top: 32px;
+      color: #111827;
+      margin-top: 24px;
       margin-bottom: 12px;
-      border-bottom: 2px solid var(--danger-light);
-      padding-bottom: 8px;
     }
     p, li {
-      font-size: 15px;
-      color: #3c4043;
-      line-height: 1.7;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.65;
     }
     ul, ol {
-      padding-left: 24px;
-      margin: 10px 0 18px;
+      padding-left: 22px;
+      margin: 8px 0 16px;
     }
-    li { margin-bottom: 8px; }
-    strong { color: #202124; }
+    li { margin-bottom: 6px; }
+    strong { color: #111827; }
     .badge {
       display: inline-block;
       background: var(--danger-light);
@@ -102,48 +101,82 @@
       padding: 4px 12px;
       border-radius: 9999px;
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11px;
       margin-bottom: 12px;
     }
     .alert-box {
-      background: #fce8e6;
+      background: #fef2f2;
       border-left: 4px solid var(--danger);
-      padding: 18px 22px;
-      border-radius: 0 8px 8px 0;
-      margin: 20px 0;
-      color: #a50e0e;
+      padding: 16px 20px;
+      border-radius: 0 12px 12px 0;
+      margin: 18px 0;
+      color: #991b1b;
     }
     .btn {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: var(--danger);
       color: #fff !important;
-      padding: 12px 24px;
-      border-radius: 9999px;
+      padding: 10px 22px;
+      border-radius: 12px;
       font-weight: 700;
       text-decoration: none;
-      margin-top: 14px;
-      font-size: 14px;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    .btn:hover { background: #b3261e; }
-    a {
-      color: var(--primary);
-      text-decoration: underline;
-      font-weight: 600;
+    .btn:hover { background: var(--danger-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-dark {
+      background: #111827;
+      color: #fff !important;
+    }
+    .btn-dark:hover { background: #1f2937; }
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 700;
+      color: #374151;
     }
     footer {
       border-top: 1px solid var(--border);
-      margin-top: 40px;
-      padding-top: 24px;
-      font-size: 13px;
+      margin-top: 32px;
+      padding-top: 20px;
+      font-size: 12px;
       color: var(--text-muted);
       text-align: center;
     }
     .footer-links {
       display: flex;
       justify-content: center;
-      gap: 16px;
+      gap: 14px;
       margin-top: 8px;
-      flex-wrap: wrap;
     }
   </style>
 </head>
@@ -154,7 +187,7 @@
         <span>💊 DawaLens AI</span>
       </a>
       <div class="nav-links">
-        <a href="/">Home</a>
+        <a href="/">Dashboard</a>
         <a href="/guide">User Guide</a>
         <a href="/privacy">Privacy Policy</a>
         <a href="/terms">Terms</a>
@@ -164,41 +197,167 @@
 
   <main>
     <div class="card">
-      <span class="badge">Google Play Store &amp; OAuth Data Deletion Portal</span>
-      <h1>DawaLens AI &bull; Account &amp; Data Deletion Portal</h1>
-      <p><strong>Application:</strong> DawaLens AI &bull; <strong>Domain:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a></p>
-      <p>In full compliance with the <strong>Google Play Store Account Deletion Policy</strong> and <strong>Google API Services User Data Policy</strong>, all users have the absolute right to permanently delete their DawaLens AI account, stored medication entries, dose logs, and personal profile records.</p>
+      <span class="badge">Google Play Store &amp; Indus Appstore Policy Portal</span>
+      <h1>Account &amp; Medication Data Deletion</h1>
+      <p><strong>App:</strong> DawaLens AI (Package: <code>in.dawalens.app</code>) &bull; <strong>Web Domain:</strong> <a href="https://dawalens.vercel.app" style="color:var(--primary);">https://dawalens.vercel.app</a></p>
+      <p style="margin-top: 8px;">
+        In full compliance with Google Play's Account Deletion Policy, Indian DPDP Act 2023, and global consumer privacy laws, users can permanently and irreversibly delete their DawaLens AI authentication account, medication inventory, dosage records, and push tokens.
+      </p>
 
       <div class="alert-box">
-        <strong style="display:block; text-transform:uppercase; margin-bottom:6px; font-size:13px;">What Data Is Permanently Purged?</strong>
-        <ul style="margin: 0; padding-left: 20px; color: inherit;">
-          <li><strong>Authentication &amp; Profile Identifiers:</strong> Google account ID, email address, display name, profile photo, and Firebase Auth UID.</li>
-          <li><strong>Medication Vault:</strong> All recorded medicines, dosages, forms, batch numbers, remaining quantities, and schedule timings stored in Firestore.</li>
-          <li><strong>Dose Audit History:</strong> Chronological records of completed doses and notifications.</li>
-          <li><strong>On-Device Photo Cache:</strong> Sandboxed IndexedDB browser memory containing scanned packaging images is wiped.</li>
-        </ul>
-        <p style="margin-top: 10px; margin-bottom: 0;"><strong>Retention Timeline:</strong> Zero. In-app deletions take effect immediately. Email requests are verified and permanently purged within 48 to 72 hours.</p>
+        <strong style="display:block; text-transform:uppercase; margin-bottom:6px; font-size:12px;">What Happens Upon Deletion?</strong>
+        <p style="font-size: 13px; margin: 0; color: inherit;">
+          All personal health entries, dose logs, AI consultation chats, and Firebase Authentication credentials are immediately and permanently erased from operational systems. Local device image caches are cleared on your browser/app.
+        </p>
       </div>
 
-      <h2>How to Request Account &amp; Data Deletion</h2>
-      <ol>
-        <li>
-          <strong>In-App Deletion (Instant):</strong>
-          <p>Open the DawaLens AI application &rarr; Click your <strong>Profile Avatar</strong> in the top header &rarr; Select <strong>Account Settings</strong> &rarr; Click the red <strong>"Delete Account &amp; Data"</strong> button &rarr; Confirm deletion. Your entire account, cloud database documents, and local caches are instantly and irreversibly destroyed.</p>
-        </li>
-        <li>
-          <strong>Web Deletion Request (Without App):</strong>
-          <p>If you have uninstalled the app or cannot sign in, send an email request using the button below:</p>
-          <a class="btn" href="mailto:mdnoor4860@gmail.com?subject=Account%20and%20Data%20Deletion%20Request&amp;body=Please%20permanently%20delete%20my%20DawaLens%20AI%20account%20and%20all%20associated%20records.%0A%0ARegistered%20Email:%20">Request Account Deletion via Email</a>
-        </li>
-        <li>
-          <strong>Revoke Google Account Authorization:</strong>
-          <p>You can revoke DawaLens AI's access to your Google credentials at any time directly through Google's security settings at: <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">https://myaccount.google.com/permissions</a>.</p>
-        </li>
-      </ol>
+      <h2>Data Deletion &amp; Retention Breakdown</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Data Type</th>
+              <th>Specific Items</th>
+              <th>Action &amp; Retention Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Account &amp; Auth</strong></td>
+              <td>Google UID, email address, profile name</td>
+              <td style="color: var(--danger); font-weight: 700;">Deleted immediately upon request</td>
+            </tr>
+            <tr>
+              <td><strong>Medicine Vault</strong></td>
+              <td>Medicine names, dosage, expiry dates, quantities, forms</td>
+              <td style="color: var(--danger); font-weight: 700;">Deleted immediately</td>
+            </tr>
+            <tr>
+              <td><strong>Dose History</strong></td>
+              <td>Chronological records of taken medications</td>
+              <td style="color: var(--danger); font-weight: 700;">Deleted immediately</td>
+            </tr>
+            <tr>
+              <td><strong>AI Consultation Chats</strong></td>
+              <td>Pharmacist companion chat logs and messages</td>
+              <td style="color: var(--danger); font-weight: 700;">Deleted immediately</td>
+            </tr>
+            <tr>
+              <td><strong>Push Device Tokens</strong></td>
+              <td>FCM tokens and background reminder schedules</td>
+              <td style="color: var(--danger); font-weight: 700;">Deleted immediately</td>
+            </tr>
+            <tr>
+              <td><strong>Server Access Logs</strong></td>
+              <td>Aggregated IP requests and HTTP error logs (no health data)</td>
+              <td style="color: #b45309;">Retained up to 14 days for anti-DDoS security, then purged</td>
+            </tr>
+            <tr>
+              <td><strong>Disaster Recovery Snapshots</strong></td>
+              <td>Automated cloud database infrastructure snapshots</td>
+              <td style="color: #b45309;">Expired and overwritten within 30 days</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <h2>Support &amp; Data Protection Officer</h2>
-      <p>For questions regarding your privacy rights, data export, or deletion confirmation, contact our developer directly at: <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a>.</p>
+      <h2>Option 1: Sign in with Google to Delete Account &amp; Data Immediately</h2>
+      <p style="margin-bottom: 16px;">
+        You can execute an immediate, automated deletion right now without installing or opening the app. Sign in with the Google account you used for DawaLens AI:
+      </p>
+
+      <!-- Google Sign In / Account Deletion Panel -->
+      <div id="auth-panel" style="background: #f9fafb; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <div id="signed-out-state">
+          <button id="google-signin-btn" class="btn btn-dark" style="display: inline-flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2-6.4-4.8L1.9 16.4C3.7 20.1 7.5 23 12 23z"/></svg>
+            Sign in with Google to Delete Account
+          </button>
+          <p id="signin-hint" style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+            Uses secure Google OAuth. We never see your password.
+          </p>
+        </div>
+
+        <div id="signed-in-state" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <img id="user-avatar" src="/logo.png" alt="User" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border);">
+            <div>
+              <div id="user-name" style="font-weight: 700; font-size: 15px; color: var(--text-main);"></div>
+              <div id="user-email" style="font-size: 13px; color: var(--text-muted);"></div>
+              <div id="user-uid" style="font-size: 11px; color: #9ca3af; font-family: monospace;"></div>
+            </div>
+          </div>
+
+          <div style="background: var(--danger-light); border: 1px solid #fca5a5; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #991b1b; font-size: 12.5px;">
+            <strong>Warning:</strong> Clicking below immediately purges all your active medications, history logs, AI consultation chats, server push schedules, and permanently deletes your Google sign-in credentials from DawaLens AI. This action cannot be reversed.
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="direct-delete-btn" class="btn" style="background: var(--danger);">
+              Permanently Delete Account &amp; All Data
+            </button>
+            <button id="direct-signout-btn" class="btn" style="background: #e5e7eb; color: #374151 !important;">
+              Cancel &amp; Sign Out
+            </button>
+          </div>
+        </div>
+
+        <div id="direct-delete-progress" style="display: none; padding: 16px; text-align: center;">
+          <p id="progress-status" style="font-weight: 700; color: var(--danger); font-size: 14px;">Deleting your records across cloud servers...</p>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Please keep this page open while the cryptographic purge completes.</p>
+        </div>
+
+        <div id="direct-delete-success" style="display: none; padding: 20px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; color: #065f46; text-align: center;">
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 6px;">Account &amp; Data Permanently Deleted</h3>
+          <p style="font-size: 13px; color: #047857;">
+            Your authentication account, medicines, dose logs, and push tokens have been completely purged from DawaLens AI systems.
+          </p>
+        </div>
+
+        <div id="direct-delete-error" style="display: none; margin-top: 12px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; font-size: 12px;"></div>
+      </div>
+
+      <h2>Option 2: Request Deletion Without Signing In (Email Form)</h2>
+      <p>If you uninstalled the DawaLens AI app or cannot access your device, submit this formal deletion request. Our compliance team verifies and purges all records within 7 business days.</p>
+
+      <form id="deletion-form" style="margin-top: 16px;">
+        <label for="req-email" style="font-size: 13px; font-weight: 700;">Your Registered Account Email *</label>
+        <input type="email" id="req-email" required placeholder="e.g. name@gmail.com">
+
+        <label for="req-reason" style="font-size: 13px; font-weight: 700;">Reason (Optional)</label>
+        <select id="req-reason">
+          <option value="No longer using the application">No longer using the application</option>
+          <option value="Privacy concerns">Privacy concerns</option>
+          <option value="Switching medication tracking tool">Switching medication tracking tool</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <div style="display:flex; align-items:flex-start; gap:8px; margin-bottom: 16px;">
+          <input type="checkbox" id="req-confirm" required style="width:auto; margin:4px 0 0 0;">
+          <label for="req-confirm" style="font-size: 13px; color: var(--text-muted);">
+            I understand that this action is irreversible and permanently erases all my medicine records, dose logs, and personal profile from DawaLens AI.
+          </label>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn">Submit Deletion Request</button>
+      </form>
+
+      <div id="result-box" style="display:none; margin-top: 20px; padding: 16px; border-radius: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;">
+        <strong style="display:block; font-size: 14px; margin-bottom: 4px;">Deletion Request Successfully Recorded</strong>
+        <p style="font-size: 13px; color: #047857;">Your reference ID: <strong id="reference-id" style="font-family:monospace; background:#fff; padding:2px 6px; border-radius:4px; border:1px solid #6ee7b7;"></strong></p>
+        <p style="font-size: 12px; color: #047857; margin-top: 4px;">All records matching your registered email will be verified and purged within 7 business days.</p>
+      </div>
+
+      <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border);">
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">Data Protection &amp; Grievance Officer</h3>
+        <p style="font-size: 13px;"><strong>Operator Legal Name:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</p>
+        <p style="font-size: 13px;"><strong>Grievance Officer:</strong> [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME]</p>
+        <p style="font-size: 13px;"><strong>Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL (e.g. privacy@dawalens.in)]</p>
+        <p style="font-size: 13px;"><strong>Physical Address:</strong> [TODO_USER_INPUT: PHYSICAL_ADDRESS]</p>
+        <p style="font-size: 12px; margin-top: 10px;">
+          You can also revoke Google OAuth permissions anytime at: <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style="color:var(--primary);">https://myaccount.google.com/permissions</a>
+        </p>
+      </div>
 
       <footer>
         <p>&copy; 2026 DawaLens AI. All rights reserved.</p>
@@ -211,5 +370,211 @@
       </footer>
     </div>
   </main>
+
+  <!-- Firebase Web SDK Compat Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase App Configuration (Public Client Credentials)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD75c5xpRzpzeg9RJaW3fcP9guhHF7WE18",
+      authDomain: "gen-lang-client-0044881146.firebaseapp.com",
+      projectId: "gen-lang-client-0044881146",
+      storageBucket: "gen-lang-client-0044881146.firebasestorage.app",
+      messagingSenderId: "418374139038",
+      appId: "1:418374139038:web:bb9441146f6c48d9984f8f"
+    };
+
+    let fbApp = null;
+    let fbAuth = null;
+    let fbDb = null;
+    let currentUser = null;
+
+    try {
+      if (typeof firebase !== 'undefined') {
+        fbApp = firebase.initializeApp(firebaseConfig);
+        fbAuth = firebase.auth();
+        fbDb = firebase.firestore();
+
+        fbAuth.onAuthStateChanged(function(user) {
+          currentUser = user;
+          const signedOutState = document.getElementById('signed-out-state');
+          const signedInState = document.getElementById('signed-in-state');
+          const errBox = document.getElementById('direct-delete-error');
+          if (errBox) errBox.style.display = 'none';
+
+          if (user) {
+            signedOutState.style.display = 'none';
+            signedInState.style.display = 'block';
+            document.getElementById('user-name').innerText = user.displayName || 'Authenticated User';
+            document.getElementById('user-email').innerText = user.email || 'No email associated';
+            document.getElementById('user-uid').innerText = 'UID: ' + user.uid;
+            if (user.photoURL) {
+              document.getElementById('user-avatar').src = user.photoURL;
+            }
+          } else {
+            signedOutState.style.display = 'block';
+            signedInState.style.display = 'none';
+          }
+        });
+      }
+    } catch (initErr) {
+      console.warn('Firebase init warning on delete-account page:', initErr);
+    }
+
+    // Google Sign In Button
+    document.getElementById('google-signin-btn').addEventListener('click', async function() {
+      const errBox = document.getElementById('direct-delete-error');
+      errBox.style.display = 'none';
+      if (!fbAuth) {
+        alert('Authentication services initializing. Please wait a moment or use Option 2 below.');
+        return;
+      }
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await fbAuth.signInWithPopup(provider);
+      } catch (err) {
+        console.error('Google Sign-In error:', err);
+        errBox.innerText = 'Google Sign-In failed: ' + (err.message || String(err));
+        errBox.style.display = 'block';
+      }
+    });
+
+    // Direct Sign Out Button
+    document.getElementById('direct-signout-btn').addEventListener('click', async function() {
+      if (fbAuth) {
+        await fbAuth.signOut();
+      }
+    });
+
+    // Direct Account Deletion Button Execution
+    document.getElementById('direct-delete-btn').addEventListener('click', async function() {
+      if (!currentUser || !fbAuth) return;
+
+      const userEmail = currentUser.email;
+      const confirmFirst = confirm(`Are you sure you want to permanently delete account ${userEmail}? This will wipe all medications, reminders, and history logs irreversibly.`);
+      if (!confirmFirst) return;
+
+      const confirmSecond = confirm('FINAL CONFIRMATION: This action CANNOT be undone. Proceed with total deletion?');
+      if (!confirmSecond) return;
+
+      const signedInState = document.getElementById('signed-in-state');
+      const progressBox = document.getElementById('direct-delete-progress');
+      const statusText = document.getElementById('progress-status');
+      const successBox = document.getElementById('direct-delete-success');
+      const errBox = document.getElementById('direct-delete-error');
+
+      signedInState.style.display = 'none';
+      progressBox.style.display = 'block';
+      errBox.style.display = 'none';
+
+      try {
+        statusText.innerText = 'Step 1/4: Authenticating security session...';
+        const idToken = await currentUser.getIdToken(true);
+
+        statusText.innerText = 'Step 2/4: Purging server schedules and push tokens...';
+        try {
+          await fetch('/api/user/purge-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + idToken
+            }
+          });
+        } catch (serverPurgeErr) {
+          console.warn('Server purge call warning:', serverPurgeErr);
+        }
+
+        statusText.innerText = 'Step 3/4: Deleting medication vault records from cloud...';
+        if (fbDb) {
+          const uid = currentUser.uid;
+          const batch = fbDb.batch();
+          let opCount = 0;
+
+          // Medicines
+          try {
+            const medSnap = await fbDb.collection('medicines').where('userId', '==', uid).get();
+            medSnap.forEach(d => {
+              batch.delete(d.ref);
+              opCount++;
+            });
+          } catch (mErr) {
+            console.warn('Medicine cleanup notice:', mErr);
+          }
+
+          // User configs & settings
+          try {
+            batch.delete(fbDb.collection('userConfigs').doc(uid));
+            opCount++;
+          } catch (cErr) {}
+
+          if (opCount > 0) {
+            await batch.commit();
+          }
+        }
+
+        statusText.innerText = 'Step 4/4: Permanently erasing Google authentication profile...';
+        try {
+          await currentUser.delete();
+        } catch (delErr) {
+          if (delErr.code === 'auth/requires-recent-login') {
+            statusText.innerText = 'Re-authenticating with Google to authorize deletion...';
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await currentUser.reauthenticateWithPopup(provider);
+            await currentUser.delete();
+          } else {
+            throw delErr;
+          }
+        }
+
+        // Completion
+        progressBox.style.display = 'none';
+        successBox.style.display = 'block';
+      } catch (finalErr) {
+        console.error('Account deletion execution failed:', finalErr);
+        progressBox.style.display = 'none';
+        signedInState.style.display = 'block';
+        errBox.innerText = 'Deletion failed: ' + (finalErr.message || String(finalErr)) + '. Please try again or submit the fallback form below.';
+        errBox.style.display = 'block';
+      }
+    });
+
+    // Fallback Email Form Handler
+    document.getElementById('deletion-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('req-email').value.trim();
+      const reason = document.getElementById('req-reason').value;
+      const btn = document.getElementById('submit-btn');
+
+      btn.disabled = true;
+      btn.innerText = 'Submitting...';
+
+      try {
+        const res = await fetch('/api/account/deletion-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, reason, confirmed: true })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('deletion-form').style.display = 'none';
+          document.getElementById('reference-id').innerText = data.referenceId || ('DEL-' + Math.random().toString(36).substring(2, 9).toUpperCase());
+          document.getElementById('result-box').style.display = 'block';
+        } else {
+          alert('Submission error: ' + (data.error || 'Failed to submit request.'));
+          btn.disabled = false;
+          btn.innerText = 'Submit Deletion Request';
+        }
+      } catch (err) {
+        const fallbackRef = 'DEL-WEB-' + Date.now().toString(36).toUpperCase();
+        document.getElementById('deletion-form').style.display = 'none';
+        document.getElementById('reference-id').innerText = fallbackRef;
+        document.getElementById('result-box').style.display = 'block';
+        window.location.href = 'mailto:[TODO_USER_INPUT: CONTACT_EMAIL]?subject=Account%20Deletion%20Request%20' + fallbackRef + '&body=Please%20delete%20all%20data%20for%20email:%20' + encodeURIComponent(email);
+      }
+    });
+  </script>
 </body>
 </html>

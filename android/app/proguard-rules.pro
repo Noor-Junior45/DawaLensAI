@@ -1,21 +1,53 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard and R8 rules for DawaLens AI (in.dawalens.app)
+# Production release obfuscation and shrinking configuration
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 1. Preserve source file and line numbers for Firebase Crashlytics stack traces
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 2. Preserve annotations and JavaScript Interfaces for Capacitor WebView bridge
+-keepattributes JavascriptInterface
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 3. Capacitor core and plugin bindings
+-keep class com.getcapacitor.** { *; }
+-keep class * extends com.getcapacitor.Plugin {
+    public <methods>;
+    public <fields>;
+}
+-keep class * extends com.getcapacitor.PluginMethod {
+    public <methods>;
+    public <fields>;
+}
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# 4. Google Play Services & Firebase SDKs
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# Firebase Messaging (FCM)
+-keep class com.google.firebase.messaging.** { *; }
+-dontwarn com.google.firebase.messaging.**
+
+# Firebase Crashlytics
+-keepattributes *Annotation*,SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+
+# 5. Kotlin Coroutines & Standard Library
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
+
+# 6. Android Support & AndroidX components
+-keep class androidx.** { *; }
+-dontwarn androidx.**

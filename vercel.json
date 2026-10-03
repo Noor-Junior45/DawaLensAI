@@ -2,48 +2,32 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://dawalensai.onrender.com/api/$1"
-    },
-    {
       "source": "/privacy",
-      "destination": "https://dawalensai.onrender.com/privacy"
-    },
-    {
-      "source": "/privacy.html",
-      "destination": "https://dawalensai.onrender.com/privacy.html"
+      "destination": "/privacy.html"
     },
     {
       "source": "/terms",
-      "destination": "https://dawalensai.onrender.com/terms"
-    },
-    {
-      "source": "/terms.html",
-      "destination": "https://dawalensai.onrender.com/terms.html"
+      "destination": "/terms.html"
     },
     {
       "source": "/guide",
-      "destination": "https://dawalensai.onrender.com/guide"
-    },
-    {
-      "source": "/guide.html",
-      "destination": "https://dawalensai.onrender.com/guide.html"
+      "destination": "/guide.html"
     },
     {
       "source": "/manual",
-      "destination": "https://dawalensai.onrender.com/manual"
+      "destination": "/guide.html"
     },
     {
       "source": "/delete-account",
-      "destination": "https://dawalensai.onrender.com/delete-account"
+      "destination": "/delete-account.html"
     },
     {
       "source": "/account-delete",
-      "destination": "https://dawalensai.onrender.com/account-delete"
+      "destination": "/delete-account.html"
     },
     {
-      "source": "/google:id.html",
-      "destination": "https://dawalensai.onrender.com/google:id.html"
+      "source": "/api/(.*)",
+      "destination": "https://dawalensai.onrender.com/api/$1"
     },
     {
       "source": "/((?!api/|.*\\.[a-zA-Z0-9]+$).*)",

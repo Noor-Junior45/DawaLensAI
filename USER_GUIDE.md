@@ -52,7 +52,7 @@ DawaLens AI features an advanced hybrid computer vision and optical character re
 [In-Memory Contrast Curve & Anti-Glare Filter]
                      │
                      ▼
-[Local On-Device OCR (Tesseract / Native Bridge) + On-Device CNN]
+[Local On-Device OCR (Tesseract / Native Bridge) + Heuristic Packaging Classifier]
                      │
                      ▼
 [Gemini 2.5 Flash Multimodal Vision Validation]
@@ -74,11 +74,11 @@ DawaLens AI features an advanced hybrid computer vision and optical character re
    - **Medicine Name & Formulation:** (e.g., *Paracetamol 500mg*, *Amoxicillin & Clavulanate*).
    - **Dosage Strength:** (e.g., *650mg*, *10ml*, *500mcg*).
    - **Normalized Expiration Date:** Automatically parsed into `YYYY-MM-01` ISO format.
-   - **Form & Quantity:** Tablet count (via CNN blister cell detection) or bottle volume.
+   - **Form & Quantity:** Form type and estimated unit count or bottle volume.
 5. Review the extracted fields in the confirmation modal. Tap any field to make manual corrections if desired, then tap **Save to Vault**.
 
 ### 2.2 Offline Scanning Fallback
-If you are traveling or lack internet connectivity, DawaLens AI seamlessly falls back to 100% on-device scanning using client-side **Tesseract.js (WebAssembly)** and our local Small Language Model (SLM). Zero bytes leave your device in this mode.
+If you are traveling or lack internet connectivity, DawaLens AI seamlessly falls back to on-device scanning using client-side text recognition and our offline rule-based reference engine. Zero bytes leave your device in this mode.
 
 ---
 

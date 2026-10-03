@@ -176,17 +176,32 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
 
           {/* Scanned Image Preview if present */}
           {formData.capturedImage && (
-            <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3 flex items-center gap-3 shadow-xs">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                <img src={formData.capturedImage} alt="Scanned label" className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
-                  <ImageIcon size={14} className="text-[#0f9d58]" /> Scanned Medicine
+            <div className="space-y-3">
+              <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3 flex items-center gap-3 shadow-xs">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                  <img src={formData.capturedImage} alt="Scanned label" className="w-full h-full object-cover" />
                 </div>
-                <p className="text-xs text-slate-500 truncate">
-                  Details extracted from prescription or packaging
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                    <ImageIcon size={14} className="text-[#0f9d58]" /> Scanned Packaging Label
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">
+                    Verify auto-filled details against physical packaging below
+                  </p>
+                </div>
+              </div>
+
+              {/* Mandatory Physical Packaging Check Warning (Play Health Safety Policy) */}
+              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-2.5 text-xs">
+                <AlertTriangle size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold text-amber-900 block uppercase tracking-wider text-[11px]">
+                    ⚠️ Check Physical Packaging Before Saving
+                  </span>
+                  <p className="leading-relaxed text-amber-900 font-medium">
+                    Automated scans may misread small text or numbers. Always inspect the printed manufacturer box, blister pack, and expiration date on your physical medicine before confirming or taking any dose.
+                  </p>
+                </div>
               </div>
             </div>
           )}

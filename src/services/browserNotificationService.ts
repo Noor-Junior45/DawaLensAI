@@ -1,5 +1,6 @@
 import { Medicine } from '../types';
 import { getApiUrl } from '../utils/apiConfig';
+import { getAuthHeader } from '../firebase';
 import { Capacitor } from '@capacitor/core';
 import { initNativeNotifications } from './nativeNotificationService';
 
@@ -210,11 +211,14 @@ export async function checkAndTriggerBrowserExpiryNotifications(
  */
 export async function registerBrowserPushTokenWithServer(userId: string, token: string): Promise<boolean> {
   try {
+    const authHeaders = await getAuthHeader();
     const res = await fetch(getApiUrl('/api/notifications/register-token'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
       body: JSON.stringify({
-        userId,
         token,
         platform: 'web',
         userAgent: navigator.userAgent

@@ -11,8 +11,6 @@
 
 import { Medicine, MedicineForm, SlmKnowledgeItem } from "../types";
 import { CnnVisualFeatures } from "./imageCnnService";
-import { db } from "../firebase";
-import { collection, doc, setDoc, getDocs, query, where, limit } from "firebase/firestore";
 import { EXPANDED_CLINICAL_DRUGS } from "./expandedPharmaDataset";
 
 export interface DrugKnowledgeItem {
@@ -818,42 +816,24 @@ export function generateOfflineSlmConsultation(
 
   if (isModelParamsQuery) {
     if (isHinglish) {
-      return `🧠 **Dr. Ross (On-Device SLM Pharmacist) Architecture & Parameters Profile:**\n\n` +
-        `Hamara offline AI model **2.1 Million (2,100,000) Active Parameters** par on-device train aur optimize kiya gaya hai:\n\n` +
-        `### 📊 Layer-by-Layer Breakdown:\n` +
-        `1. **CNN Vision Tensor Kernels**: **~125,000 Parameters**\n` +
-        `   - 128×128 spatial resolution tensor analysis\n` +
-        `   - 3×3 Sobel & Laplacian convolution filters (strip edge detection aur blister cell count)\n` +
-        `   - Aluminum foil specular reflectance & amber bottle classification\n\n` +
-        `2. **Intent Classification & Medical Semantic Embeddings**: **~350,000 Parameters**\n` +
-        `   - 64-dimensional clinical vector space\n` +
-        `   - 500+ symptoms, medical verbs, aur bilingual Hindi/Hinglish vocabulary tokens\n\n` +
-        `3. **Clinical Formulary & Drug-Interaction Matrix**: **~1,500,000 Learned Weights/Edges**\n` +
-        `   - 150+ essential OTC & prescription drugs\n` +
-        `   - Multi-drug contraindication graphs, food timing, and safe dosage ceilings\n\n` +
-        `4. **Continuous On-Device Learning Adapter**: **~125,000 Local Adapter Weights**\n` +
-        `   - Patient allergies, chronic conditions, aur continuous offline memory distillation\n\n` +
-        `⚡ **Performance**: 100% On-Device, zero internet required, <10ms execution latency!\n\n` +
-        ``;
+      return `🩺 **DawaLens AI Offline Reference Engine Architecture:**\n\n` +
+        `Hamara offline clinical reference engine rule-based pharmacology compendium aur heuristic packaging classifier par aadharit hai:\n\n` +
+        `### 📊 Architectural Overview:\n` +
+        `1. **Heuristic Packaging Classifier**: Canvas-based edge detection aur aspect-ratio heuristics packaging type classify karne ke liye.\n` +
+        `2. **Rule-Based Clinical Formulary**: 150+ essential OTC aur chronic medicines ka static reference database.\n` +
+        `3. **Interaction Matrix**: Standard drug interaction warnings aur food timing safety rules.\n` +
+        `4. **Offline Processing**: 100% on-device local execution, zero internet bandwidth zaroori hai.\n\n` +
+        `*Data Source: WHO Model List & National Formulary of India (NFI).*`;
     }
 
-    return `🧠 **Dr. Ross (On-Device SLM Pharmacist) Architecture & Parameter Profile:**\n\n` +
-      `Our on-device Small Language Model (SLM) is trained and compressed to **~2.1 Million (2,100,000) Active Parameters**, designed specifically for real-time mobile execution with zero cloud latency:\n\n` +
-      `### 📊 Architectural Parameter Breakdown:\n` +
-      `1. **CNN Vision Convolution Kernels**: **~125,000 Parameters**\n` +
-      `   - 128×128 spatial tensor analysis\n` +
-      `   - 3×3 Sobel & Laplacian convolution operators for blister strip edge detection and tablet cell counting\n` +
-      `   - Luminance and specular reflectance classification (foil blister vs. amber bottle vs. sachet)\n\n` +
-      `2. **Intent Classification & Clinical Semantic Embeddings**: **~350,000 Parameters**\n` +
-      `   - 64-dimensional dense medical vector space\n` +
-      `   - 500+ symptom tokens, clinical verbs, colloquial and Hinglish multilingual tokens\n\n` +
-      `3. **Clinical Formulary & Multi-Drug Interaction Graph**: **~1,500,000 Learned Connections**\n` +
-      `   - 150+ essential medications, dosage schedules, food timing rules, and contraindications\n` +
-      `   - Real-time combinatorial drug-to-drug cross-checking matrix\n\n` +
-      `4. **Continuous Learning Adapter & Vector Memory**: **~125,000 Weights**\n` +
-      `   - Patient allergy profiles, chronic conditions, and distilled clinical insights cached locally\n\n` +
-      `⚡ **Performance**: 100% on-device execution, zero internet bandwidth, and sub-10ms response time.\n\n` +
-      ``;
+    return `🩺 **DawaLens AI Offline Reference Engine Architecture:**\n\n` +
+      `Our offline assistant is an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier:\n\n` +
+      `### 📊 Architectural Overview:\n` +
+      `1. **Heuristic Packaging Classifier**: Canvas-based image convolution filters and aspect-ratio heuristics to classify blister strips, bottles, and boxes.\n` +
+      `2. **Rule-Based Clinical Formulary**: Curated static pharmacological database of 150+ essential medications and contraindications.\n` +
+      `3. **Drug Interaction Matrix**: Combinatorial cross-referencing matrix for multi-drug warnings and food timings.\n` +
+      `4. **Zero-Cloud Offline Execution**: Runs entirely in local device memory with zero network dependencies.\n\n` +
+      `*Data Source: WHO Model List of Essential Medicines & National Formulary of India (NFI).*`;
   }
 
   // 1. Conversational & Everyday Intent Handlers (Normal Chat)
@@ -888,9 +868,9 @@ export function generateOfflineSlmConsultation(
     /aapka\s*kaam/i.test(lower)
   ) {
     if (isHinglish) {
-      return `\n\nMera mukhya kaam aapki dawaiyon aur swasthya ki suraksha karna hai:\n\n1. 📦 **Vault Check**: Dekhna ki aapke paas kaunsi dawaiyan hain aur zaroorat ke waqt batana.\n2. ⚠️ **Drug Interaction Check**: Do ya zyada dawaiyon ko ek sath lena safe hai ya nahi, ye jaanch karna.\n3. ⏰ **Dawai Ka Sahi Samay**: Khane se pehle ya baad me, subah ya raat ko kab leni hai batana.\n4. 🔍 **Side Effects & Warnings**: Dawaiyon ke dushparinam aur savdhaniyan samjhana.\n5. 📸 **Smart Strip Scanner**: Dawaiyon ke pack ko camera se scan karke details auto-save karna.\n6. 🧠 **Continuous Learning**: 2.1M parameters par trained on-device engine bina internet ke turant jawab deta hai.\n\nBataiye, aaj hum kis cheez par kaam karein? 😊\n\n`;
+      return `\n\nMera mukhya kaam aapki dawaiyon aur inventory tracking me madad karna hai:\n\n1. 📦 **Vault Check**: Dekhna ki aapke paas kaunsi dawaiyan hain aur count batana.\n2. ⚠️ **Drug Interaction Check**: Do dawaiyon ke beech standard warnings check karna.\n3. ⏰ **Dawai Ka Samay**: Doctor ke anusaar khane se pehle ya baad me kab lena hai batana.\n4. 🔍 **Warnings & Info**: Essential medicines formulary se jankari dena.\n5. 📸 **Strip Scanner**: Packaging scan karke details vault me save karna.\n6. 🩺 **Offline Engine**: Rule-based pharmacology database se bina internet ke jawab dena.\n\nBataiye, aaj hum kis dawai ke baare me baat karein? 😊\n\n`;
     }
-    return `Here is everything I can do for you: 🩺💊\n\n1. 📦 **Check Your Medicine Vault**: Tell me what you're feeling or ask "how many medicines I have", and I will check your active inventory.\n2. ⚠️ **Drug Interaction Safety**: Cross-check your medications to make sure they are completely safe to take together.\n3. ⏰ **Dosage & Timing Guide**: Explain exact schedules (before or after meals, morning, afternoon, or bedtime).\n4. 🔍 **Side Effects & Warnings**: Detail drug precautions, contraindications, and safe OTC alternatives.\n5. 📸 **Instant Packaging Scanner**: Classify blister strips, bottles, expiry dates, and labels with computer vision.\n6. 🧠 **Zero Network Offline Execution**: Powered by a 2.1M-parameter on-device neural engine with sub-10ms response time.\n\nWhat would you like to work on today? 😊\n\n`;
+    return `Here is how I can assist with your medication tracking: 🩺💊\n\n1. 📦 **Check Your Medicine Vault**: View and count active medications stored in your inventory.\n2. ⚠️ **Drug Interaction Safety**: Cross-reference standard pharmacological interaction warnings.\n3. ⏰ **Timing Guidelines**: Provide administration timing instructions based on your prescription.\n4. 🔍 **Reference Compendium**: View indications and precautions from public pharmacopeia references.\n5. 📸 **Packaging Scanner**: Scan blister strips, bottles, and expiry dates to catalog your vault.\n6. 🩺 **Offline Execution**: Fully operational offline via our rule-based clinical formulary.\n\nWhat would you like to review today? 😊\n\n`;
   }
 
   // C. Standard Greetings ("hi", "hello", "hey", "namaste", "good morning", "good evening")
@@ -1230,7 +1210,7 @@ export function generateOfflineSlmConsultation(
     }
   }
 
-  // 3. Scenario A: User asked about what they have, or an ailment where they ALREADY own the remedy
+  // 3. Scenario A: User asked about a medicine they ALREADY own in their vault
   if (relevantVaultMeds.length > 0) {
     const primary = relevantVaultMeds[0];
     const med = primary.med;
@@ -1238,28 +1218,30 @@ export function generateOfflineSlmConsultation(
 
     if (isHinglish) {
       return `🌿 **Aapke Vault Mein Dawai Maujood Hai!**\n\n` +
-        `Maine aapka medicine vault check kiya. Aapke paas **${med.name}** (${med.dosage || drug.typicalDosages[0]}, Form: ${med.form || drug.defaultForm}) already uplabdh hai.\n\n` +
-        `### 📋 Kaisi aur kab leni hai:\n` +
+        `Maine aapka medicine vault check kiya. Aapke paas **${med.name}** (${med.dosage || 'Prescribed Strength'}, Form: ${med.form || drug.defaultForm}) saved hai.\n\n` +
+        `### 📋 Reference Overview:\n` +
+        `- **Indications**: ${drug.indications.join(', ')}\n` +
         `- **Timing**: **${drug.timing}**\n` +
-        `- **Dosage Nirdesh**: ${drug.usageInstructions}\n` +
-        `- **Expiry Date**: ${med.expirationDate ? `Aapki strip ki expiry ${med.expirationDate} hai (Safe).` : 'Strip par expiry date check karein.'}\n\n` +
+        `- **Dosage Nirdesh**: Doctor ke prescription aur package strip par likhi khuraak ka sakhti se paalan karein.\n` +
+        `- **Vault Expiry**: ${med.expirationDate ? `Aapki strip ki expiry ${med.expirationDate} hai.` : 'Strip par expiry date check karein.'}\n\n` +
         `### ⚠️ Savdhaniyan:\n` +
         `- ${drug.contraindications.join(', ')}\n` +
-        `- Agar 24-48 ghante me aaram na mile ya takleef badhe, toh kripya doctor se zaroor milein.\n\n` +
-        ``;
+        `- Agar takleef badhe ya aaram na mile, toh kripya doctor se zaroor milein.\n\n` +
+        `*Data Source: National Formulary of India (NFI) & WHO Model List. Reference purpose only, not medical advice.*`;
     }
 
-    return `🌿 **Good News! You Already Have This In Your Vault!**\n\n` +
-      `I scanned your medication inventory and found **${med.name}** (${med.dosage || drug.typicalDosages[0]}, ${med.form || drug.defaultForm}).\n\n` +
-      `### 📋 Clinical Instructions & Timing:\n` +
-      `- **Recommended Timing**: **${drug.timing}**\n` +
-      `- **Instructions**: ${drug.usageInstructions}\n` +
-      `- **Vault Expiry**: ${med.expirationDate ? `Expires on ${med.expirationDate} (Safe to use).` : 'Please verify the expiry on your blister pack.'}\n\n` +
-      `### ⚠️ Precautions & Side Effects:\n` +
-      `- ${drug.contraindications.join(', ')}\n` +
-      `- Common mild effects: ${drug.sideEffects.join(', ')}.\n` +
-      `- *Consult your physician if symptoms persist beyond 2-3 days.*\n\n` +
-      ``;
+    return `🌿 **Medication Found in Your Vault**\n\n` +
+      `I found **${med.name}** (${med.dosage || 'Prescribed Strength'}, ${med.form || drug.defaultForm}) in your saved inventory.\n\n` +
+      `### 📋 Clinical Reference:\n` +
+      `- **Primary Indications**: ${drug.indications.join(', ')}\n` +
+      `- **Administration Timing**: **${drug.timing}**\n` +
+      `- **Dosage Guideline**: Follow the precise dosage instructed by your physician or printed on your physical medication label.\n` +
+      `- **Vault Expiry**: ${med.expirationDate ? `Saved expiry date: ${med.expirationDate}.` : 'Please verify the expiry on your blister pack.'}\n\n` +
+      `### ⚠️ Precautions:\n` +
+      `- ${drug.contraindications.join('; ')}\n` +
+      `- Common side effects: ${drug.sideEffects.join(', ')}.\n` +
+      `- *Always consult your physician if symptoms worsen or persist.*\n\n` +
+      `*Data Source: National Formulary of India (NFI) & WHO Model List of Essential Medicines. Educational reference only; not a diagnosis or prescription.*`;
   }
 
   // 4. Scenario B: User asked about a specific medicine by name
@@ -1271,69 +1253,52 @@ export function generateOfflineSlmConsultation(
 
     if (isHinglish) {
       return `💊 **${mentionedDrug.name}** (${mentionedDrug.genericName})\n${isOwned ? '✅ *Ye aapke vault me save hai.*' : 'ℹ️ *Ye aapke vault me nahi hai.*'}\n\n` +
-        `### 🎯 Kiske Liye Istemal Hoti Hai:\n` +
+        `### 🎯 Clinical Indications:\n` +
         `- ${mentionedDrug.indications.map(i => `**${i.toUpperCase()}**`).join(', ')}\n\n` +
-        `### ⏰ Kaise Khayein:\n` +
+        `### ⏰ Timing & Instructions:\n` +
         `- **Timing**: **${mentionedDrug.timing}**\n` +
-        `- **Instructions**: ${mentionedDrug.usageInstructions}\n\n` +
-        `### ⚠️ Dhyan Dene Yogya Baatein:\n` +
+        `- **Dosage**: Doctor ke prescription aur strip par likhi khuraak ke anusar hi lein.\n\n` +
+        `### ⚠️ Savdhaniyan:\n` +
         `- **Contraindications**: ${mentionedDrug.contraindications.join(', ')}\n` +
         `- **Common Side Effects**: ${mentionedDrug.sideEffects.join(', ')}\n\n` +
         `${mentionedDrug.hinglishSummary}\n\n` +
-        ``;
+        `*Data Source: National Formulary of India (NFI) & WHO Essential Medicines List. Informational reference only; consult a physician for medical advice.*`;
     }
 
-    return `💊 **Clinical Overview: ${mentionedDrug.name}** (${mentionedDrug.genericName})\n${ownedNotice}\n\n` +
-      `### 🎯 Primary Indications:\n` +
-      `- Recommended for: **${mentionedDrug.indications.join(', ')}**\n` +
-      `- Standard Available Strengths: ${mentionedDrug.typicalDosages.join(', ')}\n\n` +
+    return `💊 **Clinical Reference: ${mentionedDrug.name}** (${mentionedDrug.genericName})\n${ownedNotice}\n\n` +
+      `### 🎯 Indications & Use:\n` +
+      `- Therapeutic Class: ${mentionedDrug.category}\n` +
+      `- Approved Indications: **${mentionedDrug.indications.join(', ')}**\n\n` +
       `### ⏰ Administration Guidelines:\n` +
-      `- **Optimal Timing**: **${mentionedDrug.timing}**\n` +
-      `- **Administration Note**: ${mentionedDrug.usageInstructions}\n\n` +
-      `### ⚠️ Safety & Interactions:\n` +
-      `- **Key Warnings**: ${mentionedDrug.contraindications.join('; ')}\n` +
-      `- **Known Interactions**: ${mentionedDrug.interactions.join(', ')}\n` +
+      `- **General Timing**: **${mentionedDrug.timing}**\n` +
+      `- **Dosage Instruction**: Take only the exact dosage prescribed by your licensed physician or indicated on the manufacturer label. Do not exceed the recommended dose.\n\n` +
+      `### ⚠️ Safety & Warnings:\n` +
+      `- **Contraindications**: ${mentionedDrug.contraindications.join('; ')}\n` +
+      `- **Known Drug Interactions**: ${mentionedDrug.interactions.join(', ')}\n` +
       `- **Potential Side Effects**: ${mentionedDrug.sideEffects.join(', ')}\n\n` +
-      `*Always follow the exact prescription instructions provided by your physician or licensed pharmacist.*\n\n` +
-      ``;
+      `*Data Source: National Formulary of India (NFI) & WHO Model List of Essential Medicines. Educational reference only; not a substitute for professional clinical diagnosis.*`;
   }
 
-  // 4b. Scenario B2: User describes symptoms, but DOES NOT hold the medicine in their vault
+  // 4b. Scenario B2: User describes symptoms without naming a specific medicine
+  // Safety rule: Never recommend or prescribe medicines for symptoms in the offline engine
   if (symptomMatches.length > 0) {
-    const topDrugs = symptomMatches.slice(0, 2);
     if (isHinglish) {
-      const medList = topDrugs.map(d => 
-        `• **${d.name}** (Popular Brands: ${d.synonyms.slice(0, 3).join(', ')}):\n` +
-        `  - **Khane ka tarika**: ${d.usageInstructions}\n` +
-        `  - **Timing**: **${d.timing}**\n` +
-        `  - **Savdhani**: ${d.contraindications[0] || 'Khali pet na lein'}`
-      ).join('\n\n');
-
-      return `ℹ️ **Aapke Vault Mein Dawai Maujood Nahi Hai, Lekin Yeh Standard Remedies Hain:**\n\n` +
-        `Maine aapka vault check kiya, is takleef ke liye abhi koi dawai saved nahi hai.\n\n` +
-        `Clinical guidelines ke anusar, aamtaur par yeh standard first-line options use hoti hain:\n\n` +
-        `${medList}\n\n` +
-        `### 🌿 Gharelu Dekhbhal:\n` +
-        `- Khoob paani piyein, aaram karein aur halka poshtik aahar lein.\n` +
-        `- Agar 24-48 ghante me lakshan theek na hon ya takleef badhe, toh kripya doctor se zaroor consult karein.\n\n` +
-        ``;
+      return `⚠️ **Clinical Safety Advisory**:\n\n` +
+        `Main lakshano ke aadhar par dawaiyan prescribe ya recommend nahi kar sakta. Agar aapko koi takleef mehsoos ho rahi hai, toh sahi jaanch aur prescription ke liye kripya kisi qualified doctor ya registered pharmacist se consult karein.\n\n` +
+        `### 🌿 Supportive Care:\n` +
+        `- Khoob paani piyein, paryapt aaram karein aur halka aahar lein.\n` +
+        `- Agar aapke paas pehle se doctor ki di hui dawai hai, toh aap uska naam puchh sakte hain (jaise *"Tell me about Paracetamol"*).\n` +
+        `- Emergency ya gambhir lakshan hone par turant nazdeeki clinic ya hospital jayein.\n\n` +
+        `*Data Source: Clinical Safety Protocol. DawaLens AI is an organizational tool and does not provide diagnostic services.*`;
     }
 
-    const medList = topDrugs.map(d => 
-      `• **${d.name}** (Common Brands: ${d.synonyms.slice(0, 3).join(', ')}):\n` +
-      `  - **Clinical Instructions**: ${d.usageInstructions}\n` +
-      `  - **Optimal Timing**: **${d.timing}**\n` +
-      `  - **Key Precaution**: ${d.contraindications[0] || 'Avoid alcohol; verify existing medications'}`
-    ).join('\n\n');
-
-    return `ℹ️ **Not Currently in Your Vault — Standard Clinical Recommendations:**\n\n` +
-      `I checked your medicine vault and did not find an active medication stored for this symptom.\n\n` +
-      `Based on standard pharmacopeia guidelines, the primary safe over-the-counter options are:\n\n` +
-      `${medList}\n\n` +
-      `### 🌿 Supportive Care & Recovery:\n` +
-      `- Stay well hydrated, rest, and avoid heavy or irritating foods.\n` +
-      `- *Consult your doctor if symptoms worsen or persist for longer than 2-3 days.*\n\n` +
-      ``;
+    return `⚠️ **Clinical Safety Notice**:\n\n` +
+      `DawaLens AI does not diagnose conditions or prescribe medications for symptoms. If you are experiencing symptoms, please consult a qualified healthcare professional or licensed physician for an accurate medical diagnosis and personalized prescription.\n\n` +
+      `### 🌿 General Supportive Guidance:\n` +
+      `- Stay well hydrated, rest, and monitor your symptoms.\n` +
+      `- If you have a specific prescribed medication in your inventory, you may ask for reference details by naming the medication directly (e.g., *"Tell me about Paracetamol"*).\n` +
+      `- Seek immediate emergency medical care if symptoms are severe or deteriorating.\n\n` +
+      `*Notice: DawaLens AI is an organizational tracker and does not provide diagnostic recommendations.*`;
   }
 
   // 5. Scenario C: Check Drug-to-Drug Interactions between active inventory

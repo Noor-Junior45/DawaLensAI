@@ -82,7 +82,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="text-sm sm:text-base text-[#2c2824] space-y-3 leading-relaxed">
             <p>
-              This Terms of Service and Clinical Usage Agreement (&ldquo;Terms&rdquo;, &ldquo;Agreement&rdquo;, or &ldquo;Terms of Use&rdquo;) is a binding legal contract between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;, or &ldquo;your&rdquo;) and <strong>MD NOOR HASSAN</strong>, Operating Developer and Service Provider of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+              This Terms of Service and Clinical Usage Agreement (&ldquo;Terms&rdquo;, &ldquo;Agreement&rdquo;, or &ldquo;Terms of Use&rdquo;) is a binding legal contract between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;, or &ldquo;your&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>, Operating Developer and Service Provider of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
             </p>
             <p>
               DawaLens AI is accessible as a native Android mobile application (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawalens.app</code>) and as a web application at{' '}
@@ -117,7 +117,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
             </a>
             <a href="#section-3" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center shrink-0">3</span>
-              <span className="truncate">Section 3: Exact Alarms &amp; Permissions</span>
+              <span className="truncate">Section 3: Notifications &amp; Permissions</span>
             </a>
             <a href="#section-4" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
@@ -217,10 +217,10 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
             <div className="border-l-4 border-[#0f9d58] bg-[#f5f8f5] border border-[#d2e7d7] p-4 rounded-r-xl space-y-2">
               <div className="flex items-center gap-2 font-bold text-[#1c1917] text-sm sm:text-base">
                 <Cpu size={18} className="text-[#0f9d58] shrink-0" />
-                On-Device Clinical Small Language Model (SLM &amp; CNN Classifier)
+                On-Device Clinical Reference Engine &amp; Heuristic Packaging Classifier
               </div>
               <p className="text-[#44403c]">
-                For offline emergency access and instant response times, DawaLens AI embeds a proprietary ~2.1M parameter clinical formulary model and CNN visual packaging classifier. The SLM operates completely locally in device RAM. <strong>Strict Zero-Training Guarantee:</strong> User conversations, scanned medications, and adherence logs are NEVER collected, stored, or utilized to train or fine-tune our models.
+                For offline access and instant response times, DawaLens AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier. The reference engine operates completely locally in device RAM. <strong>Strict Zero-Training Guarantee:</strong> User conversations, scanned medications, and adherence logs are NEVER collected, stored, or utilized to train or fine-tune artificial intelligence models.
               </p>
             </div>
 
@@ -241,21 +241,21 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
         <section id="section-3" className="space-y-4 scroll-mt-20">
           <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
             <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-900 text-xs sm:text-sm font-black shrink-0">3.0</span>
-            <h3 className="tracking-tight">HARDWARE PERMISSION &amp; EXACT ALARM USE</h3>
+            <h3 className="tracking-tight">HARDWARE PERMISSION &amp; NOTIFICATION USE</h3>
           </div>
 
           <div className="space-y-4 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              In compliance with the Google Play Store Device and Network Abuse Policy, permissions are invoked solely when required for life-safety and direct user features:
+              In compliance with Google Play Store Policies, permissions are invoked solely when required for direct user features and medication tracking:
             </p>
 
             <div className="border-l-4 border-blue-600 bg-[#f4f7fa] border border-[#d3dfed] p-4 rounded-r-xl space-y-2">
               <div className="flex items-center gap-2 font-bold text-[#1c1917] text-sm sm:text-base flex-wrap">
                 <Bell size={18} className="text-blue-600 shrink-0" />
-                <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">USE_EXACT_ALARM</code> &amp; <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">SCHEDULE_EXACT_ALARM</code>
+                <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">android.permission.POST_NOTIFICATIONS</code>
               </div>
               <p className="text-[#44403c]">
-                <strong>Patient Safety Justification:</strong> On Android 13+ and 14+, DawaLens AI requires exact alarm permissions because minute-precise timing is mandatory for medication adherence. Inexact or batched notifications could lead to missed doses of narrow-therapeutic-index drugs (such as insulin, cardiac medications, or antibiotics) or accidental ingestion of expired medicine. All dose alarms run locally via Android&apos;s native <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">AlarmManager</code>.
+                <strong>Notification Delivery:</strong> Used solely to alert you on-device when medications are nearing expiration (at 30 days, 7 days, and on expiration day) or require refills. DawaLens AI schedules notifications through standard Android notification channels and does not request or require restricted exact alarm permissions (<code>SCHEDULE_EXACT_ALARM</code>). Notifications contain no commercial advertisements.
               </p>
             </div>
 
@@ -265,7 +265,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">CAMERA</code> &amp; Local Storage Isolation
               </div>
               <p className="text-[#44403c]">
-                Invoked solely when scanning packaging labels. Captured photos saved into your vault are stored 100% locally in your physical device&apos;s sandboxed <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">IndexedDB</code> storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaLensLocalImages</code>) and are <strong>NEVER</strong> uploaded to Firebase Storage or cloud databases.
+                Invoked solely when scanning packaging labels. Captured photos saved into your vault are stored locally in your physical device&apos;s sandboxed <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">IndexedDB</code> storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaLensLocalImages</code>) and are never uploaded to remote database disks. During active scanning, packaging photos are streamed over secure HTTPS to Google Gemini for optical text extraction.
               </p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               <strong>4.2 Prohibited Activities:</strong> In using DawaLens AI, you strictly agree NOT to:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
-              <li>Decompile, reverse engineer, unpack, or extract proprietary model weights from our on-device Small Language Model (SLM) or CNN visual classifiers.</li>
+              <li>Decompile, reverse engineer, unpack, or copy algorithmic heuristics or client code.</li>
               <li>Deploy automated scrapers, crawlers, or bots to harvest pharmaceutical data or strain our backend proxy endpoints.</li>
               <li>Use the application to conduct unlicensed telemedicine, commercial clinical triage, prescription forgery, or illicit drug distribution.</li>
               <li>Circumvent or attempt to disable security boundaries, authentication tokens, rate limits, or Firebase Firestore security rules.</li>
@@ -307,7 +307,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              <strong>5.1 Intellectual Property Ownership:</strong> All code, user interfaces, branding, vector artwork, Doctor Logo, algorithmic heuristic rules, and offline SLM model weights are the exclusive property of <strong>MD NOOR HASSAN</strong>.
+              <strong>5.1 Intellectual Property Ownership:</strong> All code, user interfaces, branding, vector artwork, Doctor Logo, and algorithmic heuristic rules are the exclusive property of <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>.
             </p>
             <p>
               <strong>5.2 User Data Ownership &amp; Privacy:</strong> You retain complete ownership of your personal health data, medication entries, notes, and photos. We process your data strictly under the terms of our active <a href="/privacy" className="text-[#0f9d58] font-bold underline">Privacy Policy</a>.
@@ -338,7 +338,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               DAWALENS AI, ITS ENTIRE CODEBASE, ON-DEVICE OCR SCANNERS, DRUG INTERACTION CALCULATORS, SCHEDULE ALERTS, AND AI PHARMACIST OUTPUTS ARE PROVIDED STRICTLY ON AN <strong>&ldquo;AS IS&rdquo;</strong> AND <strong>&ldquo;AS AVAILABLE&rdquo;</strong> BASIS, WITHOUT WARRANTIES OR GUARANTEES OF ANY KIND, EITHER EXPRESS, STATUTORY, OR IMPLIED.
             </p>
             <p>
-              MD NOOR HASSAN AND DAWALENS AI EXPRESSLY DISCLAIM ALL IMPLIED WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, FREEDOM FROM PROGRAMMING ERRORS, OR FREEDOM FROM OPERATING SYSTEM ALARM DELAYS CAUSED BY MANUFACTURER BATTERY-SAVING MODES.
+              [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] AND DAWALENS AI EXPRESSLY DISCLAIM ALL IMPLIED WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, FREEDOM FROM PROGRAMMING ERRORS, OR FREEDOM FROM OPERATING SYSTEM NOTIFICATION DELAYS CAUSED BY MANUFACTURER BATTERY-SAVING MODES.
             </p>
           </div>
         </section>
@@ -357,7 +357,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               7.1 Exclusion of Health &amp; Consequential Damages:
             </p>
             <p className="text-[#44403c]">
-              Under no legal theory (contract, tort, negligence, or strict liability) shall MD NOOR HASSAN or DawaLens AI be liable for any personal injury, adverse drug event, pharmaceutical allergic reaction, missed dose, accidental ingestion of expired medication, death, or indirect damages resulting from your use of or reliance upon the application.
+              Under no legal theory (contract, tort, negligence, or strict liability) shall [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] or DawaLens AI be liable for any personal injury, adverse drug event, pharmaceutical allergic reaction, missed dose, accidental ingestion of expired medication, death, or indirect damages resulting from your use of or reliance upon the application.
             </p>
             <div className="bg-[#fdf4f4] border-l-4 border-rose-600 border border-rose-200 p-4 rounded-r-xl text-xs sm:text-sm text-rose-950 font-bold">
               7.2 Strict Financial Liability Cap:
@@ -384,7 +384,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 8.1 Governing Law &amp; Exclusive Jurisdiction:
               </div>
               <p className="text-[#44403c]">
-                These Terms shall be governed by and construed in accordance with the substantive laws of the <strong>Republic of India</strong> (including the Indian Contract Act, 1872 and the DPDP Act, 2023). You and MD NOOR HASSAN irrevocably agree that any dispute or lawsuit arising hereunder shall be subject to the exclusive personal and subject-matter jurisdiction of the <strong>Competent Civil Courts in Kolkata, West Bengal, India</strong>.
+                These Terms shall be governed by and construed in accordance with the substantive laws of the <strong>Republic of India</strong> (including the Indian Contract Act, 1872 and the DPDP Act, 2023). You and [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] irrevocably agree that any dispute or lawsuit arising hereunder shall be subject to the exclusive personal and subject-matter jurisdiction of the <strong>Competent Civil Courts in Kolkata, West Bengal, India</strong>.
               </p>
             </div>
 
@@ -394,7 +394,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 8.2 Mandatory 30-Day Informal Negotiation:
               </div>
               <p className="text-[#44403c]">
-                Before filing any formal legal claim, you agree to submit a written notice to <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">mdnoor4860@gmail.com</code> and negotiate in good faith for thirty (30) days to reach an amicable resolution.
+                Before filing any formal legal claim, you agree to submit a written notice to <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">[TODO_USER_INPUT: CONTACT_EMAIL]</code> and negotiate in good faith for thirty (30) days to reach an amicable resolution.
               </p>
             </div>
 
@@ -435,15 +435,15 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                       Service Provider
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 font-bold text-[#1c1917] align-middle">
-                      MD NOOR HASSAN
+                      [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]
                     </td>
                   </tr>
                   <tr className="hover:bg-[#f3ede1]/60 transition-colors">
                     <th scope="row" className="py-3 px-3.5 sm:px-4 font-semibold text-[#57534e] w-[32%] sm:w-48 shrink-0 align-middle bg-[#f6f0e4]">
-                      Designation
+                      Grievance Officer
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
-                      Operating Developer &amp; Data Protection Officer
+                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME] ([TODO_USER_INPUT: GRIEVANCE_OFFICER_DESIGNATION])
                     </td>
                   </tr>
                   <tr className="hover:bg-[#f3ede1]/60 transition-colors">
@@ -451,9 +451,17 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                       Official Contact Email
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
-                      <a href="mailto:mdnoor4860@gmail.com" className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
-                        mdnoor4860@gmail.com
-                      </a>
+                      <span className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
+                        [TODO_USER_INPUT: GRIEVANCE_OFFICER_EMAIL]
+                      </span>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-[#f3ede1]/60 transition-colors">
+                    <th scope="row" className="py-3 px-3.5 sm:px-4 font-semibold text-[#57534e] w-[32%] sm:w-48 shrink-0 align-middle bg-[#f6f0e4]">
+                      Postal Address
+                    </th>
+                    <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
+                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_POSTAL_ADDRESS]
                     </td>
                   </tr>
                   <tr className="hover:bg-[#f3ede1]/60 transition-colors">

@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { performOnDeviceOcr, OcrPreExtractionHints } from "./ocrService";
 import { runImageCnnClassifier, CnnVisualFeatures } from "./imageCnnService";
 import { getApiUrl, getDirectRenderUrl } from "../utils/apiConfig";
+import { getAuthHeader } from "../firebase";
 import { 
   generateOfflineSlmConsultation, 
   extractMedicineOfflineSlm,
@@ -365,11 +366,15 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
   });
 
   try {
+    const authHeaders = await getAuthHeader();
     let response: Response | null = null;
     try {
       response = await fetch(getApiUrl('/api/ai/extract'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: extractPayload
       });
     } catch (e) {
@@ -381,7 +386,10 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
       try {
         response = await fetch(getDirectRenderUrl('/api/ai/extract'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
           body: extractPayload
         });
       } catch (directErr) {
@@ -447,11 +455,15 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
 export async function checkDrugInteractions(medicines: { name: string; dosage: string }[]): Promise<InteractionResult | null> {
   const payload = JSON.stringify({ medicines });
   try {
+    const authHeaders = await getAuthHeader();
     let response: Response | null = null;
     try {
       response = await fetch(getApiUrl('/api/ai/interactions'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: payload
       });
     } catch (e) {
@@ -462,7 +474,10 @@ export async function checkDrugInteractions(medicines: { name: string; dosage: s
       try {
         response = await fetch(getDirectRenderUrl('/api/ai/interactions'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
           body: payload
         });
       } catch (e) {}
@@ -540,14 +555,18 @@ export async function chatWithAI(
 
 export async function chatWithGemini(messages: ChatMessage[], userId?: string, medicines?: any[]): Promise<string> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
-  const chatPayload = JSON.stringify({ messages, userId, medicines });
+  const chatPayload = JSON.stringify({ messages, medicines });
 
   try {
+    const authHeaders = await getAuthHeader();
     let response: Response | null = null;
     try {
       response = await fetch(getApiUrl('/api/ai/chat'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: chatPayload
       });
     } catch (e) {
@@ -559,7 +578,10 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
       try {
         const directResp = await fetch(getDirectRenderUrl('/api/ai/chat'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
           body: chatPayload
         });
         if (directResp.ok) {
@@ -716,6 +738,7 @@ export async function categorizeMedicinesWithAI(
 
   // 1. Try server-side AI classification with strict 3.5s timeout (prevent Android/mobile hang)
   try {
+    const authHeaders = await getAuthHeader();
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = controller ? setTimeout(() => controller.abort(), 3500) : null;
 
@@ -723,7 +746,10 @@ export async function categorizeMedicinesWithAI(
     try {
       response = await fetch(getApiUrl('/api/ai/categorize'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
         body: catPayload,
         signal: controller ? controller.signal : undefined
       });

@@ -50,27 +50,25 @@ DAWALENS AI IS NEITHER DESIGNED NOR INTENDED FOR USE IN ACUTE MEDICAL EMERGENCIE
 ### 2.1 Scope of Services
 DawaLens AI provides users with a digital utility suite including:
 1. **Medication Inventory Vault:** Secure cataloging of medication trade names, generic salts, dosage strengths, formulations (tablets, syrups, capsules, ampules), remaining stock counts, and manufacturer expiry dates.
-2. **On-Device OCR & Visual Classifier:** In-memory pre-processing and optical character recognition running via native platform bridges, client-side Tesseract.js (WebAssembly), and on-device Convolutional Neural Network (CNN) visual form classification.
+2. **On-Device OCR & Visual Classifier:** In-memory pre-processing and optical character recognition running via native platform bridges, client-side Tesseract.js (WebAssembly), and heuristic packaging classification.
 3. **Adherence & Expiration Reminders:** Local alarm scheduling for daily dose schedules and cloud-assisted multi-stage expiration warnings (dispatched at 30 days, 7 days, and expiration date).
 4. **Drug Interaction Screener:** Algorithmic cross-checking of concurrent medications for reported clinical drug-drug interactions and pharmacological precautions.
 5. **AI Pharmacist Companion ("Dr. DawaLens"):** Interactive conversational assistant delivering general pharmacological compendia summaries, lifestyle tips, and medication inventory search assistance.
 
 ### 2.2 Artificial Intelligence & Third-Party LLM Disclosures
-DawaLens AI utilizes a hybrid dual-layer artificial intelligence framework:
-- **Cloud Reasoning Layer (Google AI Studio Gemini API):** For complex pharmacological interactions, multidrug regimens, and detailed usage instructions, queries are transmitted over encrypted TLS 1.3 channels to Google AI Studio Gemini models (`gemini-2.5-flash`, `gemini-3.8-flash`). You acknowledge that this service is provided under Google AI Studio terms, that prompts are de-identified (all personal identifiers stripped), and that cloud AI outputs may reflect latency, external service interruptions, or algorithmic hallucinations.
-- **On-Device Small Language Model (SLM Layer):** For fast, offline clinical consultation and offline label extraction, the application embeds a proprietary ~2.1M parameter clinical formulary and offline expert engine. The SLM operates completely locally in device RAM and inference-only mode, with strict zero training or distillation on user conversation data.
+DawaLens AI utilizes a hybrid dual-layer clinical assistance framework:
+- **Cloud Reasoning Layer (Google AI Studio Gemini API):** For complex pharmacological interactions, multidrug regimens, and detailed usage instructions, queries are transmitted over encrypted TLS channels to Google Gemini models (`gemini-2.5-flash`). You acknowledge that prompts are de-identified (all personal identifiers stripped), and that cloud AI outputs may reflect latency, external service interruptions, or algorithmic hallucinations.
+- **On-Device Reference Engine:** For fast, offline clinical consultation and offline label extraction, the application embeds an offline, rule-based clinical formulary and reference engine. The reference engine operates completely locally in device memory, with strict zero training on user conversation data.
 
 ### 2.3 Algorithmic Hallucination & Accuracy Disclaimer
 You explicitly understand and accept that Large Language Models (LLMs) and Small Language Models (SLMs) generate probabilistic text. While trained on pharmaceutical compendia, AI models may occasionally generate inaccurate, incomplete, outdated, or hallucinated clinical assertions, incorrect dosage equivalencies, or inappropriate contraindications. DawaLens AI makes no representation, warranty, or covenant regarding the absolute accuracy, completeness, or timeliness of any AI-generated response. You assume all risk arising from reliance upon AI-generated advice.
 
 ---
 
-## 3. HARDWARE PERMISSIONS, ALARM SAFETY & NETWORK USAGE
+## 3. HARDWARE PERMISSIONS, NOTIFICATIONS & NETWORK USAGE
 
-### 3.1 Justification for Exact Alarms (`USE_EXACT_ALARM` & `SCHEDULE_EXACT_ALARM`)
-In strict adherence to Google Play Store Policies and Android Operating System requirements (Android 13+ / 14+), DawaLens AI requests and utilizes the `android.permission.USE_EXACT_ALARM` and `android.permission.SCHEDULE_EXACT_ALARM` permissions. You acknowledge that:
-- These permissions are strictly required for patient safety and medical compliance: delayed, batched, or inexact delivery of medication dose reminders poses severe health risks for patients taking critical maintenance pharmaceuticals (e.g., insulin, anti-hypertensives, immunosuppressants, antibiotics).
-- Local alarms are scheduled directly within the Android `AlarmManager` to function autonomously and offline, without requiring continuous internet connectivity or remote push server execution.
+### 3.1 Notification Permissions (`POST_NOTIFICATIONS`) & Delivery
+DawaLens AI utilizes standard local and push notifications to deliver scheduled medicine expiration warnings and dose alerts. In compliance with Google Play Store exact alarm policies, DawaLens AI does not require or request restricted exact alarm permissions (such as `SCHEDULE_EXACT_ALARM`). Notifications are dispatched through standard Android notification channels and Web Push.
 
 ### 3.2 Camera Permission (`CAMERA`) & Image Architecture
 - The camera permission is invoked solely when you initiate optical scanning of a medication box, bottle, or foil strip.
@@ -95,7 +93,7 @@ You are solely responsible for maintaining the confidentiality of your authentic
 
 ### 4.3 Prohibited Conduct & Usage Restrictions
 You agree that you shall NOT, directly or indirectly:
-1. **Reverse Engineering & Model Extraction:** Decompile, reverse engineer, disassemble, decrypt, unpack, extract weights, distill, or scrape the client-side Small Language Model (SLM), on-device CNN classifiers, or application source code.
+1. **Reverse Engineering & Code Extraction:** Decompile, reverse engineer, disassemble, decrypt, unpack, extract proprietary databases, distill, or scrape the application source code or offline drug reference engine.
 2. **Automated Scraping & Denial of Service:** Use bots, crawlers, automated scripts, spiders, or scrapers to extract pharmacological data, pharmaceutical compendia, or flood the API endpoints (`/api/ai/*`, `/api/send-email`).
 3. **Medical Fraud & Commercial Resale:** Utilize DawaLens AI to conduct unauthorized, unlicensed telemedicine, prescription fraud, counterfeit medication distribution, or commercial clinical decision support services.
 4. **Security Circumvention:** Attempt to bypass, compromise, probe, or disable any security boundaries, authentication controls, rate limits, or `firestore.rules` access filters.

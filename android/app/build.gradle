@@ -26,12 +26,18 @@ android {
             if (propFile.exists()) {
                 keyProperties.load(new FileInputStream(propFile))
             }
-            if (file('release.keystore').exists()) {
-                storeFile file('release.keystore')
-                storePassword keyProperties.getProperty('storePassword') ?: System.getenv('ANDROID_STORE_PASSWORD') ?: 'dawalens123'
-                keyAlias keyProperties.getProperty('keyAlias') ?: System.getenv('ANDROID_KEY_ALIAS') ?: 'dawalens-key'
-                keyPassword keyProperties.getProperty('keyPassword') ?: System.getenv('ANDROID_KEY_PASSWORD') ?: 'dawalens123'
-                storeType 'PKCS12'
+            def keystoreFile = file('release.keystore')
+            if (keystoreFile.exists()) {
+                def storePwd = keyProperties.getProperty('storePassword') ?: System.getenv('ANDROID_STORE_PASSWORD')
+                def kAlias = keyProperties.getProperty('keyAlias') ?: System.getenv('ANDROID_KEY_ALIAS')
+                def kPwd = keyProperties.getProperty('keyPassword') ?: System.getenv('ANDROID_KEY_PASSWORD')
+                if (storePwd && kAlias && kPwd) {
+                    storeFile keystoreFile
+                    storePassword storePwd
+                    keyAlias kAlias
+                    keyPassword kPwd
+                    storeType 'PKCS12'
+                }
             }
         }
     }
@@ -40,7 +46,8 @@ android {
             if (file('release.keystore').exists()) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -70,12 +77,15 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
-        apply plugin: 'com.google.gms.google-services'
-        apply plugin: 'com.google.firebase.crashlytics'
+def servicesJSON = file('google-services.json')
+if (servicesJSON.exists() && servicesJSON.text.trim()) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+} else {
+    gradle.taskGraph.whenReady { graph ->
+        if (graph.hasTask(':app:assembleRelease') || graph.hasTask(':app:bundleRelease')) {
+            throw new GradleException("CRITICAL: 'google-services.json' is missing from android/app/! It is required for Firebase services, Crashlytics, and Push Notifications in production release builds.")
+        }
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.warn("google-services.json not found. Push Notifications and Crashlytics plugins not applied in non-release mode.")
 }

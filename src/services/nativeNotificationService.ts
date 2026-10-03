@@ -161,10 +161,9 @@ export async function initNativeNotifications(): Promise<boolean> {
 }
 
 /**
- * Schedules native Android AlarmManager notifications for all active medicines.
- * Because these are registered with Android's AlarmManager (allowWhileIdle: true),
- * the Android OS triggers them automatically at the exact scheduled date/time,
- * even when the app is completely closed or killed.
+ * Schedules on-device Local Notifications for all active medicines.
+ * Displays scheduled heads-up notification reminders on expiration milestone dates
+ * even when the app is closed.
  */
 export async function scheduleNativeMedicineAlerts(
   medicines: Medicine[],

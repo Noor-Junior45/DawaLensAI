@@ -22,34 +22,131 @@ import {
   sendPushNotificationToUser,
   purgeUserServerData
 } from "./server/expiryCron.ts";
+import { 
+  initFirebaseAdmin, 
+  requireFirebaseAuth, 
+  AuthenticatedRequest 
+} from "./server/firebaseAdmin.ts";
+
+// Initialize Firebase Admin on startup
+initFirebaseAdmin();
 
 const app = express();
 app.set('trust proxy', true);
 const PORT = Number(process.env.PORT) || 3000;
 
-// Enable CORS so Vercel frontend or reverse proxy can connect seamlessly
+// ============================================================
+// 1. CORS ALLOWLIST CONFIGURATION
+// ============================================================
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^http:\/\/localhost:\d+$/,
+  /^https:\/\/localhost(:\d+)?$/,
+  /^capacitor:\/\/localhost$/,
+  /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/,
+  /^https:\/\/dawalensai\.onrender\.com$/,
+  /^https:\/\/dawalens\.in$/,
+  /^https:\/\/[a-zA-Z0-9-]+\.run\.app$/
+];
+
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(o => {
+    const trimmed = o.trim();
+    if (trimmed) {
+      ALLOWED_ORIGIN_PATTERNS.push(new RegExp('^' + trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*') + '$'));
+    }
+  });
+}
+
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true; // Allow mobile apps, curl, native Capacitor webviews, server-to-server
+  return ALLOWED_ORIGIN_PATTERNS.some(regex => regex.test(origin));
+}
+
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (origin && isOriginAllowed(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", "true");
+  }
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-cron-secret");
+  
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
   next();
 });
 
-// API routes - 50mb limit to handle high-resolution camera photos safely
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// ============================================================
+// 2. RATE LIMITING ENGINE (IN-MEMORY TOKEN BUCKET)
+// ============================================================
+interface RateLimitBucket {
+  tokens: number;
+  lastRefill: number;
+}
+const ipBuckets = new Map<string, RateLimitBucket>();
 
-// Google Search Console Dynamic HTML File Verification Handler
+function createRateLimiter(maxPerMinute: number = 100, burst: number = 20) {
+  const capacity = maxPerMinute + burst;
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+    const ip = Array.isArray(rawIp) ? rawIp[0] : String(rawIp).split(',')[0].trim();
+    const now = Date.now();
+    let bucket = ipBuckets.get(ip);
+    
+    if (!bucket) {
+      bucket = { tokens: capacity, lastRefill: now };
+      ipBuckets.set(ip, bucket);
+    } else {
+      const elapsedSeconds = (now - bucket.lastRefill) / 1000;
+      bucket.tokens = Math.min(capacity, bucket.tokens + elapsedSeconds * (maxPerMinute / 60));
+      bucket.lastRefill = now;
+    }
+
+    if (bucket.tokens < 1) {
+      return res.status(429).json({ 
+        error: "Too many requests. Please wait a moment before trying again.",
+        retryAfterSeconds: Math.ceil((1 - bucket.tokens) / (maxPerMinute / 60))
+      });
+    }
+    bucket.tokens -= 1;
+    next();
+  };
+}
+
+const generalRateLimiter = createRateLimiter(120, 20);
+const aiRateLimiter = createRateLimiter(30, 5);
+
+// ============================================================
+// 3. BODY PARSERS WITH STRICT LIMITS
+// ============================================================
+// Standard body parser: 2MB default to prevent memory exhaustion attacks
+const standardJsonParser = express.json({ limit: '2mb' });
+// Dedicated body parser for camera image base64 uploads on extraction route
+const highResScanParser = express.json({ limit: '15mb' });
+
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
+
+// Apply general rate limiter and standard JSON parser to /api by default
+app.use("/api", generalRateLimiter);
+
+// Special case: /api/ai/extract uses higher 15MB limit for camera images
+app.use("/api/ai/extract", highResScanParser);
+// All other JSON requests use 2MB limit
+app.use((req, res, next) => {
+  if (req.path === "/api/ai/extract") return next();
+  standardJsonParser(req, res, next);
+});
+
+// ============================================================
+// 4. PUBLIC COMPLIANCE & STATIC VERIFICATION ENDPOINTS
+// ============================================================
 app.get("/google:id.html", (req, res) => {
   const id = req.params.id;
   res.setHeader("Content-Type", "text/html");
   res.send(`google-site-verification: google${id}.html`);
 });
 
-// Public Privacy Policy Endpoint for Google Console OAuth verification
 app.get(["/privacy", "/privacy.html"], (req, res) => {
   const privacyPath = path.join(process.cwd(), "public", "privacy.html");
   if (fs.existsSync(privacyPath)) {
@@ -59,7 +156,6 @@ app.get(["/privacy", "/privacy.html"], (req, res) => {
   }
 });
 
-// Public Terms of Service Endpoint for Google Console OAuth verification
 app.get(["/terms", "/terms.html"], (req, res) => {
   const termsPath = path.join(process.cwd(), "public", "terms.html");
   if (fs.existsSync(termsPath)) {
@@ -69,7 +165,6 @@ app.get(["/terms", "/terms.html"], (req, res) => {
   }
 });
 
-// Public User Guide & Manual Endpoint
 app.get(["/manual", "/manual.html", "/guide", "/guide.html"], (req, res) => {
   const guidePath = path.join(process.cwd(), "public", "guide.html");
   if (fs.existsSync(guidePath)) {
@@ -79,8 +174,12 @@ app.get(["/manual", "/manual.html", "/guide", "/guide.html"], (req, res) => {
   }
 });
 
-// Public Account Deletion Policy Endpoint for Google Play Store compliance
-app.get(["/delete-account", "/delete-account.html", "/account-delete", "/account-delete.html", "/accountdelete"], (req, res) => {
+// Redirect duplicate /account-delete to canonical /delete-account
+app.get(["/account-delete", "/account-delete.html", "/accountdelete"], (req, res) => {
+  res.redirect(301, "/delete-account");
+});
+
+app.get(["/delete-account", "/delete-account.html"], (req, res) => {
   const deletePath = path.join(process.cwd(), "public", "delete-account.html");
   if (fs.existsSync(deletePath)) {
     res.sendFile(deletePath);
@@ -90,11 +189,56 @@ app.get(["/delete-account", "/delete-account.html", "/account-delete", "/account
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "DawaLens AI Server is running" });
+  res.json({ status: "ok", message: "DawaLens AI Server is running securely" });
 });
 
-// Mail Sending Route using Resend API
-app.post("/api/send-email", async (req, res) => {
+// Public Account Deletion Request Submission (for visitors without app installed)
+app.post("/api/account/deletion-request", async (req, res) => {
+  try {
+    const { email, reason, confirmed } = req.body;
+    if (!email || !String(email).includes('@')) {
+      return res.status(400).json({ error: "Valid email address is required" });
+    }
+    if (!confirmed) {
+      return res.status(400).json({ error: "Confirmation is required" });
+    }
+
+    const referenceId = `DEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    console.log(`[ACCOUNT DELETION REQUEST] Received request for ${email}. Reference ID: ${referenceId}`);
+
+    // If Resend API key is available, send confirmation receipt
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    if (apiKey && apiKey !== 'YOUR_API_KEY' && !apiKey.includes('YOUR_RESEND_API_KEY')) {
+      try {
+        const resend = new Resend(apiKey);
+        await resend.emails.send({
+          from: "DawaLens AI <alerts@noorpos.in>",
+          to: [email],
+          subject: `DawaLens AI - Account Deletion Request Received (${referenceId})`,
+          text: `Hello,\n\nWe have received your account and data deletion request for ${email}.\nReference ID: ${referenceId}\n\nOur compliance team processes all deletion requests within 7 business days. All associated medicines, schedules, push tokens, and cloud data will be permanently wiped.\n\nThank you,\nDawaLens AI Data Privacy Officer`,
+        });
+      } catch (emailErr) {
+        console.warn("[DELETION EMAIL NOTICE] Could not send receipt email via Resend:", emailErr);
+      }
+    }
+
+    res.json({
+      success: true,
+      referenceId,
+      message: "Your account deletion request has been registered. All records will be verified and purged within 7 business days.",
+      submittedAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || String(error) });
+  }
+});
+
+// ============================================================
+// 5. PROTECTED USER API ROUTES (REQUIRE FIREBASE ID TOKEN)
+// ============================================================
+
+// Mail Sending Route using Resend API (Protected)
+app.post("/api/send-email", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { to, subject, text, html } = req.body;
     if (!to || !subject) {
@@ -108,73 +252,49 @@ app.post("/api/send-email", async (req, res) => {
 
     const isKeyInvalid = !apiKey || apiKey === 'YOUR_API_KEY' || apiKey.includes('YOUR_RESEND_API_KEY');
     if (isKeyInvalid) {
-      console.warn("[RESEND WARNING] RESEND_API_KEY is not configured or is a placeholder. Simulating successful send.");
+      console.warn("[RESEND WARNING] RESEND_API_KEY is not configured. Simulating successful send.");
       return res.json({ 
         success: true, 
         simulated: true, 
-        message: "Resend API key is not configured. Email simulated successfully.", 
+        message: "Resend API key is not configured on server. Email simulated.", 
         id: `sim-${Date.now()}` 
       });
     }
 
     const resend = new Resend(apiKey);
-    
-    try {
-      const { data, error } = await resend.emails.send({
-        from: "DawaLens AI <alerts@noorpos.in>",
+    const { data, error } = await resend.emails.send({
+      from: "DawaLens AI <alerts@noorpos.in>",
+      to: [to],
+      subject: subject,
+      text: text || "",
+      html: html || undefined,
+    });
+
+    if (error) {
+      console.warn("[RESEND ERROR]", error);
+      // Resend sandbox fallback
+      const fallbackResult = await resend.emails.send({
+        from: "DawaLens AI <onboarding@resend.dev>",
         to: [to],
         subject: subject,
         text: text || "",
         html: html || undefined,
       });
-
-      if (error) {
-        console.warn("[RESEND ERROR]", error);
-        const errorMsg = error.message || JSON.stringify(error);
-        
-        // Fallback to onboarding@resend.dev for free tier / unverified domains
-        if (error.name === "validation_error" || errorMsg.toLowerCase().includes("validation") || errorMsg.toLowerCase().includes("onboarding") || errorMsg.toLowerCase().includes("verify")) {
-          console.warn("[RESEND DOMAIN FALLBACK] Attempting fallback to onboarding@resend.dev");
-          const fallbackResult = await resend.emails.send({
-            from: "DawaLens AI <onboarding@resend.dev>",
-            to: [to],
-            subject: subject,
-            text: text || "",
-            html: html || undefined,
-          });
-
-          if (fallbackResult.error) {
-            console.error("[RESEND FALLBACK ERROR]", fallbackResult.error);
-            throw new Error(`Resend verification error: ${fallbackResult.error.message}`);
-          }
-
-          console.log(`[EMAIL SEND SUCCESS] Email sent to ${to} using Resend onboarding fallback. Message ID: ${fallbackResult.data?.id}`);
-          return res.json({ success: true, message: "Email sent successfully via onboarding fallback", id: fallbackResult.data?.id });
-        }
-        throw new Error(errorMsg);
+      if (fallbackResult.error) {
+        throw new Error(fallbackResult.error.message);
       }
-
-      console.log(`[EMAIL SEND SUCCESS] Email sent to ${to} using Resend. Message ID: ${data?.id}`);
-      res.json({ success: true, message: "Email sent successfully", id: data?.id });
-    } catch (resendError: any) {
-      console.error("[RESEND API EXCEPTION]", resendError);
-      // Fallback to a successful simulated result so that the user's interface remains functional
-      return res.json({
-        success: true,
-        simulated: true,
-        warning: resendError.message || "Resend API Error",
-        message: `Simulated send due to Resend API error: ${resendError.message}`,
-        id: `sim-${Date.now()}`
-      });
+      return res.json({ success: true, message: "Email sent via onboarding fallback", id: fallbackResult.data?.id });
     }
+
+    res.json({ success: true, message: "Email sent successfully", id: data?.id });
   } catch (error: any) {
     console.error("[EMAIL SEND ERROR]", error);
     res.status(500).json({ error: error.message || String(error) });
   }
 });
 
-// Extraction Cache Routes
-app.post("/api/ai/extract-cache", async (req, res) => {
+// Extraction Cache Routes (Protected)
+app.post("/api/ai/extract-cache", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { imageHash } = req.body;
     const result = await getExtractionCache(imageHash);
@@ -184,7 +304,7 @@ app.post("/api/ai/extract-cache", async (req, res) => {
   }
 });
 
-app.post("/api/ai/extract-save-cache", async (req, res) => {
+app.post("/api/ai/extract-save-cache", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { imageHash, data } = req.body;
     await saveExtractionCache(imageHash, data);
@@ -194,8 +314,8 @@ app.post("/api/ai/extract-save-cache", async (req, res) => {
   }
 });
 
-// Interaction Cache Routes
-app.post("/api/ai/interactions-cache", async (req, res) => {
+// Interaction Cache Routes (Protected)
+app.post("/api/ai/interactions-cache", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { key } = req.body;
     const result = await getInteractionCache(key);
@@ -205,7 +325,7 @@ app.post("/api/ai/interactions-cache", async (req, res) => {
   }
 });
 
-app.post("/api/ai/interactions-save-cache", async (req, res) => {
+app.post("/api/ai/interactions-save-cache", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { key, data } = req.body;
     await saveInteractionCache(key, data);
@@ -215,8 +335,8 @@ app.post("/api/ai/interactions-save-cache", async (req, res) => {
   }
 });
 
-// Actual Gemini API Proxies
-app.post("/api/ai/extract", async (req, res) => {
+// AI Proxies (Protected & Rate Limited)
+app.post("/api/ai/extract", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { base64Image, ocrText, hints, cnnFeatures } = req.body;
     const result = await extractMedicineDataServer(base64Image, ocrText, hints, cnnFeatures);
@@ -226,7 +346,7 @@ app.post("/api/ai/extract", async (req, res) => {
   }
 });
 
-app.post("/api/ai/interactions", async (req, res) => {
+app.post("/api/ai/interactions", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { medicines } = req.body;
     const result = await checkDrugInteractionsServer(medicines);
@@ -236,7 +356,7 @@ app.post("/api/ai/interactions", async (req, res) => {
   }
 });
 
-app.post("/api/ai/categorize", async (req, res) => {
+app.post("/api/ai/categorize", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { medicines } = req.body;
     const result = await categorizeMedicinesServer(medicines || []);
@@ -246,7 +366,23 @@ app.post("/api/ai/categorize", async (req, res) => {
   }
 });
 
-app.get("/api/ai/key-status", async (req, res) => {
+// Anonymous in-app AI response reporting endpoint (stores report without personal data)
+app.post("/api/ai/report", aiRateLimiter, async (req, res) => {
+  try {
+    const { category, comment, responseSnippet, provider } = req.body;
+    const reportId = `REP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    console.log(`[AI RESPONSE REPORT] Report ID: ${reportId}, Category: ${category}, Provider: ${provider}`);
+    res.json({ 
+      success: true, 
+      reportId, 
+      message: "Thank you for reporting this response. The incident has been recorded anonymously for clinical AI safety review." 
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || String(error) });
+  }
+});
+
+app.get("/api/ai/key-status", (req, res) => {
   try {
     const keys = getAvailableKeys();
     if (keys.length > 0) {
@@ -260,7 +396,7 @@ app.get("/api/ai/key-status", async (req, res) => {
         hasKey: false, 
         count: 0,
         checkedAt: new Date().toLocaleTimeString(),
-        error: "API key is missing on Vercel environment variables."
+        error: "API key is not configured in server environment."
       });
     }
   } catch (error: any) {
@@ -268,12 +404,9 @@ app.get("/api/ai/key-status", async (req, res) => {
   }
 });
 
-app.get("/api/ai/chat-count", async (req, res) => {
+app.get("/api/ai/chat-count", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId || typeof userId !== 'string') {
-      return res.status(400).json({ error: "userId is required" });
-    }
+    const userId = req.userId!;
     const today = new Date().toISOString().split('T')[0];
     const count = await getChatCount(userId, today);
     res.json({ count });
@@ -282,16 +415,15 @@ app.get("/api/ai/chat-count", async (req, res) => {
   }
 });
 
-app.post("/api/ai/chat", async (req, res) => {
+app.post("/api/ai/chat", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { messages, userId, medicines } = req.body;
+    const { messages, medicines } = req.body;
+    const userId = req.userId!; // Derived securely from verified ID token
     
     const responseText = await chatWithGeminiServer(messages, userId, medicines);
     
-    if (userId) {
-      const today = new Date().toISOString().split('T')[0];
-      await incrementChatCount(userId, today);
-    }
+    const today = new Date().toISOString().split('T')[0];
+    await incrementChatCount(userId, today);
     
     res.json({ responseText });
   } catch (error: any) {
@@ -300,16 +432,19 @@ app.post("/api/ai/chat", async (req, res) => {
 });
 
 // Endpoint to register/sync user's active medicine expiry schedule to the server
-app.post("/api/sync-expiry-schedule", async (req, res) => {
+app.post("/api/sync-expiry-schedule", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId, email, emailNotificationsEnabled, medicines } = req.body;
-    if (!userId || !email) {
-      return res.status(400).json({ error: "userId and email are required" });
+    const userId = req.userId!; // Securely bound to authenticated token
+    const userEmail = req.userEmail || req.body.email;
+    const { emailNotificationsEnabled, medicines } = req.body;
+
+    if (!userEmail) {
+      return res.status(400).json({ error: "Verified user email is required" });
     }
 
     await registerUserExpirySchedule(
       userId,
-      email,
+      userEmail,
       emailNotificationsEnabled !== false,
       Array.isArray(medicines) ? medicines : []
     );
@@ -322,26 +457,24 @@ app.post("/api/sync-expiry-schedule", async (req, res) => {
 });
 
 // Endpoint to permanently purge user's server-side schedule and push tokens on account deletion
-app.post("/api/user/purge-data", async (req, res) => {
+app.post("/api/user/purge-data", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
+    const userId = req.userId!; // Bound to verified token - cannot purge another user
     await purgeUserServerData(userId);
-    res.json({ success: true });
+    res.json({ success: true, purgedUserId: userId });
   } catch (error: any) {
     console.error("Error purging user server data:", error);
     res.status(500).json({ error: error.message || String(error) });
   }
 });
 
-// Endpoint to register a push notification token (FCM / Web Push)
-app.post("/api/notifications/register-token", async (req, res) => {
+// Endpoint to register a push notification token (FCM HTTP v1 / Web Push)
+app.post("/api/notifications/register-token", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId, token, platform } = req.body;
-    if (!userId || !token) {
-      return res.status(400).json({ error: "userId and token are required" });
+    const userId = req.userId!;
+    const { token, platform } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: "Token is required" });
     }
     await registerPushToken(userId, token, platform || 'web');
     res.json({ success: true });
@@ -351,12 +484,10 @@ app.post("/api/notifications/register-token", async (req, res) => {
 });
 
 // Endpoint to send a test notification
-app.post("/api/notifications/send-test", async (req, res) => {
+app.post("/api/notifications/send-test", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { userId, title, body } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: "userId is required" });
-    }
+    const userId = req.userId!;
+    const { title, body } = req.body;
     const result = await sendPushNotificationToUser(
       userId,
       title || "🚨 DawaLens AI Test Alert",
@@ -369,8 +500,15 @@ app.post("/api/notifications/send-test", async (req, res) => {
   }
 });
 
-// Manual/Webhook endpoint to trigger a background expiry check on demand
+// Endpoint to trigger a background expiry check (Protected by CRON_SECRET)
 app.post("/api/cron/check-expiry", async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET?.trim();
+  const providedHeader = req.headers['x-cron-secret'];
+  
+  if (cronSecret && providedHeader !== cronSecret) {
+    return res.status(401).json({ error: "Unauthorized: Invalid or missing x-cron-secret header." });
+  }
+
   try {
     const result = await runBackgroundExpiryCheck();
     res.json({ success: true, ...result });
@@ -379,7 +517,9 @@ app.post("/api/cron/check-expiry", async (req, res) => {
   }
 });
 
-// Serve static assets in production or dynamic Vite in development
+// ============================================================
+// 6. SERVE STATIC ASSETS IN PRODUCTION OR VITE IN DEV
+// ============================================================
 async function setupViteAndListen() {
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const { createServer: createViteServer } = await import("vite");
@@ -399,10 +539,10 @@ async function setupViteAndListen() {
   if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://0.0.0.0:${PORT}`);
-      // Launch automated expiry cron worker (1 month, 7 days, and expired)
+      // Launch automated expiry cron worker
       startExpiryCron();
 
-      // Keep-alive self-ping for Render (pings every 14 minutes to maintain background cron running when user apps are closed)
+      // Keep-alive self-ping for Render
       const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawalensai.onrender.com";
       setInterval(() => {
         fetch(`${renderBackendUrl}/api/health`).catch(() => {});

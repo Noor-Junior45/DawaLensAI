@@ -31,7 +31,7 @@ service cloud.firestore {
 
     function isValidMedicine(data) {
       return data.keys().hasAll(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt']) &&
-             data.keys().hasOnly(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 'usageInstructions', 'capturedImage', 'imageUrl', 'taken', 'quantity', 'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert', 'category', 'tags']) &&
+             data.keys().hasOnly(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 'usageInstructions', 'imageUrl', 'taken', 'quantity', 'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert', 'category', 'tags']) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
              data.dosage is string && data.dosage.size() < 100 &&
@@ -40,7 +40,6 @@ service cloud.firestore {
              (data.createdAt is number || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is number || data.updatedAt is timestamp) &&
              (!('usageInstructions' in data) || data.usageInstructions == null || (data.usageInstructions is string && data.usageInstructions.size() < 2000)) &&
-             (!('capturedImage' in data) || data.capturedImage == null || (data.capturedImage is string && data.capturedImage.size() < 800000)) &&
              (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() < 2000)) &&
              (!('taken' in data) || data.taken is bool) &&
              (!('quantity' in data) || (data.quantity is number && data.quantity >= 0)) &&
@@ -95,6 +94,17 @@ service cloud.firestore {
              data.to == request.auth.token.email &&
              isValidEmail(data.to) &&
              data.message.keys().hasAll(['subject', 'text', 'html']);
+    }
+
+    function isValidAiReport(data) {
+      return data.keys().hasAll(['id', 'category', 'responseSnippet', 'provider', 'timestamp']) &&
+             data.keys().hasOnly(['id', 'category', 'comment', 'responseSnippet', 'provider', 'timestamp']) &&
+             data.id is string &&
+             data.category is string &&
+             data.responseSnippet is string && data.responseSnippet.size() <= 2000 &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 2000)) &&
+             data.provider in ['gemini', 'slm'] &&
+             data.timestamp is number;
     }
 
     match /mail/{mailId} {
@@ -170,6 +180,11 @@ service cloud.firestore {
 
     match /test/connection {
       allow read: if true;
+    }
+
+    match /aiReports/{reportId} {
+      allow create: if isValidAiReport(request.resource.data);
+      allow read, update, delete: if isAdmin();
     }
   }
 }

@@ -14,16 +14,21 @@ This project is now fully configured as a native Android app powered by **Capaci
 
 ---
 
-## 2. Release Signing Keystore Information
-A production-ready PKCS12 release keystore file has been generated and pre-configured into Gradle:
-- **Keystore File Location**: `android/app/release.keystore` (and `keystore/release.keystore`)
-- **Key Alias**: `dawalens-key`
-- **Store Password**: `dawalens123`
-- **Key Password**: `dawalens123`
-- **Key Algorithm**: RSA 2048-bit, 10,000 days validity
-- **Properties File**: `android/keystore.properties`
+## 2. Release Signing Configuration
+To sign release builds (AAB or APK) for Google Play / Indus Appstore:
+1. Place your private release keystore at `android/app/release.keystore`.
+2. Configure credentials securely either via `android/keystore.properties` (ignored by git):
+   ```properties
+   storePassword=[YOUR_KEYSTORE_STORE_PASSWORD]
+   keyAlias=[YOUR_KEY_ALIAS]
+   keyPassword=[YOUR_KEY_PASSWORD]
+   ```
+   Or set environment variables in your CI/CD runner:
+   - `ANDROID_STORE_PASSWORD`
+   - `ANDROID_KEY_ALIAS`
+   - `ANDROID_KEY_PASSWORD`
 
-The `android/app/build.gradle` is already wired to sign all release builds with this keystore automatically.
+Never commit release passwords or keystores to public source control. Keep backup copies in secure credential storage.
 
 ---
 

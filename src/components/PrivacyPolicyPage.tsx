@@ -74,7 +74,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           {/* Legal Identity Summary */}
           <div className="text-sm sm:text-base text-[#2c2824] space-y-3 leading-relaxed">
             <p>
-              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>MD NOOR HASSAN</strong>, Operating Developer and Data Controller of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</strong>, Operating Entity and Data Controller of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
             </p>
             <p>
               DawaLens AI is available as a native Android application distributed via the Google Play Store (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawalens.app</code>) and as a Progressive Web Application accessible at{' '}
@@ -252,7 +252,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 mt-1.5">
                   <li><strong>Local Vault Storage:</strong> Medicine photos associated with your saved inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaLensLocalImages</code>). They are NEVER stored in Firebase Cloud Storage, AWS S3, or remote database disks.</li>
                   <li><strong>Online AI Extraction:</strong> During real-time scanning in online mode, the captured packaging image is transmitted over encrypted TLS 1.3 HTTPS to our backend proxy and Google Gemini 2.5 Flash for multimodal packaging character recognition and validation. No PII (no name, email, or user identifier) is ever transmitted with the photo. The image is processed ephemerally in RAM and is never persisted or saved to server disks.</li>
-                  <li><strong>100% Offline On-Device Fallback:</strong> If offline or when cloud API access is unavailable, image OCR and visual form classification run entirely on-device via client-side Tesseract.js, native Android TextBridge, and our local CNN/SLM model with zero remote transmission.</li>
+                  <li><strong>100% Offline On-Device Fallback:</strong> If offline or when cloud API access is unavailable, image OCR and packaging classification run entirely on-device via client-side text recognition, native Android TextBridge, and our local rule-based formulary engine with zero remote transmission.</li>
                 </ul>
               </p>
             </div>
@@ -261,14 +261,12 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               <div className="flex items-center gap-2 font-bold text-[#1c1917] text-sm sm:text-base flex-wrap">
                 <Bell size={18} className="text-blue-600 shrink-0" />
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">android.permission.POST_NOTIFICATIONS</code>
-                <span className="text-[#57534e] font-normal">&amp;</span>
-                <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">USE_EXACT_ALARM / SCHEDULE_EXACT_ALARM</code>
               </div>
               <p className="text-[#44403c] leading-relaxed">
-                <strong>Medical Necessity &amp; Patient Safety Justification:</strong> In strict compliance with the Google Play Store Exact Alarm Policy (Android 13+ / 14+), DawaLens AI requests <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">USE_EXACT_ALARM</code> and <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">SCHEDULE_EXACT_ALARM</code> solely because minute-precise timing is mandatory for patient therapeutic adherence and life-safety. Delayed or batched reminders can lead to missed doses of narrow-therapeutic-index drugs (such as insulin, cardiovascular medications, or antibiotics) or accidental consumption of expired pharmaceuticals.
+                <strong>Notification Usage &amp; Patient Safety:</strong> On Android 13+ (API 33+) and modern web browsers, DawaLens AI requests notification permission exclusively to alert you when your stored medicines are nearing expiration (30-day notice, 7-day warning, and expiration day notice) or need refills. The application does not require or request restricted exact alarm permissions (such as <code>SCHEDULE_EXACT_ALARM</code>).
               </p>
               <p className="text-[#44403c] leading-relaxed">
-                <strong>Local Alarms &amp; Cloud Push Sync:</strong> Daily dose alarms are scheduled locally in the Android operating system&apos;s native <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">AlarmManager</code> for 100% offline precision. For automated pharmaceutical expiration alerts (at 30 days, 7 days, and expiration), push notifications can also be dispatched via Firebase Cloud Messaging (FCM) and email via Resend when configured in your notification preferences.
+                <strong>Local &amp; Cloud Push Sync:</strong> Expiry notifications are scheduled on-device through standard local notification channels and can also be dispatched via Firebase Cloud Messaging (FCM) and email via Resend when configured in your notification preferences.
                 <br />
                 <strong>Strict Zero-Marketing Guarantee:</strong> DawaLens AI never broadcasts promotional messages, engagement nudges, advertising, or sponsored push notifications. Notifications exist exclusively for scheduled dose reminders and pharmaceutical expiration warnings.
               </p>
@@ -312,25 +310,25 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             <div className="space-y-2.5">
               <h4 className="font-bold text-[#1c1917] flex items-center gap-2 text-base sm:text-lg">
                 <Database size={18} className="text-[#0f9d58] shrink-0" />
-                4.2 On-Device Small Language Model (SLM): Strict Zero User Data Training Guarantee
+                4.2 On-Device Reference Engine &amp; Heuristic Packaging Classifier
               </h4>
               <p className="text-[#44403c] leading-relaxed">
-                To guarantee zero-latency response times and full offline capability without internet access, DawaLens AI deploys a proprietary on-device Small Language Model (~2.1M parameter clinical formulary).
+                To guarantee instant response times and offline capability without internet access, DawaLens AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier.
               </p>
               <div className="bg-[#f5efe4] border border-[#e2d9c8] rounded-xl p-4 text-sm sm:text-base text-[#2c2824] space-y-2.5 leading-relaxed shadow-2xs">
                 <p className="font-bold text-[#1c1917]">Strict Zero Model Training on User Data Policy:</p>
                 <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-[#44403c]">
                   <li>
-                    <strong>Zero User Data Training:</strong> DawaLens AI does <strong>NOT</strong> collect, harvest, store, or utilize your conversation messages, clinical consultations, scanned prescriptions, or medication records to train, retrain, distill, or fine-tune our Small Language Model (SLM) or any artificial intelligence models.
+                    <strong>Zero User Data Training:</strong> DawaLens AI does <strong>NOT</strong> collect, harvest, store, or utilize your conversation messages, clinical consultations, scanned prescriptions, or medication records to train, retrain, distill, or fine-tune artificial intelligence models.
                   </li>
                   <li>
-                    <strong>Pre-Trained Static Clinical Formulary:</strong> Our SLM model is completely pre-trained on static, peer-reviewed, publicly available pharmacological compendia, clinical pharmacology guidelines, and drug interaction databases. It operates strictly in an inference-only, read-only capacity.
+                    <strong>Rule-Based Static Clinical Formulary:</strong> Our offline reference engine is curated from static, peer-reviewed, publicly available pharmacological compendia, clinical pharmacology guidelines, and drug interaction databases. It operates strictly in a rule-based, read-only capacity.
                   </li>
                   <li>
-                    <strong>Ephemeral In-Memory Inference:</strong> All on-device queries processed by the SLM are executed transiently in device RAM and are immediately discarded upon response completion. No prompts, inputs, or generated answers are archived for model training or improvement.
+                    <strong>Ephemeral In-Memory Execution:</strong> All on-device queries are evaluated transiently in device RAM and are immediately discarded upon response completion. No prompts, inputs, or generated answers are archived for model training or improvement.
                   </li>
                   <li>
-                    <strong>Absolute Zero-Sale &amp; Zero-Brokerage Guarantee:</strong> We do NOT sell, license, trade, publish, or distribute user queries, health data, or algorithmic weights to any third parties, advertisers, pharmaceutical corporations, or commercial data brokers.
+                    <strong>Absolute Zero-Sale &amp; Zero-Brokerage Guarantee:</strong> We do NOT sell, license, trade, publish, or distribute user queries, health data, or algorithmic rules to any third parties, advertisers, pharmaceutical corporations, or commercial data brokers.
                   </li>
                 </ul>
               </div>
@@ -455,8 +453,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               <h4 className="font-bold text-[#1c1917] text-base sm:text-lg">6.3 Email Deletion Request:</h4>
               <p className="text-[#44403c] leading-relaxed">
                 You may also send an email request directly to our developer at{' '}
-                <a href="mailto:mdnoor4860@gmail.com?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
-                  mdnoor4860@gmail.com
+                <a href="mailto:[TODO_USER_INPUT: CONTACT_EMAIL]?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
+                  [TODO_USER_INPUT: CONTACT_EMAIL]
                 </a>{' '}
                 with the subject line <em>&ldquo;Account Deletion Request&rdquo;</em> from your registered account email. All associated records will be purged within 48 to 72 hours of verification.
               </p>
@@ -580,7 +578,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Officer Name
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 font-bold text-[#1c1917] align-middle">
-                      MD NOOR HASSAN
+                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME]
                     </td>
                   </tr>
 
@@ -589,7 +587,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Designation
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
-                      Data Protection &amp; Grievance Redressal Officer
+                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_DESIGNATION]
                     </td>
                   </tr>
 
@@ -598,9 +596,18 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Official Email
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
-                      <a href="mailto:mdnoor4860@gmail.com" className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
-                        mdnoor4860@gmail.com
-                      </a>
+                      <span className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
+                        [TODO_USER_INPUT: GRIEVANCE_OFFICER_EMAIL]
+                      </span>
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-[#f3ede1]/60 transition-colors">
+                    <th scope="row" className="py-3 px-3.5 sm:px-4 font-semibold text-[#57534e] w-[32%] sm:w-48 shrink-0 align-middle bg-[#f6f0e4]">
+                      Postal Address
+                    </th>
+                    <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
+                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_POSTAL_ADDRESS]
                     </td>
                   </tr>
 
@@ -699,9 +706,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             For questions, legal notices, or assistance regarding our privacy practices and data safety compliance:
           </p>
           <div className="text-sm sm:text-base text-[#44403c] space-y-1.5 pt-1 bg-[#f5efe4] border border-[#e2d9c8] p-4 rounded-xl shadow-2xs">
-            <p><strong>Entity:</strong> DawaLens AI</p>
-            <p><strong>Operating Developer &amp; Data Controller:</strong> MD NOOR HASSAN</p>
-            <p><strong>Official Email:</strong> <a href="mailto:mdnoor4860@gmail.com" className="text-[#0f9d58] font-bold underline break-all">mdnoor4860@gmail.com</a></p>
+            <p><strong>Entity / Operator:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</p>
+            <p><strong>Official Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]</p>
             <p><strong>Official Web Domain:</strong> <a href="https://dawalens.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">https://dawalens.vercel.app</a></p>
             <p><strong>Account Deletion Portal:</strong> <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">https://dawalens.vercel.app/delete-account</a></p>
           </div>

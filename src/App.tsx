@@ -14,7 +14,7 @@ import {
   auth, db, signOut, onAuthStateChanged, 
   collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, onSnapshot, query, where, orderBy, getDocs, User,
   handleFirestoreError, OperationType, deleteField, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
-  serverTimestamp
+  serverTimestamp, reauthenticateWithPopup, reauthenticateWithCredential, GoogleAuthProvider, getAuthHeader
 } from './firebase';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { 
@@ -106,6 +106,16 @@ export default function App() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMedicineIds, setSelectedMedicineIds] = useState<Set<string>>(new Set());
   const categoryDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Mandatory First-Launch Medical & Safety Disclaimer Acknowledgment State
+  const [hasAcceptedMedicalDisclaimer, setHasAcceptedMedicalDisclaimer] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dawalens_medical_disclaimer_acknowledged') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [disclaimerCheckConsent, setDisclaimerCheckConsent] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -471,8 +481,8 @@ export default function App() {
     initNativeNotifications();
   }, []);
 
-  // Synchronize scheduled native alarms in Android AlarmManager
-  // Ensures notifications appear on user's phone even when the app is completely closed or device sleeps
+  // Synchronize scheduled local notifications for medicine expiry dates
+  // Ensures heads-up reminders appear on user's phone even when the app is closed
   useEffect(() => {
     if (medicines.length > 0) {
       scheduleNativeMedicineAlerts(medicines, alertThreshold);
@@ -1074,7 +1084,6 @@ export default function App() {
       await batch.commit();
 
       trackEvent('save_medication', { 
-        name: data.name || 'Unknown', 
         form: data.form || 'other',
         is_edit: !!editingMedicine
       });
@@ -1125,7 +1134,7 @@ export default function App() {
       const medRef = doc(db, 'medicines', medicine.id);
       await setDoc(medRef, { taken: !medicine.taken }, { merge: true });
       triggerSuccessHaptic();
-      trackEvent('toggle_taken', { name: medicine.name, is_taken: !medicine.taken });
+      trackEvent('toggle_taken', { is_taken: !medicine.taken });
 
       const historyId = crypto.randomUUID();
       await setDoc(doc(db, `medicines/${medicine.id}/history`, historyId), {
@@ -1314,7 +1323,7 @@ export default function App() {
     setIsProcessing(false);
     
     if (result.success && result.medicine) {
-      trackEvent('capture_image', { success: true, name: result.medicine.name || 'Unknown' });
+      trackEvent('capture_image', { success: true });
       setEditingMedicine(null);
       
       const cleanString = (val: any, fallback: string = '') => {
@@ -1346,7 +1355,7 @@ export default function App() {
       setIsCameraOpen(false);
       setActiveSystemPage('add');
     } else {
-      trackEvent('capture_image', { success: false, error: result.errorMessage || "Failed extraction" });
+      trackEvent('capture_image', { success: false, error_type: 'extraction_failed' });
       setExtractionError(result.errorMessage || "Could not read the label. Please ensure good lighting and a clear, focused image.");
     }
   };
@@ -1690,98 +1699,166 @@ export default function App() {
     );
   }
 
-  const handleFullAccountDeletion = async () => {
-    if (!user) return;
-    try {
-      const currentUserId = user.uid;
-
-      // 1. Delete all user medicines AND their history subcollections from Firestore
-      const snap = await getDocs(query(collection(db, 'medicines'), where('userId', '==', currentUserId)));
-      for (const medDoc of snap.docs) {
-        try {
-          // In Firestore, subcollections must be deleted before deleting the parent document
-          const histSnap = await getDocs(collection(db, 'medicines', medDoc.id, 'history'));
-          await Promise.all(histSnap.docs.map(h => deleteDoc(h.ref)));
-        } catch (hErr) {
-          console.warn('Subcollection history cleanup notice:', hErr);
+  const reauthenticateUserSession = async (targetUser: User): Promise<void> => {
+    const isNative = Capacitor.isNativePlatform();
+    if (isNative) {
+      try {
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const res = await FirebaseAuthentication.signInWithGoogle();
+        if (res.credential?.idToken) {
+          const cred = GoogleAuthProvider.credential(res.credential.idToken);
+          await reauthenticateWithCredential(targetUser, cred);
+          return;
         }
-        await deleteDoc(medDoc.ref);
+      } catch (nativeErr) {
+        console.warn("Native reauth error, falling back to popup:", nativeErr);
       }
-
-      // 2. Delete userConfigs document
-      try {
-        await deleteDoc(doc(db, 'userConfigs', currentUserId));
-      } catch (cfgErr) {
-        console.warn('userConfigs cleanup notice:', cfgErr);
-      }
-
-      // 3. Delete user settings
-      try {
-        await deleteDoc(doc(db, 'users', currentUserId, 'settings', 'appSettings'));
-      } catch (settingsErr) {
-        console.warn('appSettings cleanup notice:', settingsErr);
-      }
-
-      // 4. Delete user chats and messages subcollections
-      try {
-        const chatsSnap = await getDocs(collection(db, 'users', currentUserId, 'chats'));
-        for (const chatDoc of chatsSnap.docs) {
-          try {
-            const msgSnap = await getDocs(collection(db, 'users', currentUserId, 'chats', chatDoc.id, 'messages'));
-            await Promise.all(msgSnap.docs.map(m => deleteDoc(m.ref)));
-          } catch (mErr) {}
-          await deleteDoc(chatDoc.ref);
-        }
-      } catch (chatsErr) {
-        console.warn('chats cleanup notice:', chatsErr);
-      }
-
-      // 5. Purge any legacy SLM knowledge documents from user profile
-      try {
-        const slmSnap = await getDocs(collection(db, 'users', currentUserId, 'slmKnowledge'));
-        await Promise.all(slmSnap.docs.map(d => deleteDoc(d.ref)));
-      } catch (slmErr) {
-        console.warn('SLM knowledge cleanup notice:', slmErr);
-      }
-
-      // 6. Purge server-side expiry schedules and push tokens
-      try {
-        await fetch(getApiUrl('/api/user/purge-data'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUserId })
-        });
-      } catch (purgeErr) {
-        console.warn('Server data purge notice:', purgeErr);
-      }
-
-      // 7. Clear local physical device image caches and storage (IndexedDB + localStorage + sessionStorage)
-      try {
-        await localImageStorage.clearAll();
-      } catch (idbErr) {
-        console.warn('IndexedDB clear warning:', idbErr);
-      }
-
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {}
-
-      // 8. Delete Firebase Auth user account
-      try {
-        await user.delete();
-      } catch (authErr: any) {
-        console.warn('user.delete() required recent login, signing out:', authErr);
-        await signOut(auth);
-      }
-
-      setUser(null);
-      setMedicines([]);
-      trackEvent('user_account_deleted', { userId: currentUserId });
-    } catch (err: any) {
-      console.error('Account deletion error:', err);
-      throw err;
     }
+    const provider = new GoogleAuthProvider();
+    await reauthenticateWithPopup(targetUser, provider);
+  };
+
+  const handleFullAccountDeletion = async () => {
+    if (!user) {
+      throw new Error("No active user session to delete.");
+    }
+    const currentUserId = user.uid;
+
+    // STEP 1: Re-authenticate first to establish fresh credentials for secure deletion
+    try {
+      await reauthenticateUserSession(user);
+    } catch (reauthErr: any) {
+      console.warn("Re-auth verification notice:", reauthErr);
+      if (reauthErr.code === 'auth/popup-closed-by-user' || reauthErr.code === 'auth/cancelled') {
+        throw new Error("Re-authentication was cancelled. Deletion cannot proceed without identity verification.");
+      }
+    }
+
+    // STEP 2: Call server purge with valid Bearer token (MUST SUCCEED or abort)
+    const authHeaders = await getAuthHeader();
+    const purgeResponse = await fetch(getApiUrl('/api/user/purge-data'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!purgeResponse.ok) {
+      const errBody = await purgeResponse.text();
+      throw new Error(`Server data purge failed (${purgeResponse.status}): ${errBody}. Account deletion aborted.`);
+    }
+
+    // STEP 3: Delete Firestore data using batched writes
+    let batch = writeBatch(db);
+    let opCount = 0;
+
+    // 3a. Medicines and history subcollections
+    const snap = await getDocs(query(collection(db, 'medicines'), where('userId', '==', currentUserId)));
+    for (const medDoc of snap.docs) {
+      try {
+        const histSnap = await getDocs(collection(db, 'medicines', medDoc.id, 'history'));
+        for (const hDoc of histSnap.docs) {
+          batch.delete(hDoc.ref);
+          opCount++;
+          if (opCount >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            opCount = 0;
+          }
+        }
+      } catch (hErr) {
+        console.warn('Subcollection history cleanup notice:', hErr);
+      }
+      batch.delete(medDoc.ref);
+      opCount++;
+      if (opCount >= 400) {
+        await batch.commit();
+        batch = writeBatch(db);
+        opCount = 0;
+      }
+    }
+
+    // 3b. User configs & app settings
+    batch.delete(doc(db, 'userConfigs', currentUserId));
+    batch.delete(doc(db, 'users', currentUserId, 'settings', 'appSettings'));
+    opCount += 2;
+
+    // 3c. User chats and message subcollections
+    try {
+      const chatsSnap = await getDocs(collection(db, 'users', currentUserId, 'chats'));
+      for (const chatDoc of chatsSnap.docs) {
+        const msgSnap = await getDocs(collection(db, 'users', currentUserId, 'chats', chatDoc.id, 'messages'));
+        for (const mDoc of msgSnap.docs) {
+          batch.delete(mDoc.ref);
+          opCount++;
+          if (opCount >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            opCount = 0;
+          }
+        }
+        batch.delete(chatDoc.ref);
+        opCount++;
+        if (opCount >= 400) {
+          await batch.commit();
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      }
+    } catch (chatsErr) {
+      console.warn('chats cleanup notice:', chatsErr);
+    }
+
+    // 3d. SLM knowledge
+    try {
+      const slmSnap = await getDocs(collection(db, 'users', currentUserId, 'slmKnowledge'));
+      for (const slmDoc of slmSnap.docs) {
+        batch.delete(slmDoc.ref);
+        opCount++;
+        if (opCount >= 400) {
+          await batch.commit();
+          batch = writeBatch(db);
+          opCount = 0;
+        }
+      }
+    } catch (slmErr) {
+      console.warn('SLM knowledge cleanup notice:', slmErr);
+    }
+
+    if (opCount > 0) {
+      await batch.commit();
+    }
+
+    // STEP 4: Delete Auth user - MUST retry with reauthenticate if requires-recent-login
+    try {
+      await user.delete();
+    } catch (authErr: any) {
+      if (authErr?.code === 'auth/requires-recent-login') {
+        console.warn('Requires recent login, prompting reauth and retrying deletion...');
+        await reauthenticateUserSession(user);
+        await user.delete();
+      } else {
+        throw new Error(`Authentication account deletion failed: ${authErr?.message || authErr}`);
+      }
+    }
+
+    // STEP 5: Only after Auth deletion succeeds, clear local storage / IndexedDB
+    try {
+      await localImageStorage.clearAll();
+    } catch (idbErr) {
+      console.warn('IndexedDB clear warning:', idbErr);
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // STEP 6: Anonymous deletion event without any PII / userId
+    trackEvent('user_account_deleted');
+
+    // STEP 7: Reset state
+    setUser(null);
+    setMedicines([]);
   };
 
   const handleBackFromPublicPage = () => {
@@ -2921,7 +2998,7 @@ export default function App() {
                           <div className="space-y-0.5">
                             <h5 className="font-extrabold text-[#1f1f1f] text-xs uppercase tracking-wider">Add Medicines Manually ✍️</h5>
                             <p className="text-xs text-slate-500 leading-relaxed">
-                              Prefer entering details by hand? Tap <strong className="text-slate-700">Manual</strong> to trigger the complete medication form. You can select custom medicine types, color accents, current quantity, threshold triggers, and details on daily schedule alarms.
+                              Prefer entering details by hand? Tap <strong className="text-slate-700">Manual</strong> to trigger the complete medication form. You can select custom medicine types, color accents, current quantity, threshold triggers, and details on daily schedule reminders.
                             </p>
                           </div>
                         </div>
@@ -2990,13 +3067,16 @@ export default function App() {
 
                     <div className="space-y-4 text-xs">
                       <div>
-                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. Information Access &amp; Local Camera Security</h5>
+                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. Information Access &amp; Camera Image Security</h5>
                         <ul className="list-disc pl-5 mt-2 space-y-2 text-slate-500 leading-relaxed">
                           <li>
-                            <strong className="text-slate-700 font-bold">Medications &amp; Prescriptions:</strong> Medicine details (name, dosage, expiration, schedules) are saved securely in your private cloud database (Firebase Firestore) with AES-256 encryption.
+                            <strong className="text-slate-700 font-bold">Medications &amp; Schedules:</strong> Medicine details (brand/generic names, dosages, expiration dates, schedules) are saved securely in your private cloud database (Firebase Firestore) with AES-256 encryption at rest.
                           </li>
                           <li>
-                            <strong className="text-slate-700 font-bold">100% On-Device Photos:</strong> All photos captured using your camera are processed strictly on-device in your browser using local OCR &amp; CNN algorithms and stored in sandboxed IndexedDB memory. Photos are <strong>never</strong> uploaded to cloud servers.
+                            <strong className="text-slate-700 font-bold">Label Extraction &amp; Photos:</strong> During camera scanning, packaging photos are transmitted over encrypted HTTPS to Google Gemini for label character extraction (ephemeral memory processing). Saved medicine photos in your vault are stored locally in on-device IndexedDB memory and are never stored in cloud database disks.
+                          </li>
+                          <li>
+                            <strong className="text-slate-700 font-bold">Offline Reference Engine:</strong> Our on-device assistant runs a rule-based clinical formulary and heuristic packaging classifier with zero external network transmission.
                           </li>
                           <li>
                             <strong className="text-slate-700 font-bold">Data Deletion:</strong> You can permanently purge your entire account and all records anytime via Account Settings or our web deletion portal.
@@ -3007,7 +3087,7 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <h5 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Contact &amp; Data Protection</h5>
-                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">mdnoor4860@gmail.com</span></p>
+                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">[TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]</span></p>
                         </div>
                         <button
                           type="button"
@@ -3031,7 +3111,7 @@ export default function App() {
                       <div>
                         <h4 className="font-extrabold text-red-800 text-xs uppercase tracking-wider mb-1">Medical Disclaimer</h4>
                         <p className="text-xs text-red-700/95 leading-relaxed font-bold">
-                          DawaLens AI is NOT a clinical tool, medical device, or licensed medical professional. Our features (including AI summaries and drug interaction warnings) are generated by general artificial intelligence models and are subject to errors. Never change, delay, or start medical treatment without directly consulting your doctor or pharmacist.
+                          DawaLens AI is an informational tool and medication tracker. It is NOT a clinical tool, medical device, or licensed healthcare professional. Never change, delay, or start medical treatment without directly consulting your doctor or pharmacist.
                         </p>
                       </div>
                     </div>
@@ -3040,31 +3120,31 @@ export default function App() {
                       <div>
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. Description of Service</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          DawaLens AI provides medication barcode/label scanning, scheduling, and smart drug-interaction checking using AI technology. These features are designed strictly for educational and personal organization purposes.
+                          DawaLens AI provides medication packaging scanning, expiry tracking, and drug-interaction screening using AI and rule-based pharmacology references. These features are designed strictly for educational and personal organization purposes.
                         </p>
                       </div>
 
                       <div className="pt-3 border-t border-slate-100">
-                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">2. Privacy, Photos & Personal Data</h5>
+                        <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">2. Privacy, Photos &amp; Personal Data</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          We respect your privacy. All captured medicine images or photos are kept locally on your own physical device (IndexedDB storage) and are never sent or stored in our cloud environment. All handling of user inputs is done in accordance with our Privacy Policy.
+                          We respect your privacy. Packaging images in your vault are kept locally on your physical device (IndexedDB storage). All handling of user data adheres to our Privacy Policy.
                         </p>
                       </div>
 
                       <div className="pt-3 border-t border-slate-100">
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">3. Limitation of Liability</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          DawaLens AI is provided "as is" without any guarantees. We are not responsible for any issues resulting from missed doses, data sync failures, or information accuracy errors.
+                          DawaLens AI is provided &quot;as is&quot; without warranties. We are not liable for missed doses, sync failures, or information inaccuracies.
                         </p>
                       </div>
 
                       <div className="pt-3 border-t border-slate-100">
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">4. Governing Law &amp; Contact</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          For any questions or legal inquiries, please contact us at:
+                          Operator: <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>
                         </p>
-                        <p className="font-bold text-slate-800 mt-1.5 select-all">
-                          Email: mdnoor4860@gmail.com
+                        <p className="font-bold text-slate-800 mt-1 select-all">
+                          Contact Email: [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]
                         </p>
                       </div>
                     </div>
@@ -3079,6 +3159,110 @@ export default function App() {
                   className="px-6 py-2.5 bg-[#0f9d58] hover:bg-[#0f9d58]/95 text-white rounded-full font-bold text-xs shadow-sm transition-all active:scale-[0.98]"
                 >
                   Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Mandatory First-Launch Medical & Safety Disclaimer Modal */}
+        {!hasAcceptedMedicalDisclaimer && publicPage === null && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md overflow-y-auto"
+          >
+            <motion.div 
+              initial={{ scale: 0.92, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, y: 20 }}
+              className="w-full max-w-lg bg-white border border-[#e3e2e0] rounded-[32px] shadow-2xl overflow-hidden flex flex-col my-auto"
+            >
+              <div className="px-6 py-5 bg-gradient-to-r from-red-50 via-amber-50 to-emerald-50 border-b border-amber-200/60 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300">
+                  <ShieldAlert size={22} className="stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base tracking-tight">
+                    Important Medical &amp; Safety Notice
+                  </h3>
+                  <p className="text-[11px] text-amber-900 font-bold uppercase tracking-wider">
+                    Please read and acknowledge before proceeding
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[60vh] space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed custom-scrollbar">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-900 space-y-1.5">
+                  <strong className="block text-xs font-black uppercase tracking-wider text-red-950">
+                    ⚠️ Not a Licensed Doctor or Medical Device:
+                  </strong>
+                  <p className="text-xs leading-relaxed text-red-900 font-medium">
+                    DawaLens AI is an organizational medicine tracker and clinical reference engine. It is <strong>NOT</strong> a certified medical device, diagnostic platform, or licensed physician.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex gap-2.5 items-start">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">1</span>
+                    <p className="text-xs text-slate-600">
+                      <strong className="text-slate-800">Informational Use Only:</strong> AI summaries, label recognitions, dose tracking, and drug-interaction screenings are automated reference points. They do not constitute clinical diagnoses or prescriptions.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2.5 items-start">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">2</span>
+                    <p className="text-xs text-slate-600">
+                      <strong className="text-slate-800">Always Consult a Doctor:</strong> Never start, pause, stop, or change any prescription or medication dosage without directly consulting your primary physician or pharmacist.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2.5 items-start">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">3</span>
+                    <p className="text-xs text-slate-600">
+                      <strong className="text-slate-800">Emergency Protocol:</strong> If you suspect an adverse reaction, allergic shock, or acute medical emergency, call your local emergency services (<strong>112 / 108 / 911</strong>) immediately.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2.5 items-start">
+                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">4</span>
+                    <p className="text-xs text-slate-600">
+                      <strong className="text-slate-800">Data Sources:</strong> Drug reference knowledge is compiled from official pharmacopeias including the Indian Pharmacopoeia (IP), CDSCO, and US FDA drug databases.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200">
+                  <label className="flex items-start gap-3 cursor-pointer bg-slate-50 hover:bg-slate-100 p-3.5 rounded-2xl border border-slate-200 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={disclaimerCheckConsent} 
+                      onChange={(e) => setDisclaimerCheckConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-[#0f9d58] focus:ring-[#0f9d58] shrink-0" 
+                    />
+                    <span className="text-xs text-slate-800 font-semibold leading-relaxed">
+                      I have read, understood, and agree that DawaLens AI is an informational tool and does not provide medical diagnoses or replace licensed doctor consultations.
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-slate-100 bg-[#faf8f5] flex items-center justify-end">
+                <button
+                  disabled={!disclaimerCheckConsent}
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('dawalens_medical_disclaimer_acknowledged', 'true');
+                    } catch (e) {
+                      console.warn('Could not persist disclaimer acknowledgment:', e);
+                    }
+                    setHasAcceptedMedicalDisclaimer(true);
+                    triggerSuccessHaptic();
+                  }}
+                  className="w-full py-3.5 bg-[#0f9d58] hover:bg-[#0b8043] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-[0.98]"
+                >
+                  I Understand &amp; Acknowledge
                 </button>
               </div>
             </motion.div>

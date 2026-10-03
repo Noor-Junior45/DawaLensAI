@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - DawaLens AI</title>
-  <meta name="description" content="Official Privacy Policy and Data Safety standard for DawaLens AI in compliance with Google API Services User Data Policy and Google Play Store Data Safety guidelines.">
+  <meta name="description" content="Official Privacy Policy and Data Safety standard for DawaLens AI in compliance with Google Play Store Data Safety, Google API Services User Data Policy, and DPDP Act 2023.">
+  <link rel="icon" type="image/png" href="/logo.png">
   <style>
     :root {
       --primary: #0f9d58;
@@ -13,8 +14,10 @@
       --text-main: #202124;
       --text-muted: #5f6368;
       --border: #dadce0;
-      --bg-page: #f8f9fa;
+      --bg-page: #faf8f5;
       --bg-card: #ffffff;
+      --danger: #d93025;
+      --danger-light: #fce8e6;
     }
     * { box-sizing: border-box; }
     body {
@@ -28,7 +31,7 @@
     header {
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
-      padding: 24px 20px;
+      padding: 20px;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -66,14 +69,14 @@
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 36px 32px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     h1 {
       font-size: 28px;
       font-weight: 800;
-      color: #1a73e8;
+      color: #111827;
       margin-top: 0;
       margin-bottom: 8px;
       line-height: 1.25;
@@ -81,7 +84,7 @@
     h2 {
       font-size: 20px;
       font-weight: 700;
-      color: #202124;
+      color: #111827;
       margin-top: 36px;
       margin-bottom: 14px;
       border-bottom: 2px solid var(--primary-light);
@@ -90,13 +93,13 @@
     h3 {
       font-size: 16px;
       font-weight: 600;
-      color: #3c4043;
+      color: #374151;
       margin-top: 20px;
       margin-bottom: 8px;
     }
     p, li {
-      font-size: 15px;
-      color: #3c4043;
+      font-size: 14.5px;
+      color: #374151;
       line-height: 1.7;
     }
     ul, ol {
@@ -104,7 +107,7 @@
       margin: 10px 0 18px;
     }
     li { margin-bottom: 8px; }
-    strong { color: #202124; }
+    strong { color: #111827; }
     .badge {
       display: inline-block;
       background: var(--primary-light);
@@ -126,7 +129,6 @@
       color: #174ea6;
     }
     .callout-box p { margin: 0; color: #174ea6; font-size: 14px; }
-    .callout-box a { color: #1a73e8; font-weight: 700; }
     .notice-box {
       background: #e6f4ea;
       border-left: 4px solid var(--primary);
@@ -136,8 +138,15 @@
       font-size: 14px;
       color: #137333;
     }
-    .notice-box p { margin: 0; color: #137333; font-size: 14px; }
-    .notice-box strong { color: #0d652d; }
+    .warning-box {
+      background: #fffbeb;
+      border-left: 4px solid #d97706;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #78350f;
+    }
     a {
       color: var(--primary);
       text-decoration: underline;
@@ -148,7 +157,7 @@
       width: 100%;
       border-collapse: collapse;
       margin: 18px 0;
-      font-size: 14px;
+      font-size: 13.5px;
     }
     th, td {
       border: 1px solid var(--border);
@@ -156,9 +165,9 @@
       text-align: left;
     }
     th {
-      background: #f1f3f4;
+      background: #f9fafb;
       font-weight: 700;
-      color: #202124;
+      color: #111827;
     }
     footer {
       border-top: 1px solid var(--border);
@@ -184,7 +193,7 @@
         <span>💊 DawaLens AI</span>
       </a>
       <div class="nav-links">
-        <a href="/">Home</a>
+        <a href="/">Dashboard</a>
         <a href="/guide">User Guide</a>
         <a href="/terms">Terms</a>
         <a href="/delete-account">Delete Account</a>
@@ -194,197 +203,269 @@
 
   <main>
     <div class="card">
-      <span class="badge">Google OAuth &amp; Data Safety Compliance</span>
+      <span class="badge">Google Play Store, DPDP Act 2023 &amp; OAuth Compliance</span>
       <h1>Privacy Policy for DawaLens AI</h1>
-      <p><strong>Effective Date:</strong> September 29, 2026<br>
-      <strong>Last Updated:</strong> September 29, 2026<br>
-      <strong>Application Name:</strong> DawaLens AI<br>
-      <strong>Primary Domains:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a> and <a href="https://dawalensai.onrender.com">https://dawalensai.onrender.com</a><br>
-      <strong>Developer Contact:</strong> <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a></p>
+      <p>
+        <strong>Effective Date:</strong> October 3, 2026<br>
+        <strong>Last Updated:</strong> October 3, 2026<br>
+        <strong>Application Name:</strong> DawaLens AI (Android Package: <code>in.dawalens.app</code>)<br>
+        <strong>Primary Domains:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a> and <a href="https://dawalensai.onrender.com">https://dawalensai.onrender.com</a><br>
+        <strong>Operator Legal Name:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME]<br>
+        <strong>Data Privacy Contact:</strong> [TODO_USER_INPUT: CONTACT_EMAIL]
+      </p>
 
-      <p>DawaLens AI ("we", "our", "us", or "the Service") is dedicated to protecting the privacy, security, and digital confidentiality of our users. This Privacy Policy details our standards regarding the collection, processing, storage, encryption, sharing, and permanent deletion of user data in full adherence to the <strong>Google API Services User Data Policy</strong> (including the Limited Use requirements) and the <strong>Google Play Store Data Safety Policy</strong>.</p>
-
-      <!-- 1. Google API Services Limited Use Requirements -->
-      <h2>1. Google API Services User Data &amp; Limited Use Disclosure</h2>
-      <div class="callout-box">
-        <p><strong>Mandatory Compliance Disclosure:</strong><br>
-        <strong>DawaLens AI's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
+      <!-- Medical Disclaimer & Data Sources -->
+      <div class="warning-box">
+        <strong style="display:block; text-transform:uppercase; margin-bottom:4px; font-size:12px; letter-spacing:0.5px;">Medical Disclaimer &amp; Not a Licensed Medical Device</strong>
+        <p style="margin:0 0 8px 0; font-size:13.5px; color:#78350f;">
+          DawaLens AI is an informational medication tracker and clinical reference assistant. It is <strong>NOT</strong> a certified medical device, diagnostic system, or substitute for professional medical advice, clinical diagnosis, or prescription management. Always consult a licensed physician, clinical pharmacist, or certified healthcare provider before taking, modifying, or discontinuing any medication.
+        </p>
+        <p style="margin:0; font-size:12.5px; color:#92400e;">
+          <strong>Data Sources:</strong> Drug reference monographs, safety warnings, and dosage parameters are compiled from public pharmacopeial databases including the Indian Pharmacopoeia (IP), Central Drugs Standard Control Organisation (CDSCO), and US FDA National Drug Code directory.
+        </p>
       </div>
 
-      <p>DawaLens AI provides users with the option to sign in using <strong>Google Sign-In</strong>. When you authenticate using Google, we access and process your information strictly within the following boundaries:</p>
+      <p>
+        DawaLens AI ("we", "our", "us", or "the Service") operates an intelligent medication management platform designed to help users track personal prescriptions, receive automated expiry notifications, and check general pharmacological references. This Privacy Policy details our transparent data governance practices in strict compliance with the <strong>Google Play Store Data Safety Policy</strong>, the <strong>Google API Services User Data Policy</strong>, and the <strong>Digital Personal Data Protection (DPDP) Act 2023</strong>.
+      </p>
+
+      <!-- 1. Google API Services Limited Use -->
+      <h2>1. Google API Services User Data &amp; Limited Use Disclosure</h2>
+      <div class="callout-box">
+        <p><strong>Mandatory Limited Use Statement:</strong><br>
+        <strong>DawaLens AI's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
+      </div>
+      <p>When you choose to authenticate using <strong>Google Sign-In</strong>, we access and process your account details strictly according to these standards:</p>
       <ul>
-        <li><strong>OAuth Scopes Requested:</strong> We request only fundamental identity scopes: <code>openid</code>, <code>profile</code> (name, profile picture), and <code>email</code>. We do <strong>NOT</strong> request access to your Google Drive files, Gmail inboxes, Google Contacts, Google Photos, or any external Google Workspace services.</li>
-        <li><strong>User-Facing Features Only:</strong> We only access, use, and process your Google user data to provide prominent user-facing features within the DawaLens AI interface (such as authenticating your account, securing your medicine database, and dispatching your requested medication expiry reminder emails).</li>
-        <li><strong>No Transfer Except for Service Provision:</strong> We do not transfer or disclose your Google user data to third parties unless strictly necessary to provide or improve the user-facing features of DawaLens AI, to comply with applicable laws, or as part of a formal corporate acquisition or merger with prior notice.</li>
-        <li><strong>No Advertising or Marketing Resale:</strong> We do <strong>NOT</strong> use or transfer Google user data to serve advertisements, including personalized, re-targeted, or interest-based advertising. We never sell your Google data to third parties, data brokers, or marketing networks.</li>
-        <li><strong>Strict Prohibition on AI Model Training:</strong> We do <strong>NOT</strong> use, share, or transfer Google user data, user profile information, or medication entries to train, re-train, fine-tune, or ground generic artificial intelligence (AI), machine learning (ML), or Large Language Models (LLMs).</li>
-        <li><strong>Human Access Restrictions:</strong> No human personnel at DawaLens AI is permitted to read your personal Google data unless: (1) we have obtained your explicit affirmative consent for a specific technical support request, (2) it is required for security investigations (such as debugging fraud or abuse), (3) it is necessary to comply with applicable law, or (4) the data is aggregated and anonymized for internal system health operations.</li>
+        <li><strong>OAuth Scopes Requested:</strong> We request only basic identity scopes: <code>openid</code>, <code>profile</code> (display name, profile picture), and <code>email</code>. We do not request access to Google Drive files, Gmail, Google Contacts, Google Photos, or Google Workspace data.</li>
+        <li><strong>User-Facing Features Only:</strong> We use your Google profile solely to authenticate your identity, secure your private Firestore database partitions, and dispatch medication expiry alerts to your verified email address upon your configuration.</li>
+        <li><strong>No Advertising or Resale:</strong> We never sell, rent, commercialize, or transfer your Google profile information or health data to advertisers, data brokers, or marketing networks.</li>
+        <li><strong>Prohibition on Generic Model Training:</strong> Your private medication records, dosage logs, and inquiries are never used to train, fine-tune, or distill foundation artificial intelligence (AI) models.</li>
+        <li><strong>Human Access Safeguards:</strong> No personnel reads your personal Google or health data except where explicitly requested by you for technical troubleshooting, required for security fraud audits, or compelled by law.</li>
       </ul>
 
-      <!-- 2. Types of Information Collected -->
-      <h2>2. Information We Collect and How We Collect It</h2>
-      <p>We collect information in three ways: directly from your input, through device permissions you affirmatively grant, and automatically through system diagnostics:</p>
-
-      <h3>A. Information You Provide Directly</h3>
+      <!-- 2. Types of Data Collected -->
+      <h2>2. Categories of Information We Collect</h2>
+      <h3>A. Information You Provide</h3>
       <ul>
-        <li><strong>Account Identifiers:</strong> Your full name, email address, profile picture URL, and Firebase Auth UID obtained via Google Sign-In or email registration.</li>
-        <li><strong>Medication Vault Data:</strong> Medicine brand and generic names, dosage strengths (e.g., 500mg, 10ml), dosage form (tablets, capsules, syrup, inhaler, drops, injection), expiration dates, batch numbers, remaining quantities, dosage schedules (morning, afternoon, evening, night), administration instructions (before or after food), and custom tags.</li>
-        <li><strong>Health &amp; Consultation Inquiries:</strong> Any questions, symptoms, or medication names you type or speak into the AI Pharmacist consultation chat.</li>
-        <li><strong>Audit &amp; Intake Logs:</strong> Timestamps when you record taking a scheduled dose or updating your medicine supply.</li>
+        <li><strong>Account Profile:</strong> Display name, email address, profile picture URL, and Firebase Auth unique identifier (UID).</li>
+        <li><strong>Medication Vault Data:</strong> Medicine brand names, generic active ingredients, dosage strengths (e.g. 500mg), dosage forms (tablet, syrup, injection, drops), expiration dates, quantities on hand, schedule intervals (morning, afternoon, evening, night), and intake notes.</li>
+        <li><strong>Dose Administration Logs:</strong> Timestamps when you mark medications as taken.</li>
+        <li><strong>Pharmacist Inquiries:</strong> Medication inquiries or interaction questions submitted to Dr. DawaLens.</li>
       </ul>
 
-      <h3>B. Device Permissions &amp; Hardware Access</h3>
-      <p>DawaLens AI requests specific device permissions strictly to perform on-device operations:</p>
+      <h3>B. Hardware &amp; Device Permissions</h3>
       <table>
         <thead>
           <tr>
             <th>Permission</th>
-            <th>Purpose</th>
-            <th>Data Handling Standard</th>
+            <th>Type</th>
+            <th>Purpose &amp; Data Handling</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Camera (CAMERA)</strong></td>
-            <td>Allows scanning medicine boxes, blister packs, and prescription labels for text recognition (OCR) and visual packaging classification.</td>
-            <td><strong>Hybrid Processing &amp; Local Vault:</strong> Medicine photos in your vault are stored 100% locally in sandboxed <strong>IndexedDB storage</strong> and are <strong>NEVER</strong> saved to Firebase Storage or cloud databases. During online scanning, photos are streamed over TLS 1.3 encrypted HTTPS to Google Gemini 2.5 Flash for multimodal OCR (zero PII attached, ephemeral memory processing, zero disk caching). In offline mode, OCR runs 100% on-device via Tesseract.js.</td>
+            <td><strong>Camera</strong></td>
+            <td>Optional</td>
+            <td>Used exclusively when you tap "Scan Package" to capture medicine boxes or prescription labels. Captured photos are processed locally in sandboxed IndexedDB storage and are never saved to cloud Firestore documents.</td>
           </tr>
           <tr>
-            <td><strong>Notifications (POST_NOTIFICATIONS)</strong></td>
-            <td>Delivers scheduled medication alarms and reminders for medicines nearing their expiration date (at 30 days, 7 days, and on the expiration day).</td>
-            <td>Notifications are generated locally on your device or via secure Firebase Cloud Messaging. No marketing or promotional push notifications are ever sent.</td>
+            <td><strong>Notifications</strong> (POST_NOTIFICATIONS)</td>
+            <td>Optional</td>
+            <td>Used to alert you on-device when medications are nearing expiration or need refill. On Android 13+, permissions are requested with explicit rationale. You can toggle notifications off at any time.</td>
           </tr>
         </tbody>
       </table>
 
-      <h3>C. Information Collected Automatically</h3>
-      <ul>
-        <li><strong>Diagnostics &amp; Analytics:</strong> We use Google Analytics 4 to collect aggregated, non-personally identifiable telemetry (such as session duration, feature usage, browser type, device brand, and crash reports). IP addresses are automatically anonymized. We strictly forbid transmitting medication names, health records, or authentication tokens to analytics services.</li>
-      </ul>
-
-      <!-- 3. How We Use Collected Information -->
-      <h2>3. How We Use Your Information</h2>
-      <p>We process your data strictly for legitimate operational purposes:</p>
-      <ol>
-        <li><strong>Identity Verification:</strong> To authenticate your sign-in session and protect your account from unauthorized access.</li>
-        <li><strong>Medicine Inventory Synchronization:</strong> To synchronize your medicine inventory across your authenticated mobile, desktop, and web clients via Firebase Firestore.</li>
-        <li><strong>Safety &amp; Expiry Reminders:</strong> To automatically calculate expiration timelines and route timely email alerts to your verified email address via transactional email infrastructure.</li>
-        <li><strong>Drug Interaction Checking:</strong> To screen your entered medications for known contraindications and drug-drug interactions using clinical rules and the Google Gemini API.</li>
-        <li><strong>Customer Support:</strong> To resolve technical issues or assist you with account deletion inquiries.</li>
-      </ol>
-
-      <!-- 4. Camera, Prescription Photo & Image Architecture -->
-      <h2>4. Camera, Prescription Photo &amp; Image Architecture</h2>
+      <!-- 3. Image Processing Architecture -->
+      <h2>3. Camera, Packaging Photos &amp; Image Storage Architecture</h2>
       <div class="notice-box">
-        <p><strong>Hybrid Processing &amp; Sandboxed Local Storage:</strong> Medicine packaging photographs saved into your inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code style="font-family: monospace;">DawaLensLocalImages</code>) and are <strong>never uploaded to Firebase Storage, S3, or remote databases</strong>. During online scanning, photos are streamed over secure TLS 1.3 encrypted HTTPS to Google Gemini 2.5 Flash for multimodal OCR (zero PII attached, ephemeral memory processing, zero disk caching). In offline mode, OCR runs 100% locally via client-side Tesseract.js and on-device CNN. Deleting a medication entry or deleting your account permanently purges the local image from your device.</p>
+        <p><strong>Local Sandboxed Storage:</strong> When you photograph medicine packaging, the image is stored locally in your device's sandboxed IndexedDB database (<code style="font-family:monospace;">DawaLensLocalImages</code>). Packaging photos are <strong>never stored in Firebase Firestore documents</strong>. When you scan a medicine box using cloud AI, the photo is transmitted over encrypted HTTPS to Google Gemini solely to extract medicine text and expiration dates. In offline mode, text recognition is performed using on-device optical character recognition and rule-based heuristic classification without transmitting the image across the network. Deleting an entry or deleting your account permanently wipes the image from device storage.</p>
       </div>
 
-      <!-- 5. AI Consultation & Gemini API -->
-      <h2>5. AI Pharmacist &amp; Large Language Model (LLM) Processing</h2>
-      <p>DawaLens AI features an interactive AI Pharmacist companion ("Dr. DawaLens") powered by a hybrid architecture of Google Gemini API and an on-device Small Language Model (SLM):</p>
+      <!-- 4. On-Device vs Cloud AI Architecture -->
+      <h2>4. AI Pharmacist Architecture: Cloud AI &amp; Offline Reference Engine</h2>
+      <p>DawaLens AI provides dual-mode clinical assistance:</p>
       <ul>
-        <li><strong>No Personal Identifiers Sent to AI:</strong> When you ask a medical or medication question, only the text of your clinical query and your relevant medicine list are passed to the AI model. Your name, email address, Google account ID, and authentication tokens are never passed to the Gemini API.</li>
-        <li><strong>No Model Training:</strong> Your medical inquiries and medicine vault data are not used to train or improve Google's foundation AI models.</li>
-        <li><strong>Offline Fallback:</strong> If you are offline or if the remote API is unavailable, the on-device SLM model answers your queries entirely within your local browser sandbox with zero network transmission.</li>
+        <li><strong>Cloud AI (Google Gemini API):</strong> When online, complex multi-medication interaction screenings and queries can be processed via Google Gemini API. Only clinical medication names and user queries are transmitted; your personal name, email address, and authentication tokens are strictly stripped prior to API requests. Responses are labeled with ✨ <em>Cloud AI (Gemini)</em>.</li>
+        <li><strong>Offline Reference Engine:</strong> When offline or when cloud API keys are absent, consultations are handled by an <strong>on-device, rule-based drug reference engine and heuristic packaging classifier</strong> running entirely in local device memory. Responses are labeled with 📖 <em>Offline Reference Engine</em>.</li>
+        <li><strong>Clinical Feedback &amp; Incident Reporting:</strong> Each AI response includes a "Report" button allowing users to report inaccurate or potentially concerning answers anonymously without sending any personal health data.</li>
       </ul>
 
-      <!-- 6. Third-Party Subprocessors -->
-      <h2>6. Third-Party Subprocessors &amp; Data Sharing</h2>
-      <p>We do <strong>NOT</strong> sell, rent, commercialize, or lease your personal information, medical records, or Google user data to any third parties, advertisers, or data brokers. We share data only with trusted technical subprocessors who are contractually bound by confidentiality and data processing agreements:</p>
+      <!-- 5. Third-Party Subprocessors -->
+      <h2>5. Technical Subprocessors &amp; Service Providers</h2>
+      <p>We work exclusively with vetted infrastructure providers bound by rigorous data processing agreements:</p>
       <table>
         <thead>
           <tr>
-            <th>Subprocessor</th>
-            <th>Role &amp; Purpose</th>
-            <th>Location &amp; Policy</th>
+            <th>Provider</th>
+            <th>Service Purpose</th>
+            <th>Data Transferred</th>
+            <th>Privacy Link</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Google LLC (Firebase &amp; Google Cloud)</strong></td>
-            <td>Cloud infrastructure, User Authentication (Firebase Auth), Realtime Database (Firestore), and Google Analytics 4.</td>
-            <td>USA / Global &bull; <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></td>
+            <td><strong>Google LLC (Firebase Auth &amp; Firestore)</strong></td>
+            <td>User authentication and encrypted cloud database synchronization.</td>
+            <td>UID, email, display name, encrypted medicine records (excluding images).</td>
+            <td><a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener noreferrer">Firebase Privacy</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google LLC (Firebase Cloud Messaging)</strong></td>
+            <td>Device push notification routing for scheduled expiry alerts.</td>
+            <td>FCM push token, platform identifier.</td>
+            <td><a href="https://firebase.google.com/docs/cloud-messaging" target="_blank" rel="noopener noreferrer">FCM Overview</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google LLC (Crashlytics)</strong></td>
+            <td>Native Android application crash detection and stability monitoring.</td>
+            <td>Anonymous stack traces, OS version, device model (no health data).</td>
+            <td><a href="https://firebase.google.com/products/crashlytics" target="_blank" rel="noopener noreferrer">Crashlytics Safety</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google LLC (Google Analytics 4)</strong></td>
+            <td>Aggregated platform usage metrics. <em>Loaded only after explicit user consent.</em></td>
+            <td>Pageviews and generic navigation events (all medicine names, dosages, and PII are strictly stripped).</td>
+            <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Analytics Terms</a></td>
           </tr>
           <tr>
             <td><strong>Google LLC (Gemini API)</strong></td>
-            <td>Natural language processing for AI Pharmacist medication consultations and drug interaction checks.</td>
-            <td>USA &bull; <a href="https://ai.google.dev/terms" target="_blank" rel="noopener noreferrer">Gemini API Terms</a></td>
+            <td>Multimodal prescription label extraction and pharmacological interactions.</td>
+            <td>Query text, medicine names, packaging images during active scan.</td>
+            <td><a href="https://ai.google.dev/terms" target="_blank" rel="noopener noreferrer">Gemini API Terms</a></td>
           </tr>
           <tr>
             <td><strong>Resend Inc.</strong></td>
-            <td>Transactional email delivery service for automated medication expiration warnings and consultation summaries.</td>
-            <td>USA &bull; <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Resend Privacy Policy</a></td>
+            <td>Transactional email dispatch for user-configured expiry reminders.</td>
+            <td>Recipient email address, medicine name, expiration date.</td>
+            <td><a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Resend Policy</a></td>
           </tr>
           <tr>
-            <td><strong>Vercel Inc. &amp; Render Services Inc.</strong></td>
-            <td>Secure cloud frontend hosting, SSL termination, and reverse proxy routing for API requests.</td>
-            <td>USA &bull; <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Vercel Privacy Policy</a></td>
+            <td><strong>Vercel Inc.</strong></td>
+            <td>Frontend web application hosting, CDN distribution, and SSL edge termination.</td>
+            <td>HTTP request metadata and IP headers (purged within standard edge cycles).</td>
+            <td><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Vercel Privacy</a></td>
+          </tr>
+          <tr>
+            <td><strong>Render Services Inc.</strong></td>
+            <td>Backend Express server hosting for secure proxy routes and cron jobs.</td>
+            <td>Encrypted HTTPS API payloads, server access logs.</td>
+            <td><a href="https://render.com/privacy" target="_blank" rel="noopener noreferrer">Render Privacy</a></td>
           </tr>
         </tbody>
       </table>
 
-      <!-- 7. Data Security & Storage Standards -->
-      <h2>7. Data Security and Encryption</h2>
-      <p>We maintain strict administrative, technical, and physical safeguards to protect your personal data:</p>
+      <!-- 6. Data Security & Encryption -->
+      <h2>6. Data Security Standards</h2>
       <ul>
-        <li><strong>Encryption in Transit:</strong> All data transmitted between your device and our servers is encrypted using modern <strong>Transport Layer Security (TLS 1.3 / HTTPS)</strong> with HSTS enabled.</li>
-        <li><strong>Encryption at Rest:</strong> All database records stored in Google Cloud Firestore are encrypted using enterprise-grade <strong>AES-256 encryption</strong>.</li>
-        <li><strong>Access Controls:</strong> Firebase Security Rules strictly isolate database access so that each user can only read and write their own private medication records.</li>
-        <li><strong>Zero Plaintext Credentials:</strong> We never handle or store passwords for Google accounts. Authentication is handled entirely through Google's secure OAuth 2.0 flow.</li>
+        <li><strong>Encryption in Transit:</strong> All communications between clients, backend microservices, and Google Cloud APIs utilize Transport Layer Security (TLS / HTTPS).</li>
+        <li><strong>Encryption at Rest:</strong> Database records in Google Cloud Firestore are encrypted with enterprise AES-256 standards.</li>
+        <li><strong>Role-Based Access Control:</strong> Firestore Security Rules enforce strict ownership checks; users cannot read, list, modify, or delete medication records belonging to another account.</li>
+        <li><strong>Token-Based Authentication:</strong> All protected backend endpoints require verified Firebase Admin ID tokens passed via standard <code>Authorization: Bearer</code> headers. The user ID is cryptographically verified from the token payload, never accepted from untrusted request bodies.</li>
       </ul>
 
-      <!-- 8. Retention & Deletion Policy -->
-      <h2>8. Data Retention &amp; Permanent Account Deletion</h2>
-      <p>In accordance with the <strong>Google Play Store Data Safety and Account Deletion Policy</strong>, users have full autonomy over their personal records:</p>
+      <!-- 7. Data Retention & Deletion Table -->
+      <h2>7. Data Retention Table &amp; Account Deletion</h2>
+      <p>In adherence to Google Play Store Account Deletion requirements and the DPDP Act 2023, data is retained strictly as outlined below:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Data Category</th>
+            <th>Items Included</th>
+            <th>Retention Period &amp; Deletion Process</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Account Credentials</strong></td>
+            <td>Google UID, email address, profile picture</td>
+            <td>Deleted immediately upon account deletion request.</td>
+          </tr>
+          <tr>
+            <td><strong>Medicine Vault</strong></td>
+            <td>Medication names, dosages, forms, quantities, schedules</td>
+            <td>Deleted immediately upon item removal or account deletion.</td>
+          </tr>
+          <tr>
+            <td><strong>Dose History</strong></td>
+            <td>Historical timestamps of taken medicines</td>
+            <td>Deleted immediately upon account deletion.</td>
+          </tr>
+          <tr>
+            <td><strong>Consultation Chats</strong></td>
+            <td>Dr. DawaLens chat transcripts and messages</td>
+            <td>Deleted immediately upon manual clear or account deletion.</td>
+          </tr>
+          <tr>
+            <td><strong>Push Notification Tokens</strong></td>
+            <td>FCM tokens and background cron schedules</td>
+            <td>Purged immediately from operational servers on account deletion.</td>
+          </tr>
+          <tr>
+            <td><strong>Server Access Logs</strong></td>
+            <td>Aggregated IP requests and routing logs (no health data)</td>
+            <td>Retained up to 14 days for security and rate-limiting, then automatically purged.</td>
+          </tr>
+          <tr>
+            <td><strong>Disaster Recovery Backups</strong></td>
+            <td>Automated Google Cloud infrastructure database snapshots</td>
+            <td>Rotated, overwritten, and permanently expired within 30 days.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>How to Delete Your Account and Data</h3>
+      <ol>
+        <li><strong>In-App Immediate Deletion:</strong> Open Settings &rarr; Account &rarr; click <strong>"Delete Account &amp; Data"</strong>. Re-authenticates with Google, calls server purge, deletes Firestore collections in batches, removes the Auth user, and wipes local device storage.</li>
+        <li><strong>Standalone Web Deletion Portal (No App Needed):</strong> Visit <a href="/delete-account">https://dawalens.vercel.app/delete-account</a> to either sign in with Google for automated deletion or submit an email deletion request for processing within 7 business days.</li>
+        <li><strong>Revoke Google Access:</strong> You can disconnect DawaLens AI anytime via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account Permissions</a>.</li>
+      </ol>
+
+      <!-- 8. DPDP Act 2023 Compliance & Grievance Redressal -->
+      <h2>8. Compliance with Indian DPDP Act 2023 &amp; Grievance Redressal</h2>
+      <p>For users in India, processing of digital personal data is governed by the Digital Personal Data Protection Act, 2023. You have the right to access a summary of personal data, right to correction and erasure, right of grievance redressal, and right to nominate a representative.</p>
+      
+      <div style="background:#f9fafb; border:1px solid var(--border); border-radius:12px; padding:20px; margin:16px 0;">
+        <h3 style="margin-top:0;">Grievance Redressal Officer</h3>
+        <p style="margin:4px 0;"><strong>Operator / Data Fiduciary:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</p>
+        <p style="margin:4px 0;"><strong>Grievance Officer:</strong> [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME]</p>
+        <p style="margin:4px 0;"><strong>Official Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL]</p>
+        <p style="margin:4px 0;"><strong>Physical Address:</strong> [TODO_USER_INPUT: PHYSICAL_ADDRESS]</p>
+        <p style="font-size:12.5px; color:var(--text-muted); margin-top:8px;">Grievances and data requests are acknowledged within 24 hours and redressed within 30 days as mandated under Indian law.</p>
+      </div>
+
+      <!-- 9. Minimum Age & Children Policy -->
+      <h2>9. Minimum Age &amp; Children's Privacy Policy</h2>
+      <p>
+        DawaLens AI is intended for adult users. You must be at least <strong>18 years of age</strong> (or the legal age of majority in your jurisdiction) to use DawaLens AI independently. Minors aged <strong>13 to 17</strong> may use the application only under active parental or legal guardian supervision. We do not knowingly collect personal data from children under 13 years of age. If we learn that an account was created by a child under 13, we immediately purge all associated records.
+      </p>
+
+      <!-- 10. Consent Withdrawal -->
+      <h2>10. Consent Withdrawal &amp; User Control</h2>
+      <p>You may withdraw consent at any time:</p>
       <ul>
-        <li><strong>Retention Schedule:</strong> We retain your personal data and medication vault entries only for as long as your account remains active.</li>
-        <li><strong>How to Delete Your Account and Data:</strong>
-          <ol>
-            <li><strong>In-App Self-Service (Instant):</strong> Sign in to your account, open the Profile Menu, navigate to Account Settings, click <strong>"Delete Account &amp; Data"</strong>, and confirm. All Firestore database documents, audit history, and authentication records are permanently erased immediately.</li>
-            <li><strong>Web Deletion Portal (Without App):</strong> You can delete your account at any time without reinstalling the app by visiting our dedicated <a href="/delete-account">Account Deletion Page</a> (<a href="https://dawalens.vercel.app/delete-account">https://dawalens.vercel.app/delete-account</a>).</li>
-            <li><strong>Revoke Google OAuth Access:</strong> You can disconnect DawaLens AI's access to your Google account at any time by visiting <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account Security - Third-party apps</a>.</li>
-            <li><strong>Email Deletion Request:</strong> You may also email our data protection team directly at <a href="mailto:mdnoor4860@gmail.com?subject=Account%20and%20Data%20Deletion%20Request">mdnoor4860@gmail.com</a> with the subject line <em>"Account Deletion Request"</em>. Email deletion requests are verified and completed within 48 to 72 hours.</li>
-          </ol>
-        </li>
+        <li><strong>Analytics Tracking:</strong> Toggle analytics tracking off in App Settings. Google Analytics scripts will not load without explicit consent.</li>
+        <li><strong>Camera &amp; Notification Permissions:</strong> Revoke permissions through your Android system settings (Settings &rarr; Apps &rarr; DawaLens AI &rarr; Permissions).</li>
+        <li><strong>Email Expiry Alerts:</strong> Disable email reminders in Settings or delete scheduled reminders directly.</li>
       </ul>
 
-      <!-- 9. User Rights (GDPR & CCPA/CPRA) -->
-      <h2>9. Your Legal Rights (GDPR &amp; CCPA/CPRA)</h2>
-      <p>Depending on your jurisdiction, you possess the following rights regarding your personal information:</p>
+      <!-- 11. Contact Information -->
+      <h2>11. Contact Us</h2>
+      <p>For questions or privacy requests regarding this Privacy Policy:</p>
       <ul>
-        <li><strong>Right to Access:</strong> You have the right to request a complete summary of all personal and medication data we hold about you.</li>
-        <li><strong>Right to Rectification:</strong> You can edit or correct any inaccurate medication entries, dosages, or profile information directly in the app.</li>
-        <li><strong>Right to Erasure ("Right to be Forgotten"):</strong> You have the absolute right to have all your personal and health records permanently deleted.</li>
-        <li><strong>Right to Data Portability:</strong> You can export your complete medication inventory into a CSV spreadsheet at any time for transfer to Google Sheets, Microsoft Excel, or your medical provider.</li>
-        <li><strong>Right to Withdraw Consent:</strong> You may revoke permissions (Camera, Notifications, or Google OAuth authorization) at any time through your device settings or Google security portal.</li>
-      </ul>
-
-      <!-- 10. Children's Privacy -->
-      <h2>10. Children's Privacy (COPPA Compliance)</h2>
-      <p>DawaLens AI is not intended for use by children under the age of 13 (or under 16 in the European Economic Area). We do not knowingly collect or solicit personal information from children. If we discover that an individual under the age of 13 has created an account without verified parental consent, we will promptly delete that account and all associated records from our servers.</p>
-
-      <!-- 11. Policy Changes -->
-      <h2>11. Changes to This Privacy Policy</h2>
-      <p>We may periodically update this Privacy Policy to reflect enhancements in our medication features, changes in legal obligations, or updates to Google policies. When updates are published, we will revise the "Last Updated" date at the top of this document. Continued use of DawaLens AI following notification of updates constitutes your acceptance of the revised terms.</p>
-
-      <!-- 12. Contact & Data Controller Information -->
-      <h2>12. Contact Us &amp; Data Protection Officer</h2>
-      <p>If you have any questions, concerns, or requests regarding this Privacy Policy, our adherence to Google API policies, or our data handling practices, please contact us:</p>
-      <ul>
-        <li><strong>Data Controller:</strong> DawaLens AI</li>
-        <li><strong>Primary Developer &amp; Security Email:</strong> <a href="mailto:mdnoor4860@gmail.com">mdnoor4860@gmail.com</a></li>
-        <li><strong>Official Application URL:</strong> <a href="https://dawalens.vercel.app">https://dawalens.vercel.app</a></li>
-        <li><strong>API Service URL:</strong> <a href="https://dawalensai.onrender.com">https://dawalensai.onrender.com</a></li>
+        <li><strong>Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL]</li>
+        <li><strong>Operator Legal Name:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</li>
+        <li><strong>Physical Address:</strong> [TODO_USER_INPUT: PHYSICAL_ADDRESS]</li>
       </ul>
 
       <footer>
         <p>&copy; 2026 DawaLens AI. All rights reserved.</p>
         <div class="footer-links">
-          <a href="/">Home</a>
+          <a href="/">Dashboard</a>
           <a href="/guide">User Guide</a>
           <a href="/terms">Terms of Service</a>
           <a href="/delete-account">Delete Account</a>
-          <a href="mailto:mdnoor4860@gmail.com">Contact Support</a>
         </div>
       </footer>
     </div>
