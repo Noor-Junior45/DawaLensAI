@@ -35,6 +35,7 @@ import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { AccountDeletionPage } from './components/AccountDeletionPage';
 import { RecentlyDeletedPage } from './components/RecentlyDeletedPage';
+import { LandingPage } from './components/LandingPage';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
@@ -75,9 +76,19 @@ const getInitialPublicPage = (): PublicPageType => {
 };
 
 export default function App() {
+  const isNative = Capacitor.isNativePlatform();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [publicPage, setPublicPage] = useState<PublicPageType>(getInitialPublicPage);
+  const [showAuthScreen, setShowAuthScreen] = useState<boolean>(() => {
+    if (Capacitor.isNativePlatform()) return true;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('view') === 'login' || params.get('page') === 'login' || params.get('auth') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -1901,6 +1912,20 @@ export default function App() {
   }
 
   if (!user) {
+    if (!isNative && !showAuthScreen) {
+      return (
+        <LandingPage 
+          onSignIn={() => {
+            setShowAuthScreen(true);
+            try {
+              window.history.pushState(null, '', '/?view=login');
+            } catch {}
+          }} 
+          navigateToPublicPage={navigateToPublicPage} 
+        />
+      );
+    }
+
     const handleContinueEmail = (e?: React.FormEvent) => {
       if (e) e.preventDefault();
       if (!email || !email.trim()) {
@@ -1947,14 +1972,36 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#faf8f5] text-slate-800 font-sans flex flex-col items-center justify-between p-4 sm:p-6 selection:bg-[#0f9d58] selection:text-white">
         <div className="flex-1 flex flex-col items-center justify-center max-w-[400px] w-full my-auto space-y-6">
+          {/* Back to Homepage Button (Only on web / desktop) */}
+          {!isNative && (
+            <div className="w-full flex justify-start -mb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAuthScreen(false);
+                  try {
+                    window.history.pushState(null, '', '/');
+                  } catch {}
+                }}
+                className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5 cursor-pointer py-1 px-2.5 rounded-lg hover:bg-slate-200/60"
+              >
+                <span>&larr; Back to Homepage</span>
+              </button>
+            </div>
+          )}
+
           {/* Logo & App Name Header */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-3 text-center"
           >
-            <div className="w-20 h-20 bg-white border border-[#e3e2e0] rounded-[28px] mx-auto flex items-center justify-center shadow-md">
-              <Camera className="text-[#0f9d58]" size={38} />
+            <div className="w-24 h-24 mx-auto flex items-center justify-center select-none">
+              <img 
+                src="/logo.png" 
+                alt="DawaSnap AI" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#0f9d58]">
               DawaSnap AI

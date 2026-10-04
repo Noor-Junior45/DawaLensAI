@@ -449,6 +449,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             >
               <Trash2 size={15} className="text-[#ea4335] shrink-0" />
               <span className="text-[12px] font-bold text-[#1f1f1f]">Recently Deleted</span>
+              <span className={`ml-auto mr-1.5 min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center shrink-0 leading-none shadow-2xs ${
+                (deletedMedicines?.length || 0) > 0 
+                  ? 'bg-[#ea4335] text-white' 
+                  : 'bg-rose-200/80 text-rose-800'
+              }`}>
+                {deletedMedicines?.length || 0}
+              </span>
             </button>
           </div>
 
