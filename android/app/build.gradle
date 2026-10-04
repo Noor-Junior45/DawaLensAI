@@ -27,27 +27,30 @@ android {
                 keyProperties.load(new FileInputStream(propFile))
             }
             def keystoreFile = file('release.keystore')
+            if (!keystoreFile.exists()) {
+                keystoreFile = rootProject.file('android/app/release.keystore')
+            }
+            if (!keystoreFile.exists()) {
+                keystoreFile = rootProject.file('keystore/release.keystore')
+            }
             if (keystoreFile.exists()) {
-                def storePwd = keyProperties.getProperty('storePassword') ?: System.getenv('ANDROID_STORE_PASSWORD')
-                def kAlias = keyProperties.getProperty('keyAlias') ?: System.getenv('ANDROID_KEY_ALIAS')
-                def kPwd = keyProperties.getProperty('keyPassword') ?: System.getenv('ANDROID_KEY_PASSWORD')
-                if (storePwd && kAlias && kPwd) {
-                    storeFile keystoreFile
-                    storePassword storePwd
-                    keyAlias kAlias
-                    keyPassword kPwd
-                    storeType 'PKCS12'
-                }
+                def storePwd = keyProperties.getProperty('storePassword') ?: (System.getenv('ANDROID_STORE_PASSWORD') ?: 'Dawasnap123')
+                def kAlias = keyProperties.getProperty('keyAlias') ?: (System.getenv('ANDROID_KEY_ALIAS') ?: 'DawaSnapAi')
+                def kPwd = keyProperties.getProperty('keyPassword') ?: (System.getenv('ANDROID_KEY_PASSWORD') ?: 'Dawasnap123')
+                storeFile keystoreFile
+                storePassword storePwd
+                keyAlias kAlias
+                keyPassword kPwd
+                storeType 'PKCS12'
             }
         }
     }
     buildTypes {
         release {
-            if (file('release.keystore').exists()) {
+            if (signingConfigs.release.storeFile != null && signingConfigs.release.storeFile.exists()) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
