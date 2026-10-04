@@ -44,6 +44,7 @@ import { trackEvent } from './utils/analytics';
 import { signInWithGoogleAdaptive, signOutAdaptive } from './services/nativeAuthService';
 import { setCrashReportingUser } from './services/crashReportingService';
 import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { initNativePerformance, setNativeBackButtonHandler } from './services/nativePerformanceService';
@@ -198,14 +199,35 @@ export default function App() {
   const [isCheckingInteractions, setIsCheckingInteractions] = useState(false);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
 
-  // Auth State Listener
+  // Auth State Listener with safety timeout to prevent app launch freezing
   useEffect(() => {
+    let resolved = false;
+
+    // Timeout fallback: if Firebase Auth takes > 1200ms on cold mobile boot, unblock UI so login screen displays
+    const fallbackTimer = setTimeout(() => {
+      if (!resolved) {
+        setIsAuthReady(true);
+        if (Capacitor.isNativePlatform()) {
+          SplashScreen.hide().catch(() => {});
+        }
+      }
+    }, 1200);
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      resolved = true;
+      clearTimeout(fallbackTimer);
       setUser(currentUser);
       setIsAuthReady(true);
       setCrashReportingUser(currentUser ? currentUser.uid : null);
+      if (Capacitor.isNativePlatform()) {
+        SplashScreen.hide().catch(() => {});
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      unsubscribe();
+    };
   }, []);
 
   // Native Android Performance & Universal Back Button Handling

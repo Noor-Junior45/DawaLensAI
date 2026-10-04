@@ -15,14 +15,10 @@
 
 # 3. Capacitor core and plugin bindings
 -keep class com.getcapacitor.** { *; }
--keep class * extends com.getcapacitor.Plugin {
-    public <methods>;
-    public <fields>;
-}
--keep class * extends com.getcapacitor.PluginMethod {
-    public <methods>;
-    public <fields>;
-}
+-keep class com.capacitorjs.plugins.** { *; }
+-keep class io.capawesome.capacitorjs.plugins.** { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
+-keep class * extends com.getcapacitor.PluginMethod { *; }
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }

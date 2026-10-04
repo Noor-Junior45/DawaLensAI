@@ -14,13 +14,13 @@
       "presentationOptions": ["badge", "sound", "alert"]
     },
     "SplashScreen": {
-      "launchShowDuration": 1500,
+      "launchShowDuration": 1000,
       "launchAutoHide": true,
-      "backgroundColor": "#0f9d58",
+      "backgroundColor": "#faf8f5",
       "androidScaleType": "CENTER_CROP",
       "showSpinner": false,
-      "splashFullScreen": true,
-      "splashImmersive": true
+      "splashFullScreen": false,
+      "splashImmersive": false
     },
     "Keyboard": {
       "resize": "body",

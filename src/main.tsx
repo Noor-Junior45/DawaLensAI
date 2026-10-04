@@ -1,5 +1,7 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
+import { Capacitor } from '@capacitor/core';
+import { SplashScreen } from '@capacitor/splash-screen';
 import App from './App.tsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initCrashReporting } from './services/crashReportingService';
@@ -8,8 +10,15 @@ import './index.css';
 // Initialize Crash Protection & Crashlytics
 initCrashReporting();
 
-// Register PWA Service Worker
-if ('serviceWorker' in navigator) {
+// On native Android/iOS, ensure native splash screen is dismissed promptly
+if (Capacitor.isNativePlatform()) {
+  setTimeout(() => {
+    SplashScreen.hide().catch(() => {});
+  }, 100);
+}
+
+// Register PWA Service Worker only on Web browsers (avoid caching conflicts in Native Android WebView)
+if (!Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((reg) => {
