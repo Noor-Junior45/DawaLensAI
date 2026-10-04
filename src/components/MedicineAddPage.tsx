@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
-  ArrowLeft, Plus, Minus, Calendar, Package, Clock, 
+  ChevronLeft, Plus, Minus, Calendar, Package, Clock, 
   Sparkles, Mail, AlertTriangle, Image as ImageIcon, X
 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -162,7 +162,7 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
             title="Back"
             aria-label="Back"
           >
-            <ArrowLeft size={22} />
+            <ChevronLeft size={22} />
           </button>
           <h1 className="text-lg font-bold tracking-tight text-slate-900">
             Add Medicine

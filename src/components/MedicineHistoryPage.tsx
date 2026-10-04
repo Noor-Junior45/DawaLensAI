@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Medicine, MedicineHistory } from '../types';
-import { ArrowLeft, Clock, History as HistoryIcon, Calendar, CheckCircle2, Edit3, PlusCircle, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Clock, History as HistoryIcon, Calendar, CheckCircle2, Edit3, PlusCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { db, collection, query, orderBy, onSnapshot, handleFirestoreError, OperationType } from '../firebase';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
@@ -122,7 +122,7 @@ export const MedicineHistoryPage: React.FC<MedicineHistoryPageProps> = ({
             title="Back to Details"
             aria-label="Back"
           >
-            <ArrowLeft size={22} />
+            <ChevronLeft size={22} />
           </button>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-[#1f1f1f]">

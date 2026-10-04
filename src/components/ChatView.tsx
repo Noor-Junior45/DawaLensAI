@@ -3,7 +3,7 @@ import {
   X, Send, Bot, User, Loader2, Plus, 
   MessageSquare, Calendar, Clock, 
   History, Search, Trash2, ShieldCheck, Stethoscope,
-  AlertCircle, Pill, Info, Mail, ArrowLeft, Check, CheckCheck,
+  AlertCircle, Pill, Info, Mail, Check, CheckCheck,
   Camera, Mic, Languages, Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';

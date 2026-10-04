@@ -1,6 +1,6 @@
 import React from 'react';
 import { Medicine } from '../types';
-import { ArrowLeft, Trash2, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Trash2, RotateCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
 import { triggerLightHaptic, triggerSuccessHaptic } from '../utils/haptics';
@@ -40,7 +40,7 @@ export const RecentlyDeletedPage: React.FC<RecentlyDeletedPageProps> = ({
           className="p-2 -ml-2 mr-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
           aria-label="Back"
         >
-          <ArrowLeft size={20} />
+          <ChevronLeft size={20} />
         </button>
         <h1 className="text-base sm:text-lg font-bold text-[#1f1f1f] leading-tight">
           Recently Deleted

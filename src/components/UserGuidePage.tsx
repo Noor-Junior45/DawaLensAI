@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  ArrowLeft, 
+  ChevronLeft, 
   BookOpen, 
   Camera, 
   Layers, 
@@ -44,7 +44,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
               title="Back"
               aria-label="Back"
             >
-              <ArrowLeft size={20} />
+              <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-2.5">
               <BookOpen size={22} className="text-[#0f9d58] shrink-0" />

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Medicine } from '../types';
 import { 
-  ArrowLeft, History, Pencil, Package, Clock, Calendar, 
+  ChevronLeft, History, Pencil, Package, Clock, Calendar, 
   AlertTriangle, CheckCircle2, XCircle, Bell, BellOff, Mail,
   FileText, Settings, AlertCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, getCategoryStyle } from '../constants';
 import { LocalImage } from './LocalImage';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
@@ -19,6 +19,7 @@ interface MedicineDetailsPageProps {
   onBack: () => void;
   onGoToHistory: () => void;
   onGoToEdit: () => void;
+  onDelete?: () => void;
 }
 
 export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
@@ -29,7 +30,17 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
   onBack,
   onGoToHistory,
   onGoToEdit,
+  onDelete,
 }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const confirmDelete = () => {
+    triggerLightHaptic();
+    if (onDelete) {
+      onDelete();
+    }
+    setShowDeleteConfirm(false);
+  };
   // Mobile Edge-Swipe from left to navigate back
   useEdgeSwipeBack({ onBack });
   // Format dates cleanly like "27 Feb 2027"
@@ -122,7 +133,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
             title="Back to medicines"
             aria-label="Back"
           >
-            <ArrowLeft size={22} />
+            <ChevronLeft size={22} />
           </button>
           <h1 className="text-lg font-bold tracking-tight text-slate-900">
             Medicine Details
@@ -130,6 +141,16 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Delete Button: Text Only on the left side of history button */}
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-2.5 py-1 text-sm font-semibold text-rose-600 hover:text-rose-700 active:scale-95 transition-all cursor-pointer mr-0.5"
+            title="Delete Medicine"
+          >
+            Delete
+          </button>
+
           {/* History Button: Red Sign Only (No background, No border) */}
           <button
             type="button"
@@ -393,6 +414,48 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
         </section>
 
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDeleteConfirm(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white border border-[#e3e2e0] rounded-3xl p-6 shadow-2xl text-center z-10"
+            >
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Medicine?</h3>
+              <p className="text-slate-600 text-xs mb-6">
+                Are you sure you want to delete <span className="font-semibold text-slate-900">{medicine.name}</span>? You can restore it anytime from Recently Deleted.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={confirmDelete}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

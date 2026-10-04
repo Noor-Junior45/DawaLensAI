@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
-  ArrowLeft, Save, Plus, Minus, Calendar, Package, Clock, 
+  ChevronLeft, Save, Plus, Minus, Calendar, Package, Clock, 
   Sparkles, Bell, BellOff, Mail, Check, X, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -179,7 +179,7 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
             title="Back to Details"
             aria-label="Back"
           >
-            <ArrowLeft size={22} />
+            <ChevronLeft size={22} />
           </button>
           <h1 className="text-lg font-bold tracking-tight text-slate-900">
             Edit Medicine

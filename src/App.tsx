@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown, ShieldCheck, BookOpen, FileText } from 'lucide-react';
+import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, ChevronLeft, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown, ShieldCheck, BookOpen, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
@@ -1985,7 +1985,8 @@ export default function App() {
                 }}
                 className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1.5 cursor-pointer py-1 px-2.5 rounded-lg hover:bg-slate-200/60"
               >
-                <span>&larr; Back to Homepage</span>
+                <ChevronLeft size={15} className="shrink-0" />
+                <span>Back to Homepage</span>
               </button>
             </div>
           )}
@@ -2661,6 +2662,11 @@ export default function App() {
             }}
             onGoToHistory={() => setActiveSystemPage('history')}
             onGoToEdit={() => setActiveSystemPage('edit')}
+            onDelete={() => {
+              handleDeleteMultiple([currentDetailsMedicine.id]);
+              setActiveSystemPage(null);
+              setSelectedDetailsMedicine(null);
+            }}
           />
         )}
 

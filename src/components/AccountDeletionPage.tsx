@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  ArrowLeft, 
+  ChevronLeft, 
   Trash2, 
   ShieldAlert, 
   Mail, 
@@ -8,9 +8,9 @@ import {
   CheckCircle2, 
   Database, 
   UserX, 
-  Send,
-  Loader2,
-  LogIn,
+  Send, 
+  Loader2, 
+  LogIn, 
   KeyRound
 } from 'lucide-react';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
@@ -126,7 +126,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
               className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600 active:scale-95 cursor-pointer"
               title="Back"
             >
-              <ArrowLeft size={18} />
+              <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-2">
               <Trash2 size={18} className="text-rose-600" />
