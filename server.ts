@@ -25,7 +25,7 @@ import {
 import { 
   initFirebaseAdmin, 
   requireFirebaseAuth, 
-  AuthenticatedRequest 
+  type AuthenticatedRequest 
 } from "./server/firebaseAdmin.ts";
 
 // Initialize Firebase Admin on startup

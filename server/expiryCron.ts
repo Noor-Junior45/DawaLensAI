@@ -9,7 +9,7 @@ import {
   getDocs 
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
-import { sendEmailDirectServer, getExpiryEmailHTMLServer, ExpiryStage } from "./emailTemplates.ts";
+import { sendEmailDirectServer, getExpiryEmailHTMLServer, type ExpiryStage } from "./emailTemplates.ts";
 import { getAdminApp, hasServiceAccountConfigured } from "./firebaseAdmin.ts";
 import { getMessaging } from 'firebase-admin/messaging';
 

@@ -1,5 +1,5 @@
-import { initializeApp, getApps, cert, applicationDefault, App } from 'firebase-admin/app';
-import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
+import { initializeApp, getApps, cert, applicationDefault, type App } from 'firebase-admin/app';
+import { getAuth, type DecodedIdToken } from 'firebase-admin/auth';
 import type { Request, Response, NextFunction } from 'express';
 import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 
