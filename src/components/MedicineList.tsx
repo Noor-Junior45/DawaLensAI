@@ -28,6 +28,7 @@ interface MedicineListProps {
   selectedIds?: Set<string>;
   setSelectedIds?: React.Dispatch<React.SetStateAction<Set<string>>>;
   totalMedicinesCount?: number;
+  sortOrder?: 'default' | 'asc' | 'desc';
 }
 
 interface GroupedMedicine {
@@ -62,7 +63,8 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   setIsSelectionMode: propSetIsSelectionMode,
   selectedIds: propSelectedIds,
   setSelectedIds: propSetSelectedIds,
-  totalMedicinesCount = 0
+  totalMedicinesCount = 0,
+  sortOrder = 'default'
 }) => {
   const [internalSelectedIds, setInternalSelectedIds] = useState<Set<string>>(new Set());
   const [internalIsSelectionMode, setInternalIsSelectionMode] = useState(false);
@@ -76,7 +78,9 @@ export const MedicineList: React.FC<MedicineListProps> = ({
   const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(new Set());
   const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(() => {
     try {
-      return sessionStorage.getItem('dawalens_hide_organize_banner') === 'true' ||
+      return sessionStorage.getItem('dawasnap_hide_organize_banner') === 'true' ||
+             sessionStorage.getItem('dawalens_hide_organize_banner') === 'true' ||
+             localStorage.getItem('dawasnap_medicines_organized') === 'true' ||
              localStorage.getItem('dawalens_medicines_organized') === 'true';
     } catch {
       return false;
@@ -337,6 +341,16 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     .sort((a, b) => {
       if (a.liked && !b.liked) return -1;
       if (!a.liked && b.liked) return 1;
+
+      // When A-Z or Z-A is active, sort alphabetically by medicine name
+      if (sortOrder === 'asc') {
+        return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+      }
+      if (sortOrder === 'desc') {
+        return (b.name || '').toLowerCase().localeCompare((a.name || '').toLowerCase());
+      }
+
+      // Default: sort by nearest active expiration date
       const diffA = a.nearestActiveBatch ? getDiffDays(a.nearestActiveBatch.expirationDate) : 9999;
       const diffB = b.nearestActiveBatch ? getDiffDays(b.nearestActiveBatch.expirationDate) : 9999;
       return diffA - diffB;
@@ -348,7 +362,11 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     .sort((a, b) => {
       if (a.liked && !b.liked) return -1;
       if (!a.liked && b.liked) return 1;
-      return a.name.localeCompare(b.name);
+
+      if (sortOrder === 'desc') {
+        return (b.name || '').toLowerCase().localeCompare((a.name || '').toLowerCase());
+      }
+      return (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
     });
 
   // Render an Active Group Card
@@ -662,7 +680,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   {group.dosage}
                 </span>
                 <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100 text-[#ea4335]">
-                  <XCircle size={10} /> Expired Stock
+                  <XCircle size={10} /> {getDiffDays(earliestBatch?.expirationDate) < 0 ? 'Expired Stock' : earliestBatch?.taken ? 'Finished Stock' : 'Out of Stock'}
                 </span>
               </div>
 
@@ -716,7 +734,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
           <div className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-[#ea4335]">
             {getDiffDays(earliestBatch?.expirationDate) < 0
               ? (group.hasExpiredQuantities || group.totalExpiredQuantity > 0 ? `${group.totalExpiredQuantity} EXPIRED` : 'EXPIRED')
-              : 'OUT OF STOCK'}
+              : earliestBatch?.taken ? 'FINISHED' : 'OUT OF STOCK'}
           </div>
         </div>
       </motion.div>
@@ -832,6 +850,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                   await onAutoCategorize();
                   setIsBannerDismissed(true);
                   try {
+                    sessionStorage.setItem('dawasnap_hide_organize_banner', 'true');
                     sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
                   } catch {}
                 } catch (e) {
@@ -859,6 +878,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 triggerLightHaptic();
                 setIsBannerDismissed(true);
                 try {
+                  sessionStorage.setItem('dawasnap_hide_organize_banner', 'true');
                   sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
                 } catch {}
               }}

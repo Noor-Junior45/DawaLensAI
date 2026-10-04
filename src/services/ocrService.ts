@@ -1,5 +1,5 @@
 /**
- * DawaLens AI - Multi-Tier On-Device Optical Character Recognition (OCR) Engine
+ * DawaSnap AI - Multi-Tier On-Device Optical Character Recognition (OCR) Engine
  * 
  * Architecture:
  * 1. Native Android ML Kit bridge (if running in native Android container)

@@ -1,5 +1,5 @@
 /**
- * Google Analytics & Consent Manager for DawaLens AI
+ * Google Analytics & Consent Manager for DawaSnap AI
  * Compliant with Google Play Store Health Apps Policy & DPDP Act 2023.
  * Strictly prevents any medication names, dosages, health information, or PII from being transmitted.
  */
@@ -12,11 +12,12 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = 'G-0N6JNZ8SV0';
-const CONSENT_STORAGE_KEY = 'dawalens_analytics_consent';
+const CONSENT_STORAGE_KEY = 'dawasnap_analytics_consent';
+const LEGACY_CONSENT_KEY = 'dawalens_analytics_consent';
 
 export function hasAnalyticsConsent(): boolean {
   try {
-    return localStorage.getItem(CONSENT_STORAGE_KEY) === 'true';
+    return localStorage.getItem(CONSENT_STORAGE_KEY) === 'true' || localStorage.getItem(LEGACY_CONSENT_KEY) === 'true';
   } catch {
     return false;
   }

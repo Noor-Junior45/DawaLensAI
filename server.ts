@@ -43,6 +43,8 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/localhost(:\d+)?$/,
   /^capacitor:\/\/localhost$/,
   /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/,
+  /^https:\/\/dawasnapai\.onrender\.com$/,
+  /^https:\/\/dawasnap\.in$/,
   /^https:\/\/dawalensai\.onrender\.com$/,
   /^https:\/\/dawalens\.in$/,
   /^https:\/\/[a-zA-Z0-9-]+\.run\.app$/
@@ -189,7 +191,7 @@ app.get(["/delete-account", "/delete-account.html"], (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "DawaLens AI Server is running securely" });
+  res.json({ status: "ok", message: "DawaSnap AI Server is running securely" });
 });
 
 // Public Account Deletion Request Submission (for visitors without app installed)
@@ -212,10 +214,10 @@ app.post("/api/account/deletion-request", async (req, res) => {
       try {
         const resend = new Resend(apiKey);
         await resend.emails.send({
-          from: "DawaLens AI <alerts@noorpos.in>",
+          from: "DawaSnap AI <alerts@noorpos.in>",
           to: [email],
-          subject: `DawaLens AI - Account Deletion Request Received (${referenceId})`,
-          text: `Hello,\n\nWe have received your account and data deletion request for ${email}.\nReference ID: ${referenceId}\n\nOur compliance team processes all deletion requests within 7 business days. All associated medicines, schedules, push tokens, and cloud data will be permanently wiped.\n\nThank you,\nDawaLens AI Data Privacy Officer`,
+          subject: `DawaSnap AI - Account Deletion Request Received (${referenceId})`,
+          text: `Hello,\n\nWe have received your account and data deletion request for ${email}.\nReference ID: ${referenceId}\n\nOur compliance team processes all deletion requests within 7 business days. All associated medicines, schedules, push tokens, and cloud data will be permanently wiped.\n\nThank you,\nDawaSnap AI Data Privacy Officer`,
         });
       } catch (emailErr) {
         console.warn("[DELETION EMAIL NOTICE] Could not send receipt email via Resend:", emailErr);
@@ -263,7 +265,7 @@ app.post("/api/send-email", requireFirebaseAuth, async (req: AuthenticatedReques
 
     const resend = new Resend(apiKey);
     const { data, error } = await resend.emails.send({
-      from: "DawaLens AI <alerts@noorpos.in>",
+      from: "DawaSnap AI <alerts@noorpos.in>",
       to: [to],
       subject: subject,
       text: text || "",
@@ -274,7 +276,7 @@ app.post("/api/send-email", requireFirebaseAuth, async (req: AuthenticatedReques
       console.warn("[RESEND ERROR]", error);
       // Resend sandbox fallback
       const fallbackResult = await resend.emails.send({
-        from: "DawaLens AI <onboarding@resend.dev>",
+        from: "DawaSnap AI <onboarding@resend.dev>",
         to: [to],
         subject: subject,
         text: text || "",
@@ -490,7 +492,7 @@ app.post("/api/notifications/send-test", requireFirebaseAuth, async (req: Authen
     const { title, body } = req.body;
     const result = await sendPushNotificationToUser(
       userId,
-      title || "🚨 DawaLens AI Test Alert",
+      title || "🚨 DawaSnap AI Test Alert",
       body || "Push notification is working perfectly on your device/browser!",
       { test: true }
     );
@@ -543,7 +545,7 @@ async function setupViteAndListen() {
       startExpiryCron();
 
       // Keep-alive self-ping for Render
-      const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawalensai.onrender.com";
+      const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawasnapai.onrender.com";
       setInterval(() => {
         fetch(`${renderBackendUrl}/api/health`).catch(() => {});
       }, 14 * 60 * 1000);

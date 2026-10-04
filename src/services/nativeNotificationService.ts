@@ -112,6 +112,7 @@ export async function initNativeNotifications(): Promise<boolean> {
         PushNotifications.addListener('registration', (token) => {
           console.log('[FCM] Push registration successful, FCM Token:', token.value);
           try {
+            localStorage.setItem('dawasnap_fcm_token', token.value);
             localStorage.setItem('dawalens_fcm_token', token.value);
           } catch {
             // Ignore storage errors
@@ -130,7 +131,7 @@ export async function initNativeNotifications(): Promise<boolean> {
           LocalNotifications.schedule({
             notifications: [
               {
-                title: notification.title || 'DawaLens Alert',
+                title: notification.title || 'DawaSnap Alert',
                 body: notification.body || '',
                 id: Math.floor(Math.random() * 1000000) + 1,
                 schedule: { at: new Date(Date.now() + 100) },

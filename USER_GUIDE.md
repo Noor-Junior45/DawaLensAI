@@ -1,14 +1,14 @@
-# DawaLens AI — Official User Guide & Operating Manual
-**Document Reference:** `DAWALENS-GUIDE-2026-V2.5`  
-**Application Identity:** DawaLens AI (Android Package: `in.dawalens.app`)  
-**Web Application:** `https://dawalens.vercel.app` & `https://dawalensai.onrender.com`  
+# DawaSnap AI — Official User Guide & Operating Manual
+**Document Reference:** `DAWASNAP-GUIDE-2026-V2.5`  
+**Application Identity:** DawaSnap AI (Android Package: `in.dawasnap.app`)  
+**Web Application:** `https://dawasnap.vercel.app` & `https://dawasnapai.onrender.com`  
 **Support Desk:** `mdnoor4860@gmail.com`  
-**Account Deletion Portal:** `https://dawalens.vercel.app/delete-account`  
+**Account Deletion Portal:** `https://dawasnap.vercel.app/delete-account`  
 
 ---
 
-## Welcome to DawaLens AI
-**DawaLens AI** is your intelligent medication inventory vault, expiration monitoring companion, and personal digital pharmacist. Whether managing a single daily prescription or an entire household first-aid cabinet, DawaLens AI prevents accidental consumption of expired pharmaceuticals, screens for dangerous drug interactions, and keeps your medical supplies organized.
+## Welcome to DawaSnap AI
+**DawaSnap AI** is your intelligent medication inventory vault, expiration monitoring companion, and personal digital pharmacist. Whether managing a single daily prescription or an entire household first-aid cabinet, DawaSnap AI prevents accidental consumption of expired pharmaceuticals, screens for dangerous drug interactions, and keeps your medical supplies organized.
 
 This manual provides comprehensive, step-by-step instructions for all features and capabilities.
 
@@ -22,7 +22,7 @@ This manual provides comprehensive, step-by-step instructions for all features a
 5. [Expiration Monitoring & Multi-Stage Alerts](#5-expiration-monitoring--multi-stage-alerts)
 6. [Daily Dose Alarms & Android Exact Timers](#6-daily-dose-alarms--android-exact-timers)
 7. [Drug-Drug Interaction Checker](#7-drug-drug-interaction-checker)
-8. [AI Pharmacist Companion ("Dr. DawaLens")](#8-ai-pharmacist-companion-dr-dawalens)
+8. [AI Pharmacist Companion ("Dr. DawaSnap")](#8-ai-pharmacist-companion-dr-dawasnap)
 9. [CSV Data Export, Import & Sheets Sync](#9-csv-data-export-import--sheets-sync)
 10. [Data Privacy, Local Storage & Account Deletion](#10-data-privacy-local-storage--account-deletion)
 11. [Troubleshooting & Frequently Asked Questions](#11-troubleshooting--frequently-asked-questions)
@@ -32,8 +32,8 @@ This manual provides comprehensive, step-by-step instructions for all features a
 ## 1. Getting Started & Account Setup
 
 ### 1.1 Supported Platforms
-- **Android Native Application:** Download the signed APK directly or via Google Play Store (Package: `in.dawalens.app`). Compatible with Android 8.0 (API 26) through Android 15.
-- **Progressive Web App (PWA):** Access from any modern desktop or mobile browser at `https://dawalens.vercel.app`. You can install it to your home screen via Chrome/Safari ("Add to Home Screen").
+- **Android Native Application:** Download the signed APK directly or via Google Play Store (Package: `in.dawasnap.app`). Compatible with Android 8.0 (API 26) through Android 15.
+- **Progressive Web App (PWA):** Access from any modern desktop or mobile browser at `https://dawasnap.vercel.app`. You can install it to your home screen via Chrome/Safari ("Add to Home Screen").
 
 ### 1.2 Sign-In Options
 1. **Google Sign-In (Recommended):** Tap **Continue with Google** for instantaneous, secure one-tap authentication. Only basic OpenID profile data (`email`, `name`, `profile picture`) is requested. No access to your Google Drive, Gmail, or calendar is ever requested.
@@ -43,7 +43,7 @@ This manual provides comprehensive, step-by-step instructions for all features a
 
 ## 2. Adding Medications via AI Camera Scanning
 
-DawaLens AI features an advanced hybrid computer vision and optical character recognition (OCR) engine tailored specifically for shiny blister foils, small pharmaceutical fonts, and curved syrup bottles.
+DawaSnap AI features an advanced hybrid computer vision and optical character recognition (OCR) engine tailored specifically for shiny blister foils, small pharmaceutical fonts, and curved syrup bottles.
 
 ```
 [Point Camera at Medicine Box / Blister Foil]
@@ -78,7 +78,7 @@ DawaLens AI features an advanced hybrid computer vision and optical character re
 5. Review the extracted fields in the confirmation modal. Tap any field to make manual corrections if desired, then tap **Save to Vault**.
 
 ### 2.2 Offline Scanning Fallback
-If you are traveling or lack internet connectivity, DawaLens AI seamlessly falls back to on-device scanning using client-side text recognition and our offline rule-based reference engine. Zero bytes leave your device in this mode.
+If you are traveling or lack internet connectivity, DawaSnap AI seamlessly falls back to on-device scanning using client-side text recognition and our offline rule-based reference engine. Zero bytes leave your device in this mode.
 
 ---
 
@@ -106,7 +106,7 @@ If your packaging is severely worn or you prefer typing:
 ## 4. Medication Vault Management & FIFO Batches
 
 ### 4.1 First-In, First-Out (FIFO) Batch Grouping
-When you purchase multiple strips of the same medication over several months, DawaLens AI groups them under a single clean medicine card while maintaining independent batch expiration tracking:
+When you purchase multiple strips of the same medication over several months, DawaSnap AI groups them under a single clean medicine card while maintaining independent batch expiration tracking:
 - **Nearest Expiry First:** The batch closest to expiration is always displayed prominently with an urgent colored badge.
 - **Quick Deduct (-1 Button):** Tapping the `-1` button automatically deducts from the oldest active batch first, encouraging you to consume near-expiry pills before opening fresh stock.
 
@@ -124,7 +124,7 @@ Every time you take a dose or edit an entry, an immutable audit event is recorde
 
 ## 5. Expiration Monitoring & Multi-Stage Alerts
 
-DawaLens AI features an automated multi-stage safety alert policy to ensure zero expired medications remain in household cabinets:
+DawaSnap AI features an automated multi-stage safety alert policy to ensure zero expired medications remain in household cabinets:
 
 ```
 [Timeline to Expiration]
@@ -137,7 +137,7 @@ DawaLens AI features an automated multi-stage safety alert policy to ensure zero
 ```
 
 ### 5.1 Automated Email Delivery (Resend API)
-- Automated alerts are sent from `DawaLens AI <alerts@noorpos.in>` (or `onboarding@resend.dev`).
+- Automated alerts are sent from `DawaSnap AI <alerts@noorpos.in>` (or `onboarding@resend.dev`).
 - **Atomic Deduplication:** Alerts are tracked on the server to guarantee strictly **one email per medicine per stage**. You will never receive repetitive duplicate emails for the same batch.
 - **Safe Chemical Disposal Guidance:** When a medicine expires, the email provides critical safe disposal advisories (e.g., participating in pharmacy take-back drop-offs, mixing with coffee grounds in sealed pouches, and strictly avoiding flushing down household plumbing).
 
@@ -151,7 +151,7 @@ On Android 13+ and 14+, daily intake reminders require exact alarm scheduling:
 - **100% Offline Precision:** They function independently of internet connectivity and wake the device precisely at your prescribed intake time.
 
 ### 6.2 Cloud Push Notifications (FCM)
-For expiration warnings and multi-device sync, DawaLens AI supports Firebase Cloud Messaging (FCM). Configure permissions in **Settings** → **Browser / System Notifications**.
+For expiration warnings and multi-device sync, DawaSnap AI supports Firebase Cloud Messaging (FCM). Configure permissions in **Settings** → **Browser / System Notifications**.
 
 ---
 
@@ -159,7 +159,7 @@ For expiration warnings and multi-device sync, DawaLens AI supports Firebase Clo
 
 When managing concurrent medications, hidden pharmacological contraindications can cause adverse events:
 1. Tap the **Assistant** tab or select **Check Interactions**.
-2. DawaLens AI automatically screens all active medications in your vault (minimum 2 medicines required).
+2. DawaSnap AI automatically screens all active medications in your vault (minimum 2 medicines required).
 3. The screening engine evaluates:
    - **Severity Level:** 🟢 Low, 🟡 Moderate, or 🔴 High.
    - **Clinical Mechanism:** Why the two active ingredients interact (e.g., competitive CYP enzyme inhibition, additive bleeding risk).
@@ -169,13 +169,13 @@ When managing concurrent medications, hidden pharmacological contraindications c
 
 ---
 
-## 8. AI Pharmacist Companion ("Dr. DawaLens")
+## 8. AI Pharmacist Companion ("Dr. DawaSnap")
 
 Your interactive, family-doctor-style companion is available 24/7 in the **Assistant** tab.
 
 ### 8.1 Key Capabilities
-- **Vault-Aware Context:** When you ask, *"What painkillers do I have?"* or *"Do I have anything for a dry cough?"*, Dr. DawaLens meticulously cross-references the actual inventory in your vault first before suggesting general over-the-counter options.
-- **Multilingual & Hinglish Support:** Dr. DawaLens natively understands English, Hindi, and **Hinglish** (e.g., *"Aapko ye Paracetamol din mein do baar khana khane ke baad leni hai"*).
+- **Vault-Aware Context:** When you ask, *"What painkillers do I have?"* or *"Do I have anything for a dry cough?"*, Dr. DawaSnap meticulously cross-references the actual inventory in your vault first before suggesting general over-the-counter options.
+- **Multilingual & Hinglish Support:** Dr. DawaSnap natively understands English, Hindi, and **Hinglish** (e.g., *"Aapko ye Paracetamol din mein do baar khana khane ke baad leni hai"*).
 - **Consultation Reports:** Tap **Send Consultation Report** to receive a structured digital summary of your chat and current medication inventory delivered directly to your verified email address and in-app Treatment Mailbox.
 
 ---
@@ -191,7 +191,7 @@ Maintain full sovereignty and offline backups of your medication records:
 ## 10. Data Privacy, Local Storage & Account Deletion
 
 ### 10.1 Zero Cloud Image Storage
-Medicine packaging photographs are stored exclusively in your local device's browser/phone sandboxed **IndexedDB** (`DawaLensLocalImages`). They are **never** uploaded to cloud databases or remote storage buckets.
+Medicine packaging photographs are stored exclusively in your local device's browser/phone sandboxed **IndexedDB** (`DawaSnapLocalImages`). They are **never** uploaded to cloud databases or remote storage buckets.
 
 ### 10.2 Soft Delete vs. Permanent Purge
 - When you delete a medicine, it enters **Recently Deleted** for a 15-day grace period. You can restore it at any time.
@@ -200,7 +200,7 @@ Medicine packaging photographs are stored exclusively in your local device's bro
 ### 10.3 Complete Account Deletion
 In accordance with Google Play Store Policies and the India DPDP Act 2023, you can permanently wipe your account and all data:
 - **In-App:** Go to **Settings** → **Danger Zone** → **Delete Account & All Data** → Type `DELETE`.
-- **Web Portal (Without App Installed):** Visit `https://dawalens.vercel.app/delete-account` to submit an instant or email-based deletion request. All cloud documents, push tokens, server schedules, and local caches are permanently purged within 48 hours.
+- **Web Portal (Without App Installed):** Visit `https://dawasnap.vercel.app/delete-account` to submit an instant or email-based deletion request. All cloud documents, push tokens, server schedules, and local caches are permanently purged within 48 hours.
 
 ---
 
@@ -210,7 +210,7 @@ In accordance with Google Play Store Policies and the India DPDP Act 2023, you c
 - **Answer:** Embossed foil stamps (stamped directly into metallic blister foil) often lack contrast under direct overhead light. Tilt the strip at a 45-degree angle so shadows highlight the raised digits, or tap manual entry to type the date in seconds.
 
 #### Q2: Are my dose alarms affected by phone battery saver modes?
-- **Answer:** Some Android manufacturers (Xiaomi, Samsung, OnePlus) enforce aggressive background task killing ("Doze Mode"). To guarantee alarms fire on time, go to your phone's **Settings** → **Apps** → **DawaLens AI** → **Battery** → select **Unrestricted**.
+- **Answer:** Some Android manufacturers (Xiaomi, Samsung, OnePlus) enforce aggressive background task killing ("Doze Mode"). To guarantee alarms fire on time, go to your phone's **Settings** → **Apps** → **DawaSnap AI** → **Battery** → select **Unrestricted**.
 
 #### Q3: How do I change my primary notification email?
 - **Answer:** Open **Settings** (gear icon) on the top bar, update the email address field in your profile card, and tap **Save Settings**.
@@ -221,4 +221,4 @@ In accordance with Google Play Store Policies and the India DPDP Act 2023, you c
 For technical support, feedback, or legal inquiries:
 - **Service Provider & Developer:** MD NOOR HASSAN
 - **Official Support Email:** `mdnoor4860@gmail.com`
-- **Application Portal:** `https://dawalens.vercel.app`
+- **Application Portal:** `https://dawasnap.vercel.app`

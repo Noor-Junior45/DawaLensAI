@@ -1,5 +1,5 @@
 // sw.js - Progressive Web App Service Worker
-const CACHE_NAME = 'dawalens-cache-v3';
+const CACHE_NAME = 'dawasnap-cache-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -76,7 +76,7 @@ self.addEventListener('fetch', (event) => {
 // Push notification listener for Chrome / Browser Web Push
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'DawaLens AI Expiry Alert',
+    title: 'DawaSnap AI Expiry Alert',
     body: 'You have medicines expiring soon or needing refills.'
   };
 
@@ -92,7 +92,7 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: data.icon || '/logo.png',
     badge: data.badge || '/logo.png',
-    tag: data.tag || 'dawalens-expiry-notification',
+    tag: data.tag || 'dawasnap-expiry-notification',
     vibrate: [200, 100, 200],
     data: data.data || { url: '/' },
     actions: [
@@ -101,7 +101,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'DawaLens AI Expiry Alert', options)
+    self.registration.showNotification(data.title || 'DawaSnap AI Expiry Alert', options)
   );
 });
 

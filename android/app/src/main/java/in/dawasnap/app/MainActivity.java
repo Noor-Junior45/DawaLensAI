@@ -1,4 +1,4 @@
-package in.dawalens.app;
+package in.dawasnap.app;
 
 import com.getcapacitor.BridgeActivity;
 

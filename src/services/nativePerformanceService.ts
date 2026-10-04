@@ -35,7 +35,7 @@ function showExitToast(): void {
 
     const toast = document.createElement('div');
     toast.id = 'native-exit-toast';
-    toast.textContent = 'Press back again to exit DawaLens';
+    toast.textContent = 'Press back again to exit DawaSnap';
     toast.style.cssText = `
       position: fixed;
       bottom: 84px;

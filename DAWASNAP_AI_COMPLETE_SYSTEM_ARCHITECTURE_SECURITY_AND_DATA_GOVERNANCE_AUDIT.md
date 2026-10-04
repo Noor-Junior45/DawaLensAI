@@ -1,8 +1,8 @@
-# DawaLens AI — Complete System Architecture, Security & Data Governance Audit
-**Document Identifier:** `DAWALENS-AUDIT-2026-V1.0`  
+# DawaSnap AI — Complete System Architecture, Security & Data Governance Audit
+**Document Identifier:** `DAWASNAP-AUDIT-2026-V1.0`  
 **Classification:** Public Disclosure, App Review, Due Diligence & Buyer Documentation  
 **Effective Date:** October 3, 2026  
-**Application Identity:** DawaLens AI (Android Package: `in.dawalens.app` & Web App: `https://dawalens.vercel.app`)  
+**Application Identity:** DawaSnap AI (Android Package: `in.dawasnap.app` & Web App: `https://dawasnap.vercel.app`)  
 **Data Controller / Operating Developer:** MD NOOR HASSAN (`mdnoor4860@gmail.com`)  
 **Applicable Legal Frameworks:** Google Play Store Health & Medical Apps Policy, Google API Services User Data Policy (Limited Use), India Digital Personal Data Protection (DPDP) Act 2023, EU General Data Protection Regulation (GDPR 2016/679).
 
@@ -11,12 +11,12 @@
 ## 1. Executive Overview & Product Architecture
 
 ### 1.1 Product Purpose & Value Proposition
-DawaLens AI is an intelligent pharmaceutical management, expiration monitoring, and medication safety companion. It allows patients, families, and caregivers to:
+DawaSnap AI is an intelligent pharmaceutical management, expiration monitoring, and medication safety companion. It allows patients, families, and caregivers to:
 - Digitize medicine cabinets and prescription packages using intelligent camera scanning (multimodal optical character recognition and visual form classification).
 - Maintain an encrypted, cross-device synchronized inventory of active medications with dosage forms, strength, remaining quantities, and batch expiry dates.
 - Receive multi-stage safety notifications before medications expire (at 30 days, 7 days, and on the date of expiration with safe chemical disposal advisories).
 - Screen multiple concurrent medications for known drug-drug interactions, contraindications, and clinical safety warnings.
-- Consult an interactive AI Pharmacist ("Dr. DawaLens") using a hybrid intelligence framework (cloud clinical reasoning via Gemini 2.5 Flash and 100% offline on-device inference via a Small Language Model).
+- Consult an interactive AI Pharmacist ("Dr. DawaSnap") using a hybrid intelligence framework (cloud clinical reasoning via Gemini 2.5 Flash and 100% offline on-device inference via a Small Language Model).
 
 ### 1.2 Technology Stack Blueprint
 ```
@@ -64,7 +64,7 @@ The application interfaces strictly with vetted, enterprise-grade cloud provider
 | **Firebase Cloud Messaging (FCM)** | Automated expiration push notifications | FCM Device Registration Token, notification title, expiry warning body. | Encrypted token storage (`user_push_tokens`). Zero promotional push notifications. |
 | **Resend Inc.** | Transactional expiration & low-stock alerts | Recipient email address, medicine brand name, dosage, expiration date, disposal safety tips. | TLS encrypted delivery. Direct DKIM/SPF authenticated domain (`noorpos.in`). Logs retained ephemerally for delivery status. |
 | **Firebase Crashlytics** | Native Android stability monitoring | Stack traces, device model, Android OS version, Firebase Auth UID string. | Zero health data, zero medicine names, zero prescription photos attached. IP anonymization enabled. |
-| **Client-Side IndexedDB** | Local medicine packaging photo storage | Base64-encoded medicine packaging photographs taken by user camera. | 100% sandboxed inside client browser/device storage (`DawaLensLocalImages`). Never uploaded to Firebase Storage or cloud databases. |
+| **Client-Side IndexedDB** | Local medicine packaging photo storage | Base64-encoded medicine packaging photographs taken by user camera. | 100% sandboxed inside client browser/device storage (`DawaSnapLocalImages`). Never uploaded to Firebase Storage or cloud databases. |
 
 ---
 
@@ -90,7 +90,7 @@ The application interfaces strictly with vetted, enterprise-grade cloud provider
    - Gemini reconciles the visual label image with the OCR text fragments and returns structured JSON (medicine brand name, dosage strength, normalized ISO expiration date, form, quantity, instructions, category).
    - **Crucial Memory Discipline:** The server processes the payload strictly in Node.js heap memory. The image is **never written to a local server file**, never uploaded to an S3/Google Cloud Storage bucket, and never cached.
 6. **Local Vault Image Storage (`src/services/localImageStorage.ts` & `src/App.tsx`)**:
-   - When the user confirms and saves the medicine into their vault, the image is saved **exclusively into the device's sandboxed IndexedDB** (`DawaLensLocalImages` -> `images`).
+   - When the user confirms and saves the medicine into their vault, the image is saved **exclusively into the device's sandboxed IndexedDB** (`DawaSnapLocalImages` -> `images`).
    - The Firestore document is saved with the string literal `"imageUrl": "local"`. **Neither Firestore nor Firebase Storage ever receives the image binary or base64 data.**
 7. **Offline Mode (100% On-Device)**:
    - If the device is offline or the server is unreachable, the app falls back to `extractMedicineOfflineSlm()`, which combines on-device Tesseract OCR with the on-device Small Language Model (SLM) and CNN visual features. In this mode, **zero bytes ever leave the physical device**.
@@ -101,7 +101,7 @@ The application interfaces strictly with vetted, enterprise-grade cloud provider
 | **A. Does the medicine image leave the device?** | **YES (during online AI extraction)** / **NO (when offline or using local mode)** | When online extraction is triggered, `base64Image` is transmitted over HTTPS to `/api/ai/extract` to invoke Gemini Vision. |
 | **B. Does Gemini receive the original image?** | **YES** | `server/aiService.ts` lines 372–378 transmit `{ inlineData: { mimeType: "image/jpeg", data: base64Image } }` to Gemini. |
 | **C. Does our backend temporarily receive/store the image?** | **RECEIVES: YES** / **STORES: NO** | The Express server receives the HTTP body in RAM to forward to Gemini. It is immediately freed by V8 garbage collection; no disk or bucket persistence exists. |
-| **D. Is the image stored in IndexedDB?** | **YES** | `localImageStorage.ts` saves the base64 string locally in the client's `DawaLensLocalImages` database for instant gallery rendering. |
+| **D. Is the image stored in IndexedDB?** | **YES** | `localImageStorage.ts` saves the base64 string locally in the client's `DawaSnapLocalImages` database for instant gallery rendering. |
 | **E. Is the image stored in Firebase/Cloud Storage?** | **NO** | Firebase Cloud Storage is not initialized in the application. Firestore stores only metadata with `"imageUrl": "local"`. |
 | **F. What exact data is transmitted to Gemini?** | **Image + OCR fragments + Clinical hints** | JPEG Base64 image, OCR text extracted by Tesseract, regex candidate expiry/dosage hints, and CNN visual packaging classifications. **Zero PII (no name, email, or UID) is included.** |
 
@@ -197,7 +197,7 @@ When a user initiates account deletion from the app (or via the compliant web de
 
 ### 6.2 Standalone Web Deletion Portal
 In accordance with the **Google Play Store Account Deletion Policy**, users who have uninstalled the application or switched devices can access the web deletion portal at:
-`https://dawalens.vercel.app/delete-account` (or `/account-delete`).
+`https://dawasnap.vercel.app/delete-account` (or `/account-delete`).
 This page allows users to:
 1. Delete their account immediately if authenticated in the browser.
 2. Submit a formal deletion request via registered email without logging in, which is processed and permanently wiped within 48 hours.
@@ -234,7 +234,7 @@ During full account deletion, the **soft-delete stage is completely bypassed**. 
 ## 8. 🟠 AREA 6 — Notification Systems & FCM Audit
 
 ### 8.1 Dual-Tier Notification Architecture
-DawaLens AI implements a hybrid notification model optimized for life-safety and battery efficiency:
+DawaSnap AI implements a hybrid notification model optimized for life-safety and battery efficiency:
 
 ```
 +-----------------------------------------------------------------------------------------+
@@ -312,4 +312,4 @@ In direct response to the comprehensive audit, the following engineering fixes a
 - **Contact for Technical & Legal Inquiries:**  
   **Data Protection & Grievance Officer:** MD NOOR HASSAN  
   **Official Email:** `mdnoor4860@gmail.com`  
-  **Application Portal:** `https://dawalens.vercel.app`
+  **Application Portal:** `https://dawasnap.vercel.app`

@@ -73,17 +73,17 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                 <Sparkles size={13} /> Official Documentation &bull; Version 2.5
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#1c1917] tracking-tight leading-tight mt-2.5">
-                DawaLens AI Operating Guide
+                DawaSnap AI Operating Guide
               </h2>
             </div>
             <div className="text-xs sm:text-sm text-[#78716c] font-medium sm:text-right shrink-0">
-              <div>Ref: DAWALENS-GUIDE-2026-V2.5</div>
+              <div>Ref: DAWASNAP-GUIDE-2026-V2.5</div>
               <div>Updated: October 3, 2026</div>
             </div>
           </div>
 
           <p className="text-sm sm:text-base text-[#2c2824] leading-relaxed">
-            Welcome to <strong>DawaLens AI</strong>, your personal medication inventory vault, expiration monitoring companion, and personal digital pharmacist. This comprehensive manual details all scanning techniques, batch inventory rules, alarm configurations, and AI safety tools.
+            Welcome to <strong>DawaSnap AI</strong>, your personal medication inventory vault, expiration monitoring companion, and personal digital pharmacist. This comprehensive manual details all scanning techniques, batch inventory rules, alarm configurations, and AI safety tools.
           </p>
         </section>
 
@@ -120,7 +120,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
             </a>
             <a href="#guide-assistant" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 text-[10px] font-black flex items-center justify-center shrink-0">7</span>
-              <span className="truncate">7. AI Pharmacist ("Dr. DawaLens")</span>
+              <span className="truncate">7. AI Pharmacist ("Dr. DawaSnap")</span>
             </a>
             <a href="#guide-privacy" className="p-2 rounded-lg bg-[#fdfbf7] border border-[#e2d9c8] hover:text-[#0f9d58] hover:border-[#0f9d58] transition-all flex items-center gap-2 truncate">
               <span className="w-5 h-5 rounded-full bg-stone-200 text-stone-800 text-[10px] font-black flex items-center justify-center shrink-0">8</span>
@@ -144,7 +144,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
               Scanning Best Practices for Accurate Label Extraction
             </div>
             <p>
-              DawaLens AI features an advanced multi-tier vision and OCR pipeline capable of reading printed cartons, syrup bottles, and shiny embossed foil blister packs:
+              DawaSnap AI features an advanced multi-tier vision and OCR pipeline capable of reading printed cartons, syrup bottles, and shiny embossed foil blister packs:
             </p>
             <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-[#44403c]">
               <li>
@@ -216,7 +216,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
                 First-In, First-Out (FIFO) Batch Deduction
               </div>
               <p className="text-[#44403c]">
-                When you buy multiple packs of the same medication over time with different expiry dates, DawaLens AI groups them under one unified card while tracking each batch separately. Tapping the <strong>-1 button</strong> automatically deducts pills from the nearest expiring batch first so earlier stock is consumed before opening fresh packs.
+                When you buy multiple packs of the same medication over time with different expiry dates, DawaSnap AI groups them under one unified card while tracking each batch separately. Tapping the <strong>-1 button</strong> automatically deducts pills from the nearest expiring batch first so earlier stock is consumed before opening fresh packs.
               </p>
             </div>
 
@@ -237,7 +237,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
 
           <div className="space-y-4 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              DawaLens AI runs an automated background cron worker 24/7 on the server to dispatch time-critical safety warnings directly to your verified email:
+              DawaSnap AI runs an automated background cron worker 24/7 on the server to dispatch time-critical safety warnings directly to your verified email:
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -277,14 +277,14 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              DawaLens AI delivers timely medication alerts on Android and modern web browsers without requiring restricted exact alarm permissions:
+              DawaSnap AI delivers timely medication alerts on Android and modern web browsers without requiring restricted exact alarm permissions:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
               <li>
                 <strong>Multi-Stage Expiration Alerts:</strong> Automatic alerts are scheduled on your device at 30 days before expiration, 7 days before expiration, and on the expiration day itself.
               </li>
               <li>
-                <strong>Battery Optimization Advice:</strong> To prevent Android battery cleaners from delaying notification delivery, open your phone&apos;s <strong>Settings &rarr; Apps &rarr; DawaLens AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.
+                <strong>Battery Optimization Advice:</strong> To prevent Android battery cleaners from delaying notification delivery, open your phone&apos;s <strong>Settings &rarr; Apps &rarr; DawaSnap AI &rarr; Battery &rarr; Select "Unrestricted"</strong>.
               </li>
             </ul>
           </div>
@@ -323,7 +323,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
         <section id="guide-assistant" className="space-y-4 scroll-mt-20">
           <div className="flex items-center gap-2.5 text-[#1c1917] font-bold text-lg sm:text-xl">
             <span className="px-2.5 py-0.5 rounded-md bg-stone-200 text-stone-800 text-xs sm:text-sm font-black shrink-0">7.0</span>
-            <h3 className="tracking-tight">AI Pharmacist ("Dr. DawaLens")</h3>
+            <h3 className="tracking-tight">AI Pharmacist ("Dr. DawaSnap")</h3>
           </div>
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
@@ -332,10 +332,10 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
               <li>
-                <strong>Vault Awareness:</strong> When you ask <em>"What do I have for a headache?"</em>, Dr. DawaLens checks your actual stored medicines before recommending standard alternatives.
+                <strong>Vault Awareness:</strong> When you ask <em>"What do I have for a headache?"</em>, Dr. DawaSnap checks your actual stored medicines before recommending standard alternatives.
               </li>
               <li>
-                <strong>Native Hinglish Support:</strong> Dr. DawaLens natively speaks and understands Hinglish (e.g. <em>"Aapko ye Paracetamol din mein do baar khana khane ke baad leni hai"</em>).
+                <strong>Native Hinglish Support:</strong> Dr. DawaSnap natively speaks and understands Hinglish (e.g. <em>"Aapko ye Paracetamol din mein do baar khana khane ke baad leni hai"</em>).
               </li>
               <li>
                 <strong>Consultation Reports:</strong> Tap <strong>Send Consultation Report</strong> to dispatch a structured summary of your consultation and active medicine list directly to your verified email and in-app Treatment Mailbox.
@@ -355,7 +355,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              DawaLens AI follows a strict privacy-first architecture under the India DPDP Act 2023 and GDPR:
+              DawaSnap AI follows a strict privacy-first architecture under the India DPDP Act 2023 and GDPR:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
               <li>
@@ -366,8 +366,8 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
               </li>
               <li>
                 <strong>Permanent Account Erasure:</strong> To purge all cloud documents, push tokens, server schedules, and local device image caches, go to <strong>Settings &rarr; Danger Zone &rarr; Delete Account &amp; All Data</strong>, or visit our statutory web portal at{' '}
-                <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline">
-                  https://dawalens.vercel.app/delete-account <ExternalLink size={13} className="inline" />
+                <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline">
+                  https://dawasnap.vercel.app/delete-account <ExternalLink size={13} className="inline" />
                 </a>.
               </li>
             </ul>
@@ -383,7 +383,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
           <p className="text-sm text-[#44403c] leading-relaxed">
             Need help or have a feature recommendation? Contact Operating Developer <strong>MD NOOR HASSAN</strong> directly at{' '}
             <a 
-              href="mailto:mdnoor4860@gmail.com?subject=DawaLens%20AI%20Support%20Request" 
+              href="mailto:mdnoor4860@gmail.com?subject=DawaSnap%20AI%20Support%20Request" 
               className="text-[#0f9d58] font-bold underline"
             >
               mdnoor4860@gmail.com
@@ -395,7 +395,7 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
       {/* Footer */}
       <footer className="border-t border-[#e5decb] bg-[#faf6ee] py-6 px-4 sm:px-8 mt-12 text-xs text-[#78716c]">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI &bull; Ref: DAWALENS-GUIDE-2026-V2.5</div>
+          <div>&copy; 2026 DawaSnap AI &bull; Ref: DAWASNAP-GUIDE-2026-V2.5</div>
           <div className="flex items-center gap-4">
             <a href="/" className="hover:text-[#0f9d58] font-semibold transition-colors">Home</a>
             <span>•</span>

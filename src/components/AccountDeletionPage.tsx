@@ -30,7 +30,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
   onExecuteAccountDeletion
 }) => {
   useEdgeSwipeBack({ onBack });
-  const supportEmail = '[TODO_USER_INPUT: CONTACT_EMAIL (e.g. privacy@dawalens.in)]';
+  const supportEmail = '[TODO_USER_INPUT: CONTACT_EMAIL (e.g. privacy@dawasnap.in)]';
 
   // State for logged-in deletion confirmation
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -295,7 +295,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
             <div>
               <h3 className="text-base font-bold text-slate-900">Web Deletion Request (Without App Installed)</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                If you have uninstalled DawaLens AI or cannot sign in with Google, submit this official request form. Our data governance team will verify and execute complete account and vault deletion within 7 business days.
+                If you have uninstalled DawaSnap AI or cannot sign in with Google, submit this official request form. Our data governance team will verify and execute complete account and vault deletion within 7 business days.
               </p>
             </div>
           </div>
@@ -355,7 +355,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
                   required
                 />
                 <label htmlFor="confirm-web-delete" className="text-xs text-slate-600 leading-snug">
-                  I understand that this action is irreversible and will permanently delete all my medicine records, dose logs, and personal profile from DawaLens AI.
+                  I understand that this action is irreversible and will permanently delete all my medicine records, dose logs, and personal profile from DawaSnap AI.
                 </label>
               </div>
 

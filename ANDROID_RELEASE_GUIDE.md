@@ -1,12 +1,12 @@
-# DawaLens AI - Android Native App & Release Setup
+# DawaSnap AI - Android Native App & Release Setup
 
 This project is now fully configured as a native Android app powered by **Capacitor 8**, **Firebase SDK**, **Push/FCM Messaging**, **Local Notifications**, **Firebase Crashlytics**, and a pre-configured **Release Signing Keystore**.
 
 ---
 
 ## 1. Application Identifiers & Configuration
-- **Package Name (App ID)**: `in.dawalens.app`
-- **Application Name**: `DawaLens AI: Medicine Tracker`
+- **Package Name (App ID)**: `in.dawasnap.app`
+- **Application Name**: `DawaSnap AI: Medicine Tracker`
 - **Firebase Project ID**: `gen-lang-client-0044881146`
 - **Google Services Config**:
   - `android/app/google-services.json` (Active)

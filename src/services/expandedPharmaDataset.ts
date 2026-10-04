@@ -1,7 +1,7 @@
 import { DrugKnowledgeItem } from "./slmPharmacistModel";
 
 /**
- * DawaLens AI - Expanded On-Device Clinical Pharmacology Dataset
+ * DawaSnap AI - Expanded On-Device Clinical Pharmacology Dataset
  * Trained on essential medicines, brand synonyms, contraindications, and multi-drug interaction graphs.
  */
 export const EXPANDED_CLINICAL_DRUGS: DrugKnowledgeItem[] = [

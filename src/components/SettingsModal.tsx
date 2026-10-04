@@ -85,7 +85,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [copiedRss, setCopiedRss] = React.useState(false);
   const [cookieConsent, setCookieConsent] = React.useState(() => {
     try {
-      return localStorage.getItem('dawalens_ai_cookie_consent') !== 'denied';
+      const stored = localStorage.getItem('dawasnap_ai_cookie_consent') || localStorage.getItem('dawalens_ai_cookie_consent');
+      return stored !== 'denied';
     } catch (e) {
       return true; // Default to true if storage is blocked
     }
@@ -356,6 +357,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   const newConsent = !cookieConsent;
                   setCookieConsent(newConsent);
                   try {
+                    localStorage.setItem('dawasnap_ai_cookie_consent', newConsent ? 'granted' : 'denied');
                     localStorage.setItem('dawalens_ai_cookie_consent', newConsent ? 'granted' : 'denied');
                   } catch (e) {
                     console.warn(e);

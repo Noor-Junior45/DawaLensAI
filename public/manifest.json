@@ -1,6 +1,6 @@
 {
-  "name": "DawaLens AI: Smart Medicine Tracker",
-  "short_name": "DawaLens AI",
+  "name": "DawaSnap AI: Smart Medicine Tracker",
+  "short_name": "DawaSnap AI",
   "description": "Smart medicine tracker and medication scanner for tracking prescriptions, expiry dates, and pill reminders.",
   "start_url": "/",
   "display": "standalone",

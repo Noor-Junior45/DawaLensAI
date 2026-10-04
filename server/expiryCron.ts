@@ -310,10 +310,10 @@ export async function runBackgroundExpiryCheck(): Promise<{ checked: number; sen
                 : `📅 Expiry Notice: ${m.name} expires in 1 month`);
 
           const text = stageToSend === 'EXPIRED'
-            ? `DawaLens AI Alert: Your medicine ${m.name} has expired on ${m.expirationDate}. Please do NOT consume this medication and dispose of it safely.`
+            ? `DawaSnap AI Alert: Your medicine ${m.name} has expired on ${m.expirationDate}. Please do NOT consume this medication and dispose of it safely.`
             : (stageToSend === '7_DAYS'
-                ? `DawaLens AI Alert: Your medicine ${m.name} will expire in 7 days on ${m.expirationDate}. Please consult your doctor or pharmacy for a refill.`
-                : `DawaLens AI Alert: Your medicine ${m.name} will expire in 1 month on ${m.expirationDate}.`);
+                ? `DawaSnap AI Alert: Your medicine ${m.name} will expire in 7 days on ${m.expirationDate}. Please consult your doctor or pharmacy for a refill.`
+                : `DawaSnap AI Alert: Your medicine ${m.name} will expire in 1 month on ${m.expirationDate}.`);
 
           const html = getExpiryEmailHTMLServer(
             m.name, 

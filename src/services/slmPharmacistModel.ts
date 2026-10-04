@@ -1,11 +1,11 @@
 /**
- * DawaLens AI - On-Device Small Language Model (SLM) & Clinical Reasoning Engine
+ * DawaSnap AI - On-Device Small Language Model (SLM) & Clinical Reasoning Engine
  * 
  * Functions offline directly in browser / native runtime:
  * 1. Clinical Intent Classifier & Symptom-to-Medicine Knowledge Graph
  * 2. Real-time Patient Vault Scanner (recommends medicines already owned)
  * 3. Drug-to-Drug Interaction Matrix & Contraindication Analyzer
- * 4. Multilingual & Hinglish Natural Language Generation (Dr. DawaLens persona)
+ * 4. Multilingual & Hinglish Natural Language Generation (Dr. DawaSnap persona)
  * 5. On-Device OCR + CNN Visual Feature Extractor for offline packaging scans
  */
 
@@ -663,7 +663,7 @@ export function getCachedUserSlmKnowledge(userId: string): SlmKnowledgeItem[] {
   }
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      const stored = localStorage.getItem(`dawalens_slm_knowledge_${userId}`);
+      const stored = localStorage.getItem(`dawasnap_slm_knowledge_${userId}`) || localStorage.getItem(`dawalens_slm_knowledge_${userId}`);
       if (stored) {
         const parsed: SlmKnowledgeItem[] = JSON.parse(stored);
         slmKnowledgeMemoryCache.set(userId, parsed);
@@ -686,7 +686,7 @@ export async function loadUserSlmKnowledge(_userId: string): Promise<SlmKnowledg
 
 /**
  * STRICT ZERO USER DATA TRAINING POLICY:
- * DawaLens AI does NOT train, distill, fine-tune, or retrain the on-device SLM
+ * DawaSnap AI does NOT train, distill, fine-tune, or retrain the on-device SLM
  * on user conversation messages, clinical consultations, or personal health records.
  * The model operates exclusively on pre-compiled, peer-reviewed pharmacological data.
  */
@@ -738,8 +738,8 @@ export function cleanUserQuery(raw: string): string {
   }
   // Strip leading question labels like "Q1.", "Q1:", "Q1 -", "Q:", "Question 1:", "1.", "1)", etc.
   cleaned = cleaned.replace(/^(?:q(?:uestion)?\s*\d*[\.\:\-\)]*|\d+[\.\:\-\)]+)\s*/i, '').trim();
-  // Strip greeting addresses to Ross or Jack
-  cleaned = cleaned.replace(/^(?:hey|hi|hello|dear)?\s*(?:dr\.?\s*)?(?:ross|jack|dawalens)\s*[\,\:\-]?\s*/i, '').trim();
+  // Strip greeting addresses to Ross, Jack, DawaSnap
+  cleaned = cleaned.replace(/^(?:hey|hi|hello|dear)?\s*(?:dr\.?\s*)?(?:ross|jack|dawasnap|dawalens)\s*[\,\:\-]?\s*/i, '').trim();
   return cleaned;
 }
 
@@ -816,7 +816,7 @@ export function generateOfflineSlmConsultation(
 
   if (isModelParamsQuery) {
     if (isHinglish) {
-      return `🩺 **DawaLens AI Offline Reference Engine Architecture:**\n\n` +
+      return `🩺 **DawaSnap AI Offline Reference Engine Architecture:**\n\n` +
         `Hamara offline clinical reference engine rule-based pharmacology compendium aur heuristic packaging classifier par aadharit hai:\n\n` +
         `### 📊 Architectural Overview:\n` +
         `1. **Heuristic Packaging Classifier**: Canvas-based edge detection aur aspect-ratio heuristics packaging type classify karne ke liye.\n` +
@@ -826,7 +826,7 @@ export function generateOfflineSlmConsultation(
         `*Data Source: WHO Model List & National Formulary of India (NFI).*`;
     }
 
-    return `🩺 **DawaLens AI Offline Reference Engine Architecture:**\n\n` +
+    return `🩺 **DawaSnap AI Offline Reference Engine Architecture:**\n\n` +
       `Our offline assistant is an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier:\n\n` +
       `### 📊 Architectural Overview:\n` +
       `1. **Heuristic Packaging Classifier**: Canvas-based image convolution filters and aspect-ratio heuristics to classify blister strips, bottles, and boxes.\n` +
@@ -1289,16 +1289,16 @@ export function generateOfflineSlmConsultation(
         `- Khoob paani piyein, paryapt aaram karein aur halka aahar lein.\n` +
         `- Agar aapke paas pehle se doctor ki di hui dawai hai, toh aap uska naam puchh sakte hain (jaise *"Tell me about Paracetamol"*).\n` +
         `- Emergency ya gambhir lakshan hone par turant nazdeeki clinic ya hospital jayein.\n\n` +
-        `*Data Source: Clinical Safety Protocol. DawaLens AI is an organizational tool and does not provide diagnostic services.*`;
+        `*Data Source: Clinical Safety Protocol. DawaSnap AI is an organizational tool and does not provide diagnostic services.*`;
     }
 
     return `⚠️ **Clinical Safety Notice**:\n\n` +
-      `DawaLens AI does not diagnose conditions or prescribe medications for symptoms. If you are experiencing symptoms, please consult a qualified healthcare professional or licensed physician for an accurate medical diagnosis and personalized prescription.\n\n` +
+      `DawaSnap AI does not diagnose conditions or prescribe medications for symptoms. If you are experiencing symptoms, please consult a qualified healthcare professional or licensed physician for an accurate medical diagnosis and personalized prescription.\n\n` +
       `### 🌿 General Supportive Guidance:\n` +
       `- Stay well hydrated, rest, and monitor your symptoms.\n` +
       `- If you have a specific prescribed medication in your inventory, you may ask for reference details by naming the medication directly (e.g., *"Tell me about Paracetamol"*).\n` +
       `- Seek immediate emergency medical care if symptoms are severe or deteriorating.\n\n` +
-      `*Notice: DawaLens AI is an organizational tracker and does not provide diagnostic recommendations.*`;
+      `*Notice: DawaSnap AI is an organizational tracker and does not provide diagnostic recommendations.*`;
   }
 
   // 5. Scenario C: Check Drug-to-Drug Interactions between active inventory

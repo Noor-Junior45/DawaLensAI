@@ -1,5 +1,5 @@
 /**
- * DawaLens AI - On-Device Image Convolutional Neural Network (CNN) Visual Classifier
+ * DawaSnap AI - On-Device Image Convolutional Neural Network (CNN) Visual Classifier
  * 
  * Extracts spatial visual features from medicine packaging using canvas-based 
  * tensor convolution kernels:

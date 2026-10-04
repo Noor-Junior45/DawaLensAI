@@ -71,7 +71,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 Terms of Service &amp; Clinical Usage Agreement
               </h2>
               <p className="text-xs sm:text-sm font-semibold text-[#78716c] uppercase tracking-wider mt-1.5">
-                Ref: DAWALENS-TOS-2026-V2.5 &bull; Governing Law: Republic of India
+                Ref: DAWASNAP-TOS-2026-V2.5 &bull; Governing Law: Republic of India
               </p>
             </div>
             <div className="text-xs sm:text-sm text-[#78716c] font-medium sm:text-right shrink-0">
@@ -82,20 +82,20 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="text-sm sm:text-base text-[#2c2824] space-y-3 leading-relaxed">
             <p>
-              This Terms of Service and Clinical Usage Agreement (&ldquo;Terms&rdquo;, &ldquo;Agreement&rdquo;, or &ldquo;Terms of Use&rdquo;) is a binding legal contract between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;, or &ldquo;your&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>, Operating Developer and Service Provider of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+              This Terms of Service and Clinical Usage Agreement (&ldquo;Terms&rdquo;, &ldquo;Agreement&rdquo;, or &ldquo;Terms of Use&rdquo;) is a binding legal contract between you (&ldquo;User&rdquo;, &ldquo;you&rdquo;, or &ldquo;your&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</strong>, Operating Developer and Service Provider of <strong>DawaSnap AI</strong> (&ldquo;DawaSnap AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
             </p>
             <p>
-              DawaLens AI is accessible as a native Android mobile application (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawalens.app</code>) and as a web application at{' '}
-              <a href="https://dawalens.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
-                https://dawalens.vercel.app
+              DawaSnap AI is accessible as a native Android mobile application (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawasnap.app</code>) and as a web application at{' '}
+              <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://dawasnap.vercel.app
               </a>{' '}
               and{' '}
-              <a href="https://dawalensai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
-                https://dawalensai.onrender.com
+              <a href="https://dawasnapai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://dawasnapai.onrender.com
               </a>.
             </p>
             <p className="font-semibold text-[#1c1917]">
-              BY ACCESSING, INSTALLING, REGISTERING, OR USING DAWALENS AI, YOU EXPLICITLY ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE BOUND BY ALL PROVISIONS OF THESE TERMS, INCLUDING THE MANDATORY CLINICAL DISCLAIMERS, ARBITRATION PROCEDURES, AND CLASS ACTION WAIVER.
+              BY ACCESSING, INSTALLING, REGISTERING, OR USING DAWASNAP AI, YOU EXPLICITLY ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREED TO BE BOUND BY ALL PROVISIONS OF THESE TERMS, INCLUDING THE MANDATORY CLINICAL DISCLAIMERS, ARBITRATION PROCEDURES, AND CLASS ACTION WAIVER.
             </p>
           </div>
         </section>
@@ -165,11 +165,11 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               Mandatory Google Play Health Apps Declaration
             </div>
             <p className="font-bold text-[#1c1917]">
-              DAWALENS AI IS STRICTLY AN INFORMATIONAL, EDUCATIONAL, AND PERSONAL INVENTORY MANAGEMENT TOOL. IT IS NOT A CERTIFIED MEDICAL DEVICE, DIAGNOSTIC SOFTWARE, CLINICAL DECISION SUPPORT SYSTEM, OR PRESCRIPTION DISPENSING PLATFORM.
+              DAWASNAP AI IS STRICTLY AN INFORMATIONAL, EDUCATIONAL, AND PERSONAL INVENTORY MANAGEMENT TOOL. IT IS NOT A CERTIFIED MEDICAL DEVICE, DIAGNOSTIC SOFTWARE, CLINICAL DECISION SUPPORT SYSTEM, OR PRESCRIPTION DISPENSING PLATFORM.
             </p>
             <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-rose-950 font-medium">
               <li>
-                <strong>1.1 Absence of Doctor-Patient Relationship:</strong> No confidential doctor-patient, pharmacist-patient, or healthcare professional relationship is formed between you and DawaLens AI or its developer. All outputs, optical scans, interaction checks, and automated AI summaries are generated algorithmically for educational reference only.
+                <strong>1.1 Absence of Doctor-Patient Relationship:</strong> No confidential doctor-patient, pharmacist-patient, or healthcare professional relationship is formed between you and DawaSnap AI or its developer. All outputs, optical scans, interaction checks, and automated AI summaries are generated algorithmically for educational reference only.
               </li>
               <li>
                 <strong>1.2 Mandatory Professional Consultation:</strong> Never alter prescribed drug dosages, discontinue essential medical treatments, or disregard certified clinical guidance based on information displayed in the application. Always consult your licensed physician, hospital doctor, or certified pharmacist.
@@ -178,7 +178,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 <strong>1.3 Verification of Packaging &amp; Expiration:</strong> Optical character recognition (OCR) and computer vision algorithms may misinterpret damaged labels, metallic foil glare, or embossed text. You maintain the sole, personal responsibility to visually verify all medication names, dosages, and expiration dates against the physical package before consumption.
               </li>
               <li>
-                <strong>1.4 Emergency Protocols:</strong> DawaLens AI is not an emergency triage service. In acute life-threatening situations, anaphylaxis, or accidental poisonings, immediately call emergency services:
+                <strong>1.4 Emergency Protocols:</strong> DawaSnap AI is not an emergency triage service. In acute life-threatening situations, anaphylaxis, or accidental poisonings, immediately call emergency services:
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 pt-1 font-mono text-xs text-rose-900 font-bold">
                   <div className="bg-rose-100/70 p-2 rounded border border-rose-200 text-center">India: 112 / 108</div>
                   <div className="bg-rose-100/70 p-2 rounded border border-rose-200 text-center">USA/Canada: 911</div>
@@ -201,7 +201,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="space-y-4 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              DawaLens AI incorporates a hybrid dual-layer artificial intelligence infrastructure designed for high pharmacological precision and privacy isolation:
+              DawaSnap AI incorporates a hybrid dual-layer artificial intelligence infrastructure designed for high pharmacological precision and privacy isolation:
             </p>
 
             <div className="border-l-4 border-purple-600 bg-[#f9f5fc] border border-purple-200/80 p-4 rounded-r-xl space-y-2">
@@ -220,7 +220,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 On-Device Clinical Reference Engine &amp; Heuristic Packaging Classifier
               </div>
               <p className="text-[#44403c]">
-                For offline access and instant response times, DawaLens AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier. The reference engine operates completely locally in device RAM. <strong>Strict Zero-Training Guarantee:</strong> User conversations, scanned medications, and adherence logs are NEVER collected, stored, or utilized to train or fine-tune artificial intelligence models.
+                For offline access and instant response times, DawaSnap AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier. The reference engine operates completely locally in device RAM. <strong>Strict Zero-Training Guarantee:</strong> User conversations, scanned medications, and adherence logs are NEVER collected, stored, or utilized to train or fine-tune artificial intelligence models.
               </p>
             </div>
 
@@ -255,7 +255,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">android.permission.POST_NOTIFICATIONS</code>
               </div>
               <p className="text-[#44403c]">
-                <strong>Notification Delivery:</strong> Used solely to alert you on-device when medications are nearing expiration (at 30 days, 7 days, and on expiration day) or require refills. DawaLens AI schedules notifications through standard Android notification channels and does not request or require restricted exact alarm permissions (<code>SCHEDULE_EXACT_ALARM</code>). Notifications contain no commercial advertisements.
+                <strong>Notification Delivery:</strong> Used solely to alert you on-device when medications are nearing expiration (at 30 days, 7 days, and on expiration day) or require refills. DawaSnap AI schedules notifications through standard Android notification channels and does not request or require restricted exact alarm permissions (<code>SCHEDULE_EXACT_ALARM</code>). Notifications contain no commercial advertisements.
               </p>
             </div>
 
@@ -265,7 +265,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917]">CAMERA</code> &amp; Local Storage Isolation
               </div>
               <p className="text-[#44403c]">
-                Invoked solely when scanning packaging labels. Captured photos saved into your vault are stored locally in your physical device&apos;s sandboxed <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">IndexedDB</code> storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaLensLocalImages</code>) and are never uploaded to remote database disks. During active scanning, packaging photos are streamed over secure HTTPS to Google Gemini for optical text extraction.
+                Invoked solely when scanning packaging labels. Captured photos saved into your vault are stored locally in your physical device&apos;s sandboxed <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">IndexedDB</code> storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaSnapLocalImages</code>) and are never uploaded to remote database disks. During active scanning, packaging photos are streamed over secure HTTPS to Google Gemini for optical text extraction.
               </p>
             </div>
           </div>
@@ -282,10 +282,10 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              <strong>4.1 Eligibility:</strong> You must be at least 18 years of age or the legal age of majority in your jurisdiction. Minors aged 13 to 17 may use the service only under active parental or guardian supervision. Children under 13 are strictly prohibited from using DawaLens AI.
+              <strong>4.1 Eligibility:</strong> You must be at least 18 years of age or the legal age of majority in your jurisdiction. Minors aged 13 to 17 may use the service only under active parental or guardian supervision. Children under 13 are strictly prohibited from using DawaSnap AI.
             </p>
             <p>
-              <strong>4.2 Prohibited Activities:</strong> In using DawaLens AI, you strictly agree NOT to:
+              <strong>4.2 Prohibited Activities:</strong> In using DawaSnap AI, you strictly agree NOT to:
             </p>
             <ul className="list-disc pl-5 space-y-2 text-[#44403c]">
               <li>Decompile, reverse engineer, unpack, or copy algorithmic heuristics or client code.</li>
@@ -307,15 +307,15 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
 
           <div className="space-y-3 text-sm sm:text-base text-[#2c2824] leading-relaxed">
             <p>
-              <strong>5.1 Intellectual Property Ownership:</strong> All code, user interfaces, branding, vector artwork, Doctor Logo, and algorithmic heuristic rules are the exclusive property of <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>.
+              <strong>5.1 Intellectual Property Ownership:</strong> All code, user interfaces, branding, vector artwork, Doctor Logo, and algorithmic heuristic rules are the exclusive property of <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</strong>.
             </p>
             <p>
               <strong>5.2 User Data Ownership &amp; Privacy:</strong> You retain complete ownership of your personal health data, medication entries, notes, and photos. We process your data strictly under the terms of our active <a href="/privacy" className="text-[#0f9d58] font-bold underline">Privacy Policy</a>.
             </p>
             <p>
               <strong>5.3 Account &amp; Data Deletion:</strong> You have the unconditional right to erase all your cloud documents and local device image caches immediately via our in-app settings or via our dedicated web portal at{' '}
-              <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">
-                https://dawalens.vercel.app/delete-account <ExternalLink size={13} className="inline" />
+              <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">
+                https://dawasnap.vercel.app/delete-account <ExternalLink size={13} className="inline" />
               </a>.
             </p>
           </div>
@@ -335,10 +335,10 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               TO THE FULLEST EXTENT PERMISSIBLE BY APPLICABLE LAW:
             </p>
             <p>
-              DAWALENS AI, ITS ENTIRE CODEBASE, ON-DEVICE OCR SCANNERS, DRUG INTERACTION CALCULATORS, SCHEDULE ALERTS, AND AI PHARMACIST OUTPUTS ARE PROVIDED STRICTLY ON AN <strong>&ldquo;AS IS&rdquo;</strong> AND <strong>&ldquo;AS AVAILABLE&rdquo;</strong> BASIS, WITHOUT WARRANTIES OR GUARANTEES OF ANY KIND, EITHER EXPRESS, STATUTORY, OR IMPLIED.
+              DAWASNAP AI, ITS ENTIRE CODEBASE, ON-DEVICE OCR SCANNERS, DRUG INTERACTION CALCULATORS, SCHEDULE ALERTS, AND AI PHARMACIST OUTPUTS ARE PROVIDED STRICTLY ON AN <strong>&ldquo;AS IS&rdquo;</strong> AND <strong>&ldquo;AS AVAILABLE&rdquo;</strong> BASIS, WITHOUT WARRANTIES OR GUARANTEES OF ANY KIND, EITHER EXPRESS, STATUTORY, OR IMPLIED.
             </p>
             <p>
-              [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] AND DAWALENS AI EXPRESSLY DISCLAIM ALL IMPLIED WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, FREEDOM FROM PROGRAMMING ERRORS, OR FREEDOM FROM OPERATING SYSTEM NOTIFICATION DELAYS CAUSED BY MANUFACTURER BATTERY-SAVING MODES.
+              [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] AND DAWASNAP AI EXPRESSLY DISCLAIM ALL IMPLIED WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, ACCURACY, FREEDOM FROM PROGRAMMING ERRORS, OR FREEDOM FROM OPERATING SYSTEM NOTIFICATION DELAYS CAUSED BY MANUFACTURER BATTERY-SAVING MODES.
             </p>
           </div>
         </section>
@@ -357,12 +357,12 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
               7.1 Exclusion of Health &amp; Consequential Damages:
             </p>
             <p className="text-[#44403c]">
-              Under no legal theory (contract, tort, negligence, or strict liability) shall [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] or DawaLens AI be liable for any personal injury, adverse drug event, pharmaceutical allergic reaction, missed dose, accidental ingestion of expired medication, death, or indirect damages resulting from your use of or reliance upon the application.
+              Under no legal theory (contract, tort, negligence, or strict liability) shall [TODO_USER_INPUT: OPERATOR_LEGAL_NAME] or DawaSnap AI be liable for any personal injury, adverse drug event, pharmaceutical allergic reaction, missed dose, accidental ingestion of expired medication, death, or indirect damages resulting from your use of or reliance upon the application.
             </p>
             <div className="bg-[#fdf4f4] border-l-4 border-rose-600 border border-rose-200 p-4 rounded-r-xl text-xs sm:text-sm text-rose-950 font-bold">
               7.2 Strict Financial Liability Cap:
               <div className="font-normal text-rose-900 mt-1">
-                IN NO EVENT SHALL OUR TOTAL AGGREGATE LIABILITY FOR ALL CLAIMS RELATING TO THIS SERVICE EXCEED THE AMOUNT PAID BY YOU TO DAWALENS AI IN THE PRECEDING TWELVE (12) MONTHS OR THE SUM OF <strong>₹4,200 INR (FOUR THOUSAND TWO HUNDRED RUPEES) / $50.00 USD</strong>, WHICHEVER IS LESS.
+                IN NO EVENT SHALL OUR TOTAL AGGREGATE LIABILITY FOR ALL CLAIMS RELATING TO THIS SERVICE EXCEED THE AMOUNT PAID BY YOU TO DAWASNAP AI IN THE PRECEDING TWELVE (12) MONTHS OR THE SUM OF <strong>₹4,200 INR (FOUR THOUSAND TWO HUNDRED RUPEES) / $50.00 USD</strong>, WHICHEVER IS LESS.
               </div>
             </div>
           </div>
@@ -435,7 +435,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                       Service Provider
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 font-bold text-[#1c1917] align-middle">
-                      [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]
+                      [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]
                     </td>
                   </tr>
                   <tr className="hover:bg-[#f3ede1]/60 transition-colors">
@@ -482,8 +482,8 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                       Permanent Deletion Portal
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
-                      <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">
-                        https://dawalens.vercel.app/delete-account
+                      <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">
+                        https://dawasnap.vercel.app/delete-account
                       </a>
                     </td>
                   </tr>
@@ -497,7 +497,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
       {/* Footer */}
       <footer className="border-t border-[#e5decb] bg-[#faf6ee] py-6 px-4 sm:px-8 mt-12 text-xs text-[#78716c]">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>&copy; 2026 DawaLens AI &bull; Ref: DAWALENS-TOS-2026-V2.5</div>
+          <div>&copy; 2026 DawaSnap AI &bull; Ref: DAWASNAP-TOS-2026-V2.5</div>
           <div className="flex items-center gap-4">
             <a href="/" className="hover:text-[#0f9d58] font-semibold transition-colors">Home</a>
             <span>•</span>

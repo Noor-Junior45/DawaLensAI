@@ -48,8 +48,8 @@ export async function requestBrowserNotificationPermission(): Promise<boolean> {
       if (permission === 'granted') {
         // Show an immediate confirmation notification so the user knows it's working
         await showBrowserNotification('✅ Expiry Notifications Enabled', {
-          body: 'DawaLens AI will alert you when your medicines are nearing expiration or need refills.',
-          tag: 'dawalens-welcome'
+          body: 'DawaSnap AI will alert you when your medicines are nearing expiration or need refills.',
+          tag: 'dawasnap-welcome'
         });
         return true;
       }
@@ -152,10 +152,10 @@ export async function checkAndTriggerBrowserExpiryNotifications(
   }
 
   // Deduplication key per date to avoid repeating same notifications every minute
-  const cacheKey = `dawalens_notified_${todayStr}`;
+  const cacheKey = `dawasnap_notified_${todayStr}`;
   let alreadyNotifiedToday = false;
   try {
-    alreadyNotifiedToday = localStorage.getItem(cacheKey) === 'true';
+    alreadyNotifiedToday = localStorage.getItem(cacheKey) === 'true' || localStorage.getItem(`dawalens_notified_${todayStr}`) === 'true';
   } catch {
     // Ignore storage issues
   }
@@ -172,7 +172,7 @@ export async function checkAndTriggerBrowserExpiryNotifications(
     const names = expiredList.slice(0, 3).map(m => m.name).join(', ') + (expiredList.length > 3 ? ` +${expiredList.length - 3} more` : '');
     await showBrowserNotification('🚨 Medicine Expired Alert', {
       body: `${expiredList.length} medication(s) have expired: ${names}. Please dispose of them safely.`,
-      tag: 'dawalens-expired',
+      tag: 'dawasnap-expired',
       requireInteraction: true
     });
   }
@@ -182,14 +182,14 @@ export async function checkAndTriggerBrowserExpiryNotifications(
     const names = urgent7DaysList.slice(0, 3).map(m => m.name).join(', ') + (urgent7DaysList.length > 3 ? ` +${urgent7DaysList.length - 3} more` : '');
     await showBrowserNotification('⚠️ Refill Warning: Expiring in 7 Days', {
       body: `${urgent7DaysList.length} medicine(s) expire this week: ${names}. Check pharmacy refills soon.`,
-      tag: 'dawalens-7days'
+      tag: 'dawasnap-7days'
     });
   } else if (notice30DaysList.length > 0) {
     // 3. 30-day notice if no 7-day urgent alert
     const names = notice30DaysList.slice(0, 3).map(m => m.name).join(', ') + (notice30DaysList.length > 3 ? ` +${notice30DaysList.length - 3} more` : '');
     await showBrowserNotification('📅 Expiry Notice: Expiring This Month', {
       body: `${notice30DaysList.length} medicine(s) expire in 1 month: ${names}.`,
-      tag: 'dawalens-30days'
+      tag: 'dawasnap-30days'
     });
   }
 

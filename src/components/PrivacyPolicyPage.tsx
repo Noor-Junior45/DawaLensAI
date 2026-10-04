@@ -62,7 +62,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 Privacy Policy &amp; Data Safety Declaration
               </h2>
               <p className="text-xs sm:text-sm font-semibold text-[#78716c] uppercase tracking-wider mt-1.5">
-                Ref: DAWALENS-PRIVACY-2026-V2.5 &bull; Legal Jurisdiction: India &amp; Global (GDPR)
+                Ref: DAWASNAP-PRIVACY-2026-V2.5 &bull; Legal Jurisdiction: India &amp; Global (GDPR)
               </p>
             </div>
             <div className="text-xs sm:text-sm text-[#78716c] font-medium sm:text-right shrink-0">
@@ -74,16 +74,16 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           {/* Legal Identity Summary */}
           <div className="text-sm sm:text-base text-[#2c2824] space-y-3 leading-relaxed">
             <p>
-              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</strong>, Operating Entity and Data Controller of <strong>DawaLens AI</strong> (&ldquo;DawaLens AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</strong>, Operating Entity and Data Controller of <strong>DawaSnap AI</strong> (&ldquo;DawaSnap AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
             </p>
             <p>
-              DawaLens AI is available as a native Android application distributed via the Google Play Store (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawalens.app</code>) and as a Progressive Web Application accessible at{' '}
-              <a href="https://dawalens.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
-                https://dawalens.vercel.app
+              DawaSnap AI is available as a native Android application distributed via the Google Play Store (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawasnap.app</code>) and as a Progressive Web Application accessible at{' '}
+              <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://dawasnap.vercel.app
               </a>{' '}
               and{' '}
-              <a href="https://dawalensai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
-                https://dawalensai.onrender.com
+              <a href="https://dawasnapai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://dawasnapai.onrender.com
               </a>.
             </p>
             <p>
@@ -157,14 +157,14 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               Mandatory Google Play Store Health Apps Disclaimer
             </div>
             <p className="font-bold text-[#1c1917]">
-              DAWALENS AI IS AN INFORMATIONAL, ORGANIZATIONAL, AND EDUCATIONAL APPLICATION. IT IS NOT A CERTIFIED MEDICAL DEVICE, DIAGNOSTIC INSTRUMENT, MEDICAL SOFTWARE, OR CLINICAL PRESCRIPTION SYSTEM.
+              DAWASNAP AI IS AN INFORMATIONAL, ORGANIZATIONAL, AND EDUCATIONAL APPLICATION. IT IS NOT A CERTIFIED MEDICAL DEVICE, DIAGNOSTIC INSTRUMENT, MEDICAL SOFTWARE, OR CLINICAL PRESCRIPTION SYSTEM.
             </p>
             <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-amber-950 font-medium">
               <li>
-                <strong>1.1 No Doctor-Patient Relationship:</strong> The features provided—including expiration monitoring, optical character recognition (OCR) of medicine packaging, intake schedules, and AI Pharmacist (&ldquo;Dr. DawaLens&rdquo;) summaries—are intended solely for personal record-keeping and reference. They do not constitute medical advice, clinical diagnosis, personalized drug therapy, or emergency triage.
+                <strong>1.1 No Doctor-Patient Relationship:</strong> The features provided—including expiration monitoring, optical character recognition (OCR) of medicine packaging, intake schedules, and AI Pharmacist (&ldquo;Dr. DawaSnap&rdquo;) summaries—are intended solely for personal record-keeping and reference. They do not constitute medical advice, clinical diagnosis, personalized drug therapy, or emergency triage.
               </li>
               <li>
-                <strong>1.2 Clinical Consultation Required:</strong> Never disregard professional medical advice, alter drug dosages, discontinue prescribed medications, or delay seeking medical evaluation due to information generated by DawaLens AI. Always consult your licensed physician, registered medical practitioner, or licensed pharmacist.
+                <strong>1.2 Clinical Consultation Required:</strong> Never disregard professional medical advice, alter drug dosages, discontinue prescribed medications, or delay seeking medical evaluation due to information generated by DawaSnap AI. Always consult your licensed physician, registered medical practitioner, or licensed pharmacist.
               </li>
               <li>
                 <strong>1.3 Medical Emergencies:</strong> If you suspect a drug overdose, life-threatening adverse reaction, anaphylaxis, or acute medical emergency, immediately contact your local emergency response service (such as 112 in India, 911 in North America, or 999 in the UK) or proceed to the nearest emergency room.
@@ -188,7 +188,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               Affirmation of Google API Limited Use Requirements
             </div>
             <p className="font-semibold text-[#1c1917]">
-              DawaLens AI&apos;s use and transfer to any other app of information received from Google APIs adheres strictly to the{' '}
+              DawaSnap AI&apos;s use and transfer to any other app of information received from Google APIs adheres strictly to the{' '}
               <a 
                 href="https://developers.google.com/terms/api-services-user-data-policy" 
                 target="_blank" 
@@ -235,7 +235,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           </div>
 
           <p className="text-sm sm:text-base text-[#2c2824] leading-relaxed">
-            In compliance with Google Play Store Device and Network Abuse policies, DawaLens AI requests hardware permissions only when directly required for functional operation:
+            In compliance with Google Play Store Device and Network Abuse policies, DawaSnap AI requests hardware permissions only when directly required for functional operation:
           </p>
 
           <div className="space-y-4 text-sm sm:text-base text-[#2c2824]">
@@ -250,7 +250,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 <br />
                 <strong>Hybrid Image Architecture &amp; Physical Local Storage:</strong>
                 <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 mt-1.5">
-                  <li><strong>Local Vault Storage:</strong> Medicine photos associated with your saved inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaLensLocalImages</code>). They are NEVER stored in Firebase Cloud Storage, AWS S3, or remote database disks.</li>
+                  <li><strong>Local Vault Storage:</strong> Medicine photos associated with your saved inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaSnapLocalImages</code>). They are NEVER stored in Firebase Cloud Storage, AWS S3, or remote database disks.</li>
                   <li><strong>Online AI Extraction:</strong> During real-time scanning in online mode, the captured packaging image is transmitted over encrypted TLS 1.3 HTTPS to our backend proxy and Google Gemini 2.5 Flash for multimodal packaging character recognition and validation. No PII (no name, email, or user identifier) is ever transmitted with the photo. The image is processed ephemerally in RAM and is never persisted or saved to server disks.</li>
                   <li><strong>100% Offline On-Device Fallback:</strong> If offline or when cloud API access is unavailable, image OCR and packaging classification run entirely on-device via client-side text recognition, native Android TextBridge, and our local rule-based formulary engine with zero remote transmission.</li>
                 </ul>
@@ -263,12 +263,12 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">android.permission.POST_NOTIFICATIONS</code>
               </div>
               <p className="text-[#44403c] leading-relaxed">
-                <strong>Notification Usage &amp; Patient Safety:</strong> On Android 13+ (API 33+) and modern web browsers, DawaLens AI requests notification permission exclusively to alert you when your stored medicines are nearing expiration (30-day notice, 7-day warning, and expiration day notice) or need refills. The application does not require or request restricted exact alarm permissions (such as <code>SCHEDULE_EXACT_ALARM</code>).
+                <strong>Notification Usage &amp; Patient Safety:</strong> On Android 13+ (API 33+) and modern web browsers, DawaSnap AI requests notification permission exclusively to alert you when your stored medicines are nearing expiration (30-day notice, 7-day warning, and expiration day notice) or need refills. The application does not require or request restricted exact alarm permissions (such as <code>SCHEDULE_EXACT_ALARM</code>).
               </p>
               <p className="text-[#44403c] leading-relaxed">
                 <strong>Local &amp; Cloud Push Sync:</strong> Expiry notifications are scheduled on-device through standard local notification channels and can also be dispatched via Firebase Cloud Messaging (FCM) and email via Resend when configured in your notification preferences.
                 <br />
-                <strong>Strict Zero-Marketing Guarantee:</strong> DawaLens AI never broadcasts promotional messages, engagement nudges, advertising, or sponsored push notifications. Notifications exist exclusively for scheduled dose reminders and pharmaceutical expiration warnings.
+                <strong>Strict Zero-Marketing Guarantee:</strong> DawaSnap AI never broadcasts promotional messages, engagement nudges, advertising, or sponsored push notifications. Notifications exist exclusively for scheduled dose reminders and pharmaceutical expiration warnings.
               </p>
             </div>
           </div>
@@ -284,7 +284,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           </div>
 
           <p className="text-sm sm:text-base text-[#2c2824] leading-relaxed">
-            DawaLens AI incorporates a hybrid dual-layer artificial intelligence architecture combining cloud reasoning and proprietary on-device machine intelligence:
+            DawaSnap AI incorporates a hybrid dual-layer artificial intelligence architecture combining cloud reasoning and proprietary on-device machine intelligence:
           </p>
 
           <div className="space-y-4 text-sm sm:text-base text-[#2c2824]">
@@ -302,7 +302,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                   In accordance with Google AI Studio developer terms for the Free Tier, prompt data may be processed and reviewed by Google to maintain, improve, and develop Google products and services under Google&apos;s API Terms of Service.
                 </p>
                 <p className="font-bold text-[#0f9d58]">
-                  Privacy Safeguards: DawaLens AI strips all Personally Identifiable Information (PII) before transmission. Your name, email address, IP address, and Firebase User ID (UID) are NEVER included in AI prompt payloads. Only abstract drug names and pharmacological questions are transmitted.
+                  Privacy Safeguards: DawaSnap AI strips all Personally Identifiable Information (PII) before transmission. Your name, email address, IP address, and Firebase User ID (UID) are NEVER included in AI prompt payloads. Only abstract drug names and pharmacological questions are transmitted.
                 </p>
               </div>
             </div>
@@ -313,13 +313,13 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 4.2 On-Device Reference Engine &amp; Heuristic Packaging Classifier
               </h4>
               <p className="text-[#44403c] leading-relaxed">
-                To guarantee instant response times and offline capability without internet access, DawaLens AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier.
+                To guarantee instant response times and offline capability without internet access, DawaSnap AI embeds an on-device, rule-based clinical pharmacology reference engine and heuristic packaging classifier.
               </p>
               <div className="bg-[#f5efe4] border border-[#e2d9c8] rounded-xl p-4 text-sm sm:text-base text-[#2c2824] space-y-2.5 leading-relaxed shadow-2xs">
                 <p className="font-bold text-[#1c1917]">Strict Zero Model Training on User Data Policy:</p>
                 <ul className="list-disc pl-4 sm:pl-5 space-y-2 text-[#44403c]">
                   <li>
-                    <strong>Zero User Data Training:</strong> DawaLens AI does <strong>NOT</strong> collect, harvest, store, or utilize your conversation messages, clinical consultations, scanned prescriptions, or medication records to train, retrain, distill, or fine-tune artificial intelligence models.
+                    <strong>Zero User Data Training:</strong> DawaSnap AI does <strong>NOT</strong> collect, harvest, store, or utilize your conversation messages, clinical consultations, scanned prescriptions, or medication records to train, retrain, distill, or fine-tune artificial intelligence models.
                   </li>
                   <li>
                     <strong>Rule-Based Static Clinical Formulary:</strong> Our offline reference engine is curated from static, peer-reviewed, publicly available pharmacological compendia, clinical pharmacology guidelines, and drug interaction databases. It operates strictly in a rule-based, read-only capacity.
@@ -425,7 +425,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             <div className="border-l-4 border-rose-500 bg-[#fdf4f4]/80 border border-rose-200/60 p-4 rounded-r-xl space-y-2 shadow-2xs">
               <h4 className="font-bold text-[#1c1917] text-base sm:text-lg">6.1 In-App Immediate Deletion:</h4>
               <ol className="list-decimal pl-4 sm:pl-5 space-y-1.5 text-[#44403c] leading-relaxed">
-                <li>Launch the DawaLens AI app.</li>
+                <li>Launch the DawaSnap AI app.</li>
                 <li>Tap the <strong>Settings</strong> gear icon (or user profile avatar) in the top navigation bar.</li>
                 <li>Scroll down to the <strong>Danger Zone</strong> section.</li>
                 <li>Tap <strong>&ldquo;Delete Account &amp; All Data&rdquo;</strong>.</li>
@@ -439,12 +439,12 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 If you have uninstalled the application or cannot access your Android device, you can delete your account and all associated data via our permanent web deletion portal:
                 <br />
                 <a 
-                  href="https://dawalens.vercel.app/delete-account" 
+                  href="https://dawasnap.vercel.app/delete-account" 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-rose-600 font-bold underline inline-flex items-center gap-1 mt-1.5 break-all"
                 >
-                  https://dawalens.vercel.app/delete-account <ExternalLink size={14} className="shrink-0" />
+                  https://dawasnap.vercel.app/delete-account <ExternalLink size={14} className="shrink-0" />
                 </a>
               </p>
             </div>
@@ -463,7 +463,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             <div className="border-l-4 border-blue-500 bg-[#f0f6fc]/80 border border-blue-200/60 p-4 rounded-r-xl space-y-1.5 shadow-2xs">
               <h4 className="font-bold text-[#1c1917] text-base sm:text-lg">6.4 Revocation of Google Permissions:</h4>
               <p className="text-[#44403c] leading-relaxed">
-                You may disconnect DawaLens AI&apos;s access to your Google account at any time via your{' '}
+                You may disconnect DawaSnap AI&apos;s access to your Google account at any time via your{' '}
                 <a 
                   href="https://myaccount.google.com/permissions" 
                   target="_blank" 
@@ -487,7 +487,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           </div>
 
           <p className="text-sm sm:text-base text-[#2c2824] leading-relaxed">
-            DawaLens AI does not sell data. We share information only with technical infrastructure subprocessors bound by strict data processing agreements, SOC 2 / ISO 27001 certifications, and confidentiality obligations:
+            DawaSnap AI does not sell data. We share information only with technical infrastructure subprocessors bound by strict data processing agreements, SOC 2 / ISO 27001 certifications, and confidentiality obligations:
           </p>
 
           {/* Responsive Technical Subprocessors Table - Clean In-Line on Phone & Desktop */}
@@ -649,12 +649,12 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
                       <a 
-                        href="https://dawalens.vercel.app/delete-account" 
+                        href="https://dawasnap.vercel.app/delete-account" 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="text-rose-600 font-semibold underline inline-flex items-center gap-1 break-all"
                       >
-                        https://dawalens.vercel.app/delete-account <ExternalLink size={14} className="shrink-0" />
+                        https://dawasnap.vercel.app/delete-account <ExternalLink size={14} className="shrink-0" />
                       </a>
                     </td>
                   </tr>
@@ -685,7 +685,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 <strong>9.3 European Union (GDPR) Rights:</strong> EU/EEA and UK users possess statutory rights under Articles 15-22 to access, rectify, restrict processing of, object to processing of, and erase personal data, as well as lodge a complaint with their supervisory Data Protection Authority.
               </li>
               <li>
-                <strong>9.4 Children&apos;s Online Privacy Protection (COPPA):</strong> DawaLens AI is not directed at children under the age of 13 (or under 16 in the European Union). We do not knowingly collect personal data from minors.
+                <strong>9.4 Children&apos;s Online Privacy Protection (COPPA):</strong> DawaSnap AI is not directed at children under the age of 13 (or under 16 in the European Union). We do not knowingly collect personal data from minors.
               </li>
               <li>
                 <strong>9.5 Policy Revisions:</strong> Any material revisions to this Privacy Policy will be notified within the application interface and reflected on this permanent URL.
@@ -706,10 +706,10 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             For questions, legal notices, or assistance regarding our privacy practices and data safety compliance:
           </p>
           <div className="text-sm sm:text-base text-[#44403c] space-y-1.5 pt-1 bg-[#f5efe4] border border-[#e2d9c8] p-4 rounded-xl shadow-2xs">
-            <p><strong>Entity / Operator:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</p>
-            <p><strong>Official Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]</p>
-            <p><strong>Official Web Domain:</strong> <a href="https://dawalens.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">https://dawalens.vercel.app</a></p>
-            <p><strong>Account Deletion Portal:</strong> <a href="https://dawalens.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">https://dawalens.vercel.app/delete-account</a></p>
+            <p><strong>Entity / Operator:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</p>
+            <p><strong>Official Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]</p>
+            <p><strong>Official Web Domain:</strong> <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">https://dawasnap.vercel.app</a></p>
+            <p><strong>Account Deletion Portal:</strong> <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">https://dawasnap.vercel.app/delete-account</a></p>
           </div>
         </section>
       </main>
@@ -755,18 +755,18 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           {/* Dividing line below the buttons */}
           <div className="w-full border-t border-[#e2d9c8]" />
 
-          {/* Below: 2026 dawalens ai text and domain in one line */}
+          {/* Below: 2026 dawasnap ai text and domain in one line */}
           <div className="flex items-center justify-center gap-2 flex-wrap text-center">
-            <span>&copy; 2026 DawaLens AI</span>
+            <span>&copy; 2026 DawaSnap AI</span>
             <span className="text-[#a8a29e]">&bull;</span>
             <span>Registered Domain:</span>
             <a 
-              href="https://dawalens.vercel.app" 
+              href="https://dawasnap.vercel.app" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="hover:text-[#0f9d58] underline font-medium"
             >
-              https://dawalens.vercel.app
+              https://dawasnap.vercel.app
             </a>
           </div>
         </div>

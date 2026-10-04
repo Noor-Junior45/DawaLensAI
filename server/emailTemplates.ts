@@ -190,12 +190,12 @@ export function getExpiryEmailHTMLServer(
 
               <!-- Action Button -->
               <div style="margin: 22px 0 18px 0; text-align: left;">
-                <a href="https://dawalens.vercel.app" target="_blank" class="btn-action" style="background-color: #0f9d58; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 13px; display: inline-block; box-shadow: 0 2px 4px rgba(15,157,88,0.2); box-sizing: border-box; text-align: center;">Open DawaLens Vault</a>
+                <a href="https://dawasnap.vercel.app" target="_blank" class="btn-action" style="background-color: #0f9d58; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; font-size: 13px; display: inline-block; box-shadow: 0 2px 4px rgba(15,157,88,0.2); box-sizing: border-box; text-align: center;">Open DawaSnap Vault</a>
               </div>
               
               <!-- Footer Info -->
               <p style="color: #94a3b8; font-size: 11px; margin: 20px 0 0 0; line-height: 1.5; border-top: 1px solid #f1f5f9; padding-top: 14px;">
-                This automated safety alert was delivered by <strong>DawaLens AI</strong> based on your scheduled alert policy (1 month, 7 days &amp; expired). You can customize or mute these notifications anytime in your account settings.
+                This automated safety alert was delivered by <strong>DawaSnap AI</strong> based on your scheduled alert policy (1 month, 7 days &amp; expired). You can customize or mute these notifications anytime in your account settings.
               </p>
 
             </td>
@@ -227,7 +227,7 @@ export async function sendEmailDirectServer(to: string, subject: string, html: s
   const resend = new Resend(apiKey);
   try {
     const { data, error } = await resend.emails.send({
-      from: "DawaLens AI <alerts@noorpos.in>",
+      from: "DawaSnap AI <alerts@noorpos.in>",
       to: [to],
       subject,
       text,
@@ -237,7 +237,7 @@ export async function sendEmailDirectServer(to: string, subject: string, html: s
     if (error) {
       // Fallback domain
       const fallbackResult = await resend.emails.send({
-        from: "DawaLens AI <onboarding@resend.dev>",
+        from: "DawaSnap AI <onboarding@resend.dev>",
         to: [to],
         subject,
         text,

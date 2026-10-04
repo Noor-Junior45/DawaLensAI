@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw } from 'lucide-react';
+import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
@@ -110,7 +110,7 @@ export default function App() {
   // Mandatory First-Launch Medical & Safety Disclaimer Acknowledgment State
   const [hasAcceptedMedicalDisclaimer, setHasAcceptedMedicalDisclaimer] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('dawalens_medical_disclaimer_acknowledged') === 'true';
+      return localStorage.getItem('dawasnap_medical_disclaimer_acknowledged') === 'true' || localStorage.getItem('dawalens_medical_disclaimer_acknowledged') === 'true';
     } catch {
       return false;
     }
@@ -1247,7 +1247,9 @@ export default function App() {
 
         // 2. Hide organize banner immediately
         try {
+          sessionStorage.setItem('dawasnap_hide_organize_banner', 'true');
           sessionStorage.setItem('dawalens_hide_organize_banner', 'true');
+          localStorage.setItem('dawasnap_medicines_organized', 'true');
           localStorage.setItem('dawalens_medicines_organized', 'true');
         } catch {}
 
@@ -1512,7 +1514,7 @@ export default function App() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `dawalens_ai_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `dawasnap_ai_export_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -1609,12 +1611,8 @@ export default function App() {
 
       // 3. Status/Pill Filters
       if (filter === 'all') {
-        // When a specific category is selected, show all medicines of that category.
-        // When viewing all categories, show active & expired (exclude taken from main list).
-        if (selectedCategory !== 'ALL') {
-          return true;
-        }
-        return !m.taken;
+        // Show all tracked medications (Active safe stock + Expired, empty, or finished stock)
+        return true;
       }
 
       if (filter === 'taken') {
@@ -1946,7 +1944,7 @@ export default function App() {
               <Camera className="text-[#0f9d58]" size={38} />
             </div>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#0f9d58]">
-              DawaLens AI
+              DawaSnap AI
             </h1>
           </motion.div>
 
@@ -2155,7 +2153,7 @@ export default function App() {
         {/* Prominent Footer on homepage/login page */}
         <footer className="w-full max-w-xl border-t border-slate-300/60 mt-10 pt-4 pb-4 text-center text-xs text-slate-500 font-medium">
           <div className="text-[11px] text-slate-400">
-            &copy; 2026 DawaLens AI &bull; Smart Medicine Tracker
+            &copy; 2026 DawaSnap AI &bull; Smart Medicine Tracker
           </div>
         </footer>
 
@@ -2245,7 +2243,7 @@ export default function App() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0f9d58]">
-                DawaLens AI
+                DawaSnap AI
               </h1>
               <p className="text-[#5f6368] text-[7px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5 sm:mt-1">
                 Your Digital Pharmacy
@@ -2311,29 +2309,22 @@ export default function App() {
         <div className="px-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3.5 shadow-sm">
             <p className="text-slate-500 text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold mb-1">Total</p>
-            <p className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">{medicines.length}</p>
+            <p className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
+              {medicines.filter(m => !m.isDeleted).length}
+            </p>
           </div>
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3.5 shadow-sm">
             <p className="text-slate-500 text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold mb-1">Unique</p>
             <p className="text-xl sm:text-2xl font-black text-[#1a73e8] tracking-tight">
-              {new Set(medicines.map(m => m.name.toLowerCase().trim())).size}
+              {new Set(medicines.filter(m => !m.isDeleted).map(m => (m.name || '').toLowerCase().trim())).size}
             </p>
           </div>
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3.5 shadow-sm">
             <p className="text-slate-500 text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold mb-1">Expiring</p>
             <p className="text-xl sm:text-2xl font-black text-[#f2a154] tracking-tight">
               {medicines.filter(m => {
-                const expiry = new Date(m.expirationDate);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const [year, month, day] = m.expirationDate.split('-').map(Number);
-                if (year && month && day) {
-                  expiry.setFullYear(year, month - 1, day);
-                }
-                expiry.setHours(0, 0, 0, 0);
-                
-                const diffTime = expiry.getTime() - today.getTime();
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                if (m.isDeleted || m.taken || !m.expirationDate) return false;
+                const diffDays = calculateDiffDays(m.expirationDate);
                 const effectiveThreshold = alertThreshold === 90 ? 92 : alertThreshold;
                 return diffDays >= 0 && diffDays <= effectiveThreshold;
               }).length}
@@ -2342,7 +2333,7 @@ export default function App() {
           <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3.5 shadow-sm">
             <p className="text-slate-500 text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold mb-1">Taken</p>
             <p className="text-xl sm:text-2xl font-black text-[#0f9d58] tracking-tight">
-              {medicines.filter(m => m.taken).length}
+              {medicines.filter(m => !m.isDeleted && m.taken).length}
             </p>
           </div>
         </div>
@@ -2391,14 +2382,28 @@ export default function App() {
           </button>
           <div className="w-px h-4 sm:h-5 bg-[#e3e2e0] mx-0.5 sm:mx-1 self-center shrink-0"></div>
           <button 
+            type="button"
             onClick={() => {
               const nextOrder = sortOrder === 'default' ? 'asc' : sortOrder === 'asc' ? 'desc' : 'default';
               setSortOrder(nextOrder);
               handleUpdateConfig({ sortOrder: nextOrder });
             }}
-            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 ${sortOrder !== 'default' ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'}`}
+            title={sortOrder === 'asc' ? 'Sorted A to Z (Click for Z to A)' : sortOrder === 'desc' ? 'Sorted Z to A (Click for Expiration Order)' : 'Sort A to Z'}
+            aria-label={sortOrder === 'asc' ? 'Sorted A to Z' : sortOrder === 'desc' ? 'Sorted Z to A' : 'Sort A to Z'}
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wide border transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+              sortOrder !== 'default' 
+                ? 'bg-[#0f9d58] text-white border-transparent shadow-xs' 
+                : 'bg-white hover:bg-slate-50 border-[#e3e2e0] text-slate-600 hover:text-slate-800'
+            }`}
           >
-            {sortOrder === 'desc' ? 'Z-A' : 'A-Z'}
+            {sortOrder === 'asc' ? (
+              <ArrowDown size={12} className="shrink-0 text-white" />
+            ) : sortOrder === 'desc' ? (
+              <ArrowUp size={12} className="shrink-0 text-white" />
+            ) : (
+              <ArrowUpDown size={12} className="shrink-0 text-slate-400" />
+            )}
+            <span>{sortOrder === 'desc' ? 'Z-A' : 'A-Z'}</span>
           </button>
           <div className="w-px h-4 sm:h-5 bg-[#e3e2e0] mx-0.5 sm:mx-1 self-center shrink-0"></div>
 
@@ -2512,6 +2517,7 @@ export default function App() {
 
         <MedicineList 
           medicines={filteredMedicines} 
+          sortOrder={sortOrder}
           onEdit={handleEdit} 
           onToggleTaken={handleToggleTaken}
           onReduceQuantity={handleReduceQuantity}
@@ -2537,7 +2543,7 @@ export default function App() {
 
         {/* Minimal Footer within main app view */}
         <footer className="mt-12 px-4 pb-24 border-t border-[#e3e2e0]/60 pt-4 text-center text-[11px] text-slate-400 font-bold">
-          &copy; 2026 DawaLens AI. All rights reserved.
+          &copy; 2026 DawaSnap AI. All rights reserved.
         </footer>
 
       </main>
@@ -2687,7 +2693,7 @@ export default function App() {
                   await LocalNotifications.schedule({
                     notifications: [
                       {
-                        title: '🚨 DawaLens AI Test Alert',
+                        title: '🚨 DawaSnap AI Test Alert',
                         body: 'Native Android notifications are active! You will receive automated medicine alerts.',
                         id: Math.floor(Math.random() * 1000000) + 1,
                         schedule: { at: new Date(Date.now() + 100) },
@@ -2705,7 +2711,7 @@ export default function App() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       userId: user.uid,
-                      title: '🚨 DawaLens AI Server Alert',
+                      title: '🚨 DawaSnap AI Server Alert',
                       body: 'Native push notification reached your device successfully!'
                     })
                   }).catch(() => {});
@@ -2724,9 +2730,9 @@ export default function App() {
                   return;
                 }
               }
-              const success = await showBrowserNotification('🚨 DawaLens AI Test Alert', {
+              const success = await showBrowserNotification('🚨 DawaSnap AI Test Alert', {
                 body: 'Chrome notifications are active and working! You will receive automated medicine expiry alerts.',
-                tag: 'dawalens-test-direct'
+                tag: 'dawasnap-test-direct'
               });
               if (!success) {
                 setAlertMessage('Could not display notification. Please check browser permission settings.');
@@ -2737,7 +2743,7 @@ export default function App() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     userId: user.uid,
-                    title: '🚨 DawaLens AI Server Alert',
+                    title: '🚨 DawaSnap AI Server Alert',
                     body: 'Server push notification reached your browser successfully!'
                   })
                 }).catch(() => {});
@@ -2967,13 +2973,13 @@ export default function App() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 text-white">
                         <span className="text-[9px] font-bold uppercase tracking-widest bg-[#0f9d58] px-2.5 py-0.5 rounded-full mb-1.5 inline-block">App Manual</span>
-                        <h4 className="text-base sm:text-lg font-black leading-tight tracking-tight">Master Your Cabinet with DawaLens AI</h4>
+                        <h4 className="text-base sm:text-lg font-black leading-tight tracking-tight">Master Your Cabinet with DawaSnap AI</h4>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <p className="text-slate-500 font-medium text-xs leading-relaxed">
-                        Welcome to your digital medication assistant. DawaLens AI helps you safely catalog, scan, track, and analyze your daily medicine schedules using advanced AI technology.
+                        Welcome to your digital medication assistant. DawaSnap AI helps you safely catalog, scan, track, and analyze your daily medicine schedules using advanced AI technology.
                       </p>
 
                       <div className="space-y-3 pt-1">
@@ -3053,7 +3059,7 @@ export default function App() {
                       <div>
                         <h4 className="font-extrabold text-[#1f1f1f] text-xs uppercase tracking-wider mb-1">Google OAuth &amp; Data Safety Compliance</h4>
                         <p className="text-xs text-emerald-850/80 leading-relaxed font-semibold">
-                          DawaLens AI is dedicated to protecting your personal information and health privacy. This policy applies to our application hosted at dawalens.vercel.app and dawalensai.onrender.com.
+                          DawaSnap AI is dedicated to protecting your personal information and health privacy. This policy applies to our application hosted at dawasnap.vercel.app and dawasnapai.onrender.com.
                         </p>
                       </div>
                     </div>
@@ -3061,7 +3067,7 @@ export default function App() {
                     <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 leading-relaxed space-y-1">
                       <strong className="block text-blue-950 font-bold uppercase text-[10px]">Google API Limited Use Disclosure:</strong>
                       <p>
-                        DawaLens AI&apos;s use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We never sell your Google data or use it for advertising or foundation AI model training.
+                        DawaSnap AI&apos;s use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements. We never sell your Google data or use it for advertising or foundation AI model training.
                       </p>
                     </div>
 
@@ -3087,7 +3093,7 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <h5 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Contact &amp; Data Protection</h5>
-                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">[TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]</span></p>
+                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">[TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]</span></p>
                         </div>
                         <button
                           type="button"
@@ -3111,7 +3117,7 @@ export default function App() {
                       <div>
                         <h4 className="font-extrabold text-red-800 text-xs uppercase tracking-wider mb-1">Medical Disclaimer</h4>
                         <p className="text-xs text-red-700/95 leading-relaxed font-bold">
-                          DawaLens AI is an informational tool and medication tracker. It is NOT a clinical tool, medical device, or licensed healthcare professional. Never change, delay, or start medical treatment without directly consulting your doctor or pharmacist.
+                          DawaSnap AI is an informational tool and medication tracker. It is NOT a clinical tool, medical device, or licensed healthcare professional. Never change, delay, or start medical treatment without directly consulting your doctor or pharmacist.
                         </p>
                       </div>
                     </div>
@@ -3120,7 +3126,7 @@ export default function App() {
                       <div>
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">1. Description of Service</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          DawaLens AI provides medication packaging scanning, expiry tracking, and drug-interaction screening using AI and rule-based pharmacology references. These features are designed strictly for educational and personal organization purposes.
+                          DawaSnap AI provides medication packaging scanning, expiry tracking, and drug-interaction screening using AI and rule-based pharmacology references. These features are designed strictly for educational and personal organization purposes.
                         </p>
                       </div>
 
@@ -3134,17 +3140,17 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100">
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">3. Limitation of Liability</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          DawaLens AI is provided &quot;as is&quot; without warranties. We are not liable for missed doses, sync failures, or information inaccuracies.
+                          DawaSnap AI is provided &quot;as is&quot; without warranties. We are not liable for missed doses, sync failures, or information inaccuracies.
                         </p>
                       </div>
 
                       <div className="pt-3 border-t border-slate-100">
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">4. Governing Law &amp; Contact</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          Operator: <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaLens Technologies Private Limited)]</strong>
+                          Operator: <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</strong>
                         </p>
                         <p className="font-bold text-slate-800 mt-1 select-all">
-                          Contact Email: [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawalens.in)]
+                          Contact Email: [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]
                         </p>
                       </div>
                     </div>
@@ -3199,7 +3205,7 @@ export default function App() {
                     ⚠️ Not a Licensed Doctor or Medical Device:
                   </strong>
                   <p className="text-xs leading-relaxed text-red-900 font-medium">
-                    DawaLens AI is an organizational medicine tracker and clinical reference engine. It is <strong>NOT</strong> a certified medical device, diagnostic platform, or licensed physician.
+                    DawaSnap AI is an organizational medicine tracker and clinical reference engine. It is <strong>NOT</strong> a certified medical device, diagnostic platform, or licensed physician.
                   </p>
                 </div>
 
@@ -3242,7 +3248,7 @@ export default function App() {
                       className="mt-0.5 w-4 h-4 rounded text-[#0f9d58] focus:ring-[#0f9d58] shrink-0" 
                     />
                     <span className="text-xs text-slate-800 font-semibold leading-relaxed">
-                      I have read, understood, and agree that DawaLens AI is an informational tool and does not provide medical diagnoses or replace licensed doctor consultations.
+                      I have read, understood, and agree that DawaSnap AI is an informational tool and does not provide medical diagnoses or replace licensed doctor consultations.
                     </span>
                   </label>
                 </div>
@@ -3253,6 +3259,7 @@ export default function App() {
                   disabled={!disclaimerCheckConsent}
                   onClick={() => {
                     try {
+                      localStorage.setItem('dawasnap_medical_disclaimer_acknowledged', 'true');
                       localStorage.setItem('dawalens_medical_disclaimer_acknowledged', 'true');
                     } catch (e) {
                       console.warn('Could not persist disclaimer acknowledgment:', e);

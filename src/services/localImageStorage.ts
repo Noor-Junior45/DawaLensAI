@@ -1,4 +1,5 @@
-const DB_NAME = 'DawaLensLocalImages';
+const DB_NAME = 'DawaSnapLocalImages';
+const LEGACY_DB_NAME = 'DawaLensLocalImages';
 const STORE_NAME = 'images';
 const DB_VERSION = 1;
 
@@ -49,7 +50,7 @@ class LocalImageStorage {
   public async getImage(medicineId: string): Promise<string | null> {
     try {
       const db = await this.initDB();
-      return new Promise((resolve, reject) => {
+      const res = await new Promise<string | null>((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readonly');
         const store = transaction.objectStore(STORE_NAME);
         const request = store.get(medicineId);
@@ -57,6 +58,37 @@ class LocalImageStorage {
         request.onsuccess = () => resolve(request.result || null);
         request.onerror = () => reject(request.error);
       });
+
+      if (res) return res;
+
+      // Fallback check legacy store
+      try {
+        const legacyReq = indexedDB.open(LEGACY_DB_NAME, 1);
+        return new Promise<string | null>((resolve) => {
+          legacyReq.onsuccess = () => {
+            const legacyDb = legacyReq.result;
+            if (!legacyDb.objectStoreNames.contains(STORE_NAME)) {
+              legacyDb.close();
+              return resolve(null);
+            }
+            const tx = legacyDb.transaction(STORE_NAME, 'readonly');
+            const legacyStore = tx.objectStore(STORE_NAME);
+            const legacyFetch = legacyStore.get(medicineId);
+            legacyFetch.onsuccess = () => {
+              const legacyVal = legacyFetch.result || null;
+              legacyDb.close();
+              resolve(legacyVal);
+            };
+            legacyFetch.onerror = () => {
+              legacyDb.close();
+              resolve(null);
+            };
+          };
+          legacyReq.onerror = () => resolve(null);
+        });
+      } catch {
+        return null;
+      }
     } catch (e) {
       console.error('Failed to get image from IndexedDB:', e);
       return null;
@@ -66,7 +98,7 @@ class LocalImageStorage {
   public async deleteImage(medicineId: string): Promise<void> {
     try {
       const db = await this.initDB();
-      return new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction(STORE_NAME, 'readwrite');
         const store = transaction.objectStore(STORE_NAME);
         const request = store.delete(medicineId);

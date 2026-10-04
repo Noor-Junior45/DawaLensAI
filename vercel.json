@@ -27,7 +27,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "https://dawalensai.onrender.com/api/$1"
+      "destination": "https://dawasnapai.onrender.com/api/$1"
     },
     {
       "source": "/((?!api/|.*\\.[a-zA-Z0-9]+$).*)",

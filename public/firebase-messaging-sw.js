@@ -5,14 +5,14 @@ importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-com
 // Initialize the Firebase app in the service worker by passing in the messagingSenderId
 firebase.initializeApp({
   messagingSenderId: '418374139038',
-  appId: '1:418374139038:web:dawalens'
+  appId: '1:418374139038:web:dawasnap'
 });
 
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
-  const notificationTitle = payload.notification?.title || payload.data?.title || 'DawaLens AI Expiry Alert';
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'DawaSnap AI Expiry Alert';
   const notificationOptions = {
     body: payload.notification?.body || payload.data?.body || 'You have medication alerts.',
     icon: '/logo.png',

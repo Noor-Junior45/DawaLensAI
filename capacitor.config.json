@@ -1,6 +1,6 @@
 {
-  "appId": "in.dawalens.app",
-  "appName": "DawaLens AI: Medicine Tracker",
+  "appId": "in.dawasnap.app",
+  "appName": "DawaSnap AI: Medicine Tracker",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

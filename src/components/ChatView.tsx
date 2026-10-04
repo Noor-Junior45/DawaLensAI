@@ -337,14 +337,14 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
     
     setIsLoading(true);
     try {
-      const reportContent = messages.map(m => `${m.role === 'user' ? 'Patient' : 'DawaLens AI'}: ${m.content}`).join('\n\n');
+      const reportContent = messages.map(m => `${m.role === 'user' ? 'Patient' : 'DawaSnap AI'}: ${m.content}`).join('\n\n');
       const medList = medicines.map(m => `- ${m.name} (${m.dosage || 'N/A'})`).join('\n');
       
-      const subject = `Consultation Report: DawaLens AI - ${new Date().toLocaleDateString()}`;
-      const text = `Here is your medical consultation summary from DawaLens AI.\n\nYour Current Medications:\n${medList}\n\nChat History:\n${reportContent}\n\nDisclaimer: This report is for informational purposes only.`;
+      const subject = `Consultation Report: DawaSnap AI - ${new Date().toLocaleDateString()}`;
+      const text = `Here is your medical consultation summary from DawaSnap AI.\n\nYour Current Medications:\n${medList}\n\nChat History:\n${reportContent}\n\nDisclaimer: This report is for informational purposes only.`;
       
       const chatHtmlBubbles = messages.map(m => {
-        const sender = m.role === 'user' ? 'Patient' : 'DawaLens AI';
+        const sender = m.role === 'user' ? 'Patient' : 'DawaSnap AI';
         const color = m.role === 'user' ? '#1e40af' : '#047857';
         const bg = m.role === 'user' ? '#eff6ff' : '#ecfdf5';
         return `
@@ -435,9 +435,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const cleanMessageDisplay = (text: string) => {
     if (!text) return '';
     return text
-      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaLens),?\s*Your\s*On-Device\s*SLM\s*Pharmacist\s*[🧠🌿🩺💊]*/gi, '')
-      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaLens)[^\n`]*/gi, '')
-      .replace(/\s*Dr\.?\s*(?:Ross|Rose|DawaLens),?\s*your\s*on-device\s*slm\s*pharmacist[^\n`]*/gi, '')
+      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*Your\s*On-Device\s*SLM\s*Pharmacist\s*[🧠🌿🩺💊]*/gi, '')
+      .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens)[^\n`]*/gi, '')
+      .replace(/\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*your\s*on-device\s*slm\s*pharmacist[^\n`]*/gi, '')
       .trim();
   };
 
@@ -536,7 +536,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-950 leading-snug">
-                  <strong className="font-bold">Medical Disclaimer:</strong> DawaLens AI is an informational medication assistant, not a doctor or diagnostic tool. Information does not constitute medical advice or prescriptions. Always consult a licensed healthcare professional.
+                  <strong className="font-bold">Medical Disclaimer:</strong> DawaSnap AI is an informational medication assistant, not a doctor or diagnostic tool. Information does not constitute medical advice or prescriptions. Always consult a licensed healthcare professional.
                 </p>
               </div>
               <button
@@ -870,7 +870,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900 mb-2">Clear Chat History?</h3>
                 <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                  Are you sure you want to permanently clear your conversation with Dr. DawaLens? This action cannot be undone.
+                  Are you sure you want to permanently clear your conversation with Dr. DawaSnap? This action cannot be undone.
                 </p>
                 <div className="flex items-center gap-2.5">
                   <button

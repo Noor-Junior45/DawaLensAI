@@ -1,4 +1,4 @@
-# ProGuard and R8 rules for DawaLens AI (in.dawalens.app)
+# ProGuard and R8 rules for DawaSnap AI (in.dawasnap.app)
 # Production release obfuscation and shrinking configuration
 
 # 1. Preserve source file and line numbers for Firebase Crashlytics stack traces

@@ -54,7 +54,7 @@ export const TreatmentMailboxPage: React.FC<MailboxModalProps> = ({ onClose, use
       to: user?.email || 'patient@example.com',
       message: {
         subject: `🚨 Urgent: ${med.name} has Expired - Do Not Consume`,
-        text: `DawaLens AI Alert: Your medicine ${med.name} has reached its expiration date (${med.expirationDate}). Please DO NOT take this medicine. Expired medications can lose chemical potency or produce dangerous degradation compounds.`,
+        text: `DawaSnap AI Alert: Your medicine ${med.name} has reached its expiration date (${med.expirationDate}). Please DO NOT take this medicine. Expired medications can lose chemical potency or produce dangerous degradation compounds.`,
         html: getExpiryEmailHTML(med.name, med.quantity || 20, med.expirationDate || "2026-10-01", "EXPIRED")
       },
       createdAt: Date.now(),

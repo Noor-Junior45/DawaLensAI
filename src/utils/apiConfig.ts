@@ -9,7 +9,7 @@ const metaEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : 
 export const RENDER_BACKEND_URL = 
   (metaEnv?.VITE_BACKEND_URL) 
     ? String(metaEnv.VITE_BACKEND_URL).replace(/\/+$/, '') 
-    : "https://dawalensai.onrender.com";
+    : "https://dawasnapai.onrender.com";
 
 /**
  * Resolves API URL.
