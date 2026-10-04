@@ -19,7 +19,6 @@ interface SettingsModalProps {
   setEmailNotificationsEnabled: (val: boolean) => void;
   browserNotificationsEnabled: boolean;
   setBrowserNotificationsEnabled: (val: boolean) => void;
-  onTestNotification?: () => void;
   photoURL?: string;
   userEmail: string;
   onLogout: () => void;
@@ -59,7 +58,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   setEmailNotificationsEnabled,
   browserNotificationsEnabled,
   setBrowserNotificationsEnabled,
-  onTestNotification,
   photoURL,
   userEmail,
   onLogout,
@@ -135,6 +133,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  // Auto-sync notifications state with current OS / browser permission on modal open
+  React.useEffect(() => {
+    const checkNativePerms = async () => {
+      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+        try {
+          let granted = false;
+          if (Capacitor.isPluginAvailable('LocalNotifications')) {
+            const l = await LocalNotifications.checkPermissions();
+            if (l.display === 'granted') granted = true;
+          }
+          if (Capacitor.isPluginAvailable('PushNotifications')) {
+            const p = await PushNotifications.checkPermissions();
+            if (p.receive === 'granted') granted = true;
+          }
+          if (granted) {
+            setBrowserNotificationsEnabled(true);
+          }
+        } catch {}
+      } else if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          setBrowserNotificationsEnabled(true);
+        } else if (Notification.permission === 'denied') {
+          setBrowserNotificationsEnabled(false);
+        }
+      }
+    };
+    checkNativePerms();
+  }, []);
+
   const handleNotificationToggle = async () => {
     const nextVal = !browserNotificationsEnabled;
 
@@ -143,33 +170,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return;
     }
 
-    // Explicitly request native push notification permissions using Capacitor Push Notifications API
+    // Explicitly request native notification permissions using Capacitor APIs
     try {
-      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('PushNotifications')) {
-        // Direct native system dialog via Capacitor Push Notifications API
-        const permStatus = await PushNotifications.requestPermissions();
-        const isGranted = permStatus.receive === 'granted';
+      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+        let isGranted = false;
 
-        if (isGranted) {
-          // Register device with FCM to receive native push notifications
-          await PushNotifications.register().catch((err) => {
-            console.warn('[FCM] Native register warning:', err);
-          });
-
-          // Also ensure Local Notifications permissions are requested for high-priority alerts
-          try {
-            if (Capacitor.isPluginAvailable('LocalNotifications')) {
-              await LocalNotifications.requestPermissions();
+        // 1. Check & request Local Notifications (Android 13+ POST_NOTIFICATIONS)
+        try {
+          if (Capacitor.isPluginAvailable('LocalNotifications')) {
+            let localPerm = await LocalNotifications.checkPermissions();
+            if (localPerm.display !== 'granted') {
+              localPerm = await LocalNotifications.requestPermissions();
             }
-          } catch {}
+            if (localPerm.display === 'granted') {
+              isGranted = true;
+            }
+          }
+        } catch (err) {
+          console.warn('LocalNotifications permission request warning:', err);
         }
 
-        // Sync the user configuration state to reflect the status returned by the system
+        // 2. Also register device with FCM
+        try {
+          if (Capacitor.isPluginAvailable('PushNotifications')) {
+            let pushPerm = await PushNotifications.checkPermissions();
+            if (pushPerm.receive !== 'granted') {
+              pushPerm = await PushNotifications.requestPermissions();
+            }
+            if (pushPerm.receive === 'granted') {
+              isGranted = true;
+              await PushNotifications.register().catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.warn('PushNotifications register warning:', err);
+        }
+
+        // If either local or push notification permission is granted, enable notifications
         setBrowserNotificationsEnabled(isGranted);
         return;
       }
     } catch (err) {
-      console.warn('Capacitor PushNotifications.requestPermissions error, attempting web fallback:', err);
+      console.warn('Native notification permission error:', err);
     }
 
     // Direct Web / Chrome system dialog fallback (no alert-based flow)
@@ -180,6 +222,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       } catch {
         setBrowserNotificationsEnabled(false);
       }
+    } else if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      setBrowserNotificationsEnabled(true);
     } else {
       setBrowserNotificationsEnabled(false);
     }
@@ -318,18 +362,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 shadow-3xs border border-amber-100">
                   <Bell size={15} />
                 </div>
-                <div className="flex items-center gap-2">
+                <div>
                   <span className="text-[12px] font-semibold text-[#1f1f1f] block leading-tight">Notifications</span>
-                  {browserNotificationsEnabled && onTestNotification && (
-                    <button
-                      type="button"
-                      onClick={onTestNotification}
-                      className="text-[10px] text-amber-700 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded font-bold transition-colors cursor-pointer border border-amber-200"
-                      title="Send test notification"
-                    >
-                      Send Test
-                    </button>
-                  )}
                 </div>
               </div>
               <button 

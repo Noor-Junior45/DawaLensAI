@@ -539,10 +539,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignIn, navigateToPu
                 <Bell size={24} />
               </div>
               <h4 className="text-lg font-bold text-[#1f1f1f]">
-                Exact Alarms &amp; Adherence
+                Smart Alerts &amp; Adherence
               </h4>
               <p className="text-sm text-[#5f6368] leading-relaxed">
-                Android exact alarms and browser push notifications alert you before medication potency degrades or a daily dose is missed.
+                Native Android notifications and browser push alerts remind you before medication potency degrades or a daily dose is missed.
               </p>
             </div>
 

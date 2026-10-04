@@ -490,10 +490,25 @@ export default function App() {
   }, [user]);
 
   // Native Android Closed-App Notifications Setup
-  // Requests Android POST_NOTIFICATIONS permission and creates notification channels
+  // Requests Android POST_NOTIFICATIONS permission, creates notification channels, and syncs toggle
   useEffect(() => {
-    initNativeNotifications();
-  }, []);
+    const setupNative = async () => {
+      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications')) {
+        try {
+          const granted = await initNativeNotifications();
+          if (granted) {
+            setBrowserNotificationsEnabled(true);
+            if (user?.uid) {
+              handleUpdateConfig({ browserNotificationsEnabled: true });
+            }
+          }
+        } catch (e) {
+          console.warn('Native init error:', e);
+        }
+      }
+    };
+    setupNative();
+  }, [user]);
 
   // Synchronize scheduled local notifications for medicine expiry dates
   // Ensures heads-up reminders appear on user's phone even when the app is closed
@@ -556,16 +571,38 @@ export default function App() {
   // Synchronize Notifications toggle state with Android / OS system notification permission
   useEffect(() => {
     const syncNotificationPermissionWithSystem = async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
         try {
-          const pushPerm = await PushNotifications.checkPermissions();
-          if (pushPerm.receive === 'denied') {
-            setBrowserNotificationsEnabled(false);
-          } else if (pushPerm.receive === 'granted') {
+          let isGranted = false;
+          let isDenied = false;
+
+          if (Capacitor.isPluginAvailable('LocalNotifications')) {
+            const localPerm = await LocalNotifications.checkPermissions();
+            if (localPerm.display === 'granted') isGranted = true;
+            if (localPerm.display === 'denied') isDenied = true;
+          }
+
+          if (Capacitor.isPluginAvailable('PushNotifications')) {
+            const pushPerm = await PushNotifications.checkPermissions();
+            if (pushPerm.receive === 'granted') isGranted = true;
+            if (pushPerm.receive === 'denied') isDenied = true;
+          }
+
+          if (isGranted) {
             setBrowserNotificationsEnabled(true);
+            if (user?.uid) {
+              handleUpdateConfig({ browserNotificationsEnabled: true });
+            }
+          } else if (isDenied) {
+            setBrowserNotificationsEnabled(false);
+            if (user?.uid) {
+              handleUpdateConfig({ browserNotificationsEnabled: false });
+            }
           }
           return;
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Native permission sync warning:', e);
+        }
       }
 
       if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -2751,68 +2788,6 @@ export default function App() {
                     registerBrowserPushTokenWithServer(user.uid, `web_${user.uid}`).catch(() => {});
                   }
                 }
-              }
-            }}
-            onTestNotification={async () => {
-              if (Capacitor.isNativePlatform()) {
-                try {
-                  await LocalNotifications.schedule({
-                    notifications: [
-                      {
-                        title: '🚨 DawaSnap AI Test Alert',
-                        body: 'Native Android notifications are active! You will receive automated medicine alerts.',
-                        id: Math.floor(Math.random() * 1000000) + 1,
-                        schedule: { at: new Date(Date.now() + 100) },
-                        channelId: 'medicine_alerts',
-                        smallIcon: 'ic_launcher'
-                      }
-                    ]
-                  });
-                } catch (e) {
-                  console.warn('Native test notification error:', e);
-                }
-                if (user?.uid) {
-                  fetch(getApiUrl('/api/notifications/send-test'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.uid,
-                      title: '🚨 DawaSnap AI Server Alert',
-                      body: 'Native push notification reached your device successfully!'
-                    })
-                  }).catch(() => {});
-                }
-                return;
-              }
-
-              if (!isBrowserNotificationSupported()) {
-                setAlertMessage('Notifications are not supported in this browser.');
-                return;
-              }
-              if (Notification.permission !== 'granted') {
-                const granted = await requestBrowserNotificationPermission();
-                if (!granted) {
-                  setAlertMessage('Notification permission not granted. Please allow notifications in Chrome.');
-                  return;
-                }
-              }
-              const success = await showBrowserNotification('🚨 DawaSnap AI Test Alert', {
-                body: 'Chrome notifications are active and working! You will receive automated medicine expiry alerts.',
-                tag: 'dawasnap-test-direct'
-              });
-              if (!success) {
-                setAlertMessage('Could not display notification. Please check browser permission settings.');
-              }
-              if (user?.uid) {
-                fetch(getApiUrl('/api/notifications/send-test'), {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.uid,
-                    title: '🚨 DawaSnap AI Server Alert',
-                    body: 'Server push notification reached your browser successfully!'
-                  })
-                }).catch(() => {});
               }
             }}
             photoURL={user?.photoURL || undefined}

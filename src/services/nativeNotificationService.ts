@@ -53,11 +53,33 @@ export async function requestNativePushPermission(): Promise<boolean> {
 }
 
 /**
+ * Checks if native notifications are currently granted by the user or OS.
+ */
+export async function checkNativeNotificationPermission(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform() && !Capacitor.isPluginAvailable('LocalNotifications')) {
+    return false;
+  }
+  try {
+    if (Capacitor.isPluginAvailable('LocalNotifications')) {
+      const localPerm = await LocalNotifications.checkPermissions();
+      if (localPerm.display === 'granted') return true;
+    }
+    if (Capacitor.isPluginAvailable('PushNotifications')) {
+      const pushPerm = await PushNotifications.checkPermissions();
+      if (pushPerm.receive === 'granted') return true;
+    }
+  } catch (e) {
+    console.warn('checkNativeNotificationPermission error:', e);
+  }
+  return false;
+}
+
+/**
  * Initializes native Android notification channels and requests permissions.
  * This ensures Android will wake the device and display notifications even when the app is closed.
  */
 export async function initNativeNotifications(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform()) {
+  if (!Capacitor.isNativePlatform() && !Capacitor.isPluginAvailable('LocalNotifications')) {
     return false;
   }
 
@@ -94,61 +116,64 @@ export async function initNativeNotifications(): Promise<boolean> {
         lightColor: '#1a73e8'
       };
 
-      await LocalNotifications.createChannel(alertsChannel);
-      await LocalNotifications.createChannel(dailyChannel);
+      await LocalNotifications.createChannel(alertsChannel).catch(() => {});
+      await LocalNotifications.createChannel(dailyChannel).catch(() => {});
     }
 
     // 3. Register for Firebase Cloud Messaging (Push Notifications) and listen for messages
     try {
-      let pushPerm = await PushNotifications.checkPermissions();
-      if (pushPerm.receive !== 'granted') {
-        pushPerm = await PushNotifications.requestPermissions();
-      }
-      if (pushPerm.receive === 'granted') {
-        // Remove existing listeners before re-attaching
-        await PushNotifications.removeAllListeners();
+      if (Capacitor.isPluginAvailable('PushNotifications')) {
+        let pushPerm = await PushNotifications.checkPermissions();
+        if (pushPerm.receive !== 'granted') {
+          pushPerm = await PushNotifications.requestPermissions();
+        }
+        if (pushPerm.receive === 'granted') {
+          // Remove existing listeners before re-attaching
+          await PushNotifications.removeAllListeners();
 
-        // On successful FCM registration token received
-        PushNotifications.addListener('registration', (token) => {
-          console.log('[FCM] Push registration successful, FCM Token:', token.value);
-          try {
-            localStorage.setItem('dawasnap_fcm_token', token.value);
-            localStorage.setItem('dawalens_fcm_token', token.value);
-          } catch {
-            // Ignore storage errors
-          }
-        });
+          // On successful FCM registration token received
+          PushNotifications.addListener('registration', (token) => {
+            console.log('[FCM] Push registration successful, FCM Token:', token.value);
+            try {
+              localStorage.setItem('dawasnap_fcm_token', token.value);
+              localStorage.setItem('dawalens_fcm_token', token.value);
+            } catch {
+              // Ignore storage errors
+            }
+          });
 
-        // Registration error
-        PushNotifications.addListener('registrationError', (error) => {
-          console.warn('[FCM] Push registration error:', error);
-        });
+          // Registration error
+          PushNotifications.addListener('registrationError', (error) => {
+            console.warn('[FCM] Push registration error:', error);
+          });
 
-        // When a push notification message arrives while app is open
-        PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          console.log('[FCM] Push notification received in foreground:', notification);
-          // Show as local notification banner so user sees heads-up
-          LocalNotifications.schedule({
-            notifications: [
-              {
-                title: notification.title || 'DawaSnap Alert',
-                body: notification.body || '',
-                id: Math.floor(Math.random() * 1000000) + 1,
-                schedule: { at: new Date(Date.now() + 100) },
-                channelId: 'medicine_alerts',
-                smallIcon: 'ic_launcher',
-                extra: notification.data || {}
-              }
-            ]
-          }).catch(() => {});
-        });
+          // When a push notification message arrives while app is open
+          PushNotifications.addListener('pushNotificationReceived', (notification) => {
+            console.log('[FCM] Push notification received in foreground:', notification);
+            // Show as local notification banner so user sees heads-up
+            LocalNotifications.schedule({
+              notifications: [
+                {
+                  title: notification.title || 'DawaSnap Alert',
+                  body: notification.body || '',
+                  id: Math.floor(Math.random() * 1000000) + 1,
+                  schedule: { at: new Date(Date.now() + 100) },
+                  channelId: 'medicine_alerts',
+                  smallIcon: 'ic_launcher',
+                  extra: notification.data || {},
+                  isExactNotification: false
+                }
+              ]
+            }).catch(() => {});
+          });
 
-        // When user taps on a push notification
-        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-          console.log('[FCM] Push notification action performed:', action);
-        });
+          // When user taps on a push notification
+          PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+            console.log('[FCM] Push notification action performed:', action);
+          });
 
-        await PushNotifications.register();
+          await PushNotifications.register().catch(() => {});
+        }
       }
     } catch (pushErr) {
       console.warn('Native push registration warning (non-fatal):', pushErr);
@@ -215,7 +240,8 @@ export async function scheduleNativeMedicineAlerts(
           },
           channelId: 'medicine_alerts',
           smallIcon: 'ic_launcher',
-          extra: { medicineId: m.id, type: '30_DAYS' }
+          extra: { medicineId: m.id, type: '30_DAYS' },
+          isExactNotification: false
         });
       }
 
@@ -232,7 +258,8 @@ export async function scheduleNativeMedicineAlerts(
           },
           channelId: 'medicine_alerts',
           smallIcon: 'ic_launcher',
-          extra: { medicineId: m.id, type: '7_DAYS' }
+          extra: { medicineId: m.id, type: '7_DAYS' },
+          isExactNotification: false
         });
       }
 
@@ -248,7 +275,8 @@ export async function scheduleNativeMedicineAlerts(
           },
           channelId: 'medicine_alerts',
           smallIcon: 'ic_launcher',
-          extra: { medicineId: m.id, type: 'EXPIRED' }
+          extra: { medicineId: m.id, type: 'EXPIRED' },
+          isExactNotification: false
         });
       }
 
@@ -266,7 +294,8 @@ export async function scheduleNativeMedicineAlerts(
             },
             channelId: 'medicine_alerts',
             smallIcon: 'ic_launcher',
-            extra: { medicineId: m.id, type: 'CUSTOM' }
+            extra: { medicineId: m.id, type: 'CUSTOM' },
+            isExactNotification: false
           });
         }
       }

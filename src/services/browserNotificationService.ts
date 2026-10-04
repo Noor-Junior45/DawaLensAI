@@ -9,17 +9,19 @@ import { initNativeNotifications } from './nativeNotificationService';
  */
 
 export function isBrowserNotificationSupported(): boolean {
-  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+  if (typeof window === 'undefined') return false;
+  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
     return true;
   }
-  return typeof window !== 'undefined' && 'Notification' in window;
+  return 'Notification' in window || ('serviceWorker' in navigator && 'PushManager' in window);
 }
 
 export function getBrowserNotificationPermission(): NotificationPermission | 'unsupported' {
-  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+  if (typeof window === 'undefined') return 'unsupported';
+  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
     return 'granted';
   }
-  if (!isBrowserNotificationSupported()) {
+  if (!('Notification' in window)) {
     return 'unsupported';
   }
   return Notification.permission;
@@ -74,7 +76,30 @@ export async function showBrowserNotification(
   title: string,
   options: NotificationOptionsExtended = {}
 ): Promise<boolean> {
-  if (!isBrowserNotificationSupported() || Notification.permission !== 'granted') {
+  // 1. If running in Native Android app, trigger via LocalNotifications
+  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications')) {
+    try {
+      const { LocalNotifications } = await import('@capacitor/local-notifications');
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            title,
+            body: options.body || '',
+            id: Math.floor(Math.random() * 1000000) + 1,
+            schedule: { at: new Date(Date.now() + 100) },
+            channelId: 'medicine_alerts',
+            smallIcon: 'ic_launcher',
+            isExactNotification: false
+          }
+        ]
+      });
+      return true;
+    } catch (e) {
+      console.warn('Native LocalNotifications show warning:', e);
+    }
+  }
+
+  if (typeof window === 'undefined') {
     return false;
   }
 
@@ -98,12 +123,14 @@ export async function showBrowserNotification(
       }
     }
 
-    new Notification(title, defaultOptions);
-    return true;
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, defaultOptions);
+      return true;
+    }
   } catch (error) {
     console.warn('Error showing browser notification:', error);
-    return false;
   }
+  return false;
 }
 
 /**
