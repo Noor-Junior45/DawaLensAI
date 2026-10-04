@@ -43,6 +43,8 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/localhost(:\d+)?$/,
   /^capacitor:\/\/localhost$/,
   /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/,
+  /^https:\/\/noorpos\.in$/,
+  /^https:\/\/www\.noorpos\.in$/,
   /^https:\/\/dawasnapai\.onrender\.com$/,
   /^https:\/\/dawasnap\.in$/,
   /^https:\/\/dawalensai\.onrender\.com$/,
@@ -545,7 +547,7 @@ async function setupViteAndListen() {
       startExpiryCron();
 
       // Keep-alive self-ping for Render
-      const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawasnapai.onrender.com";
+      const renderBackendUrl = process.env.RENDER_EXTERNAL_URL || "https://dawalensai.onrender.com";
       setInterval(() => {
         fetch(`${renderBackendUrl}/api/health`).catch(() => {});
       }, 14 * 60 * 1000);

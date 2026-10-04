@@ -78,12 +78,14 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             </p>
             <p>
               DawaSnap AI is available as a native Android application distributed via the Google Play Store (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawasnap.app</code>) and as a Progressive Web Application accessible at{' '}
+              <a href="https://noorpos.in" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://noorpos.in
+              </a>{', '}
               <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
                 https://dawasnap.vercel.app
-              </a>{' '}
-              and{' '}
-              <a href="https://dawasnapai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
-                https://dawasnapai.onrender.com
+              </a>{', and '}
+              <a href="https://dawalensai.onrender.com" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">
+                https://dawalensai.onrender.com
               </a>.
             </p>
             <p>
