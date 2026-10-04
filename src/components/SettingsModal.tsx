@@ -43,6 +43,7 @@ interface SettingsModalProps {
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
   onOpenDeleteAccount: () => void;
+  onOpenRecentlyDeleted: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -75,12 +76,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenGuide,
   onOpenPrivacy,
   onOpenTerms,
-  onOpenDeleteAccount
+  onOpenDeleteAccount,
+  onOpenRecentlyDeleted
 }) => {
   const [showConfirmClear, setShowConfirmClear] = React.useState(false);
   const [isDangerZoneOpen, setIsDangerZoneOpen] = React.useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = React.useState(false);
-  const [isDeletedOpen, setIsDeletedOpen] = React.useState(false);
   const [showRssPanel, setShowRssPanel] = React.useState(false);
   const [copiedRss, setCopiedRss] = React.useState(false);
   const [cookieConsent, setCookieConsent] = React.useState(() => {
@@ -437,73 +438,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
 
           {/* RECENTLY DELETED */}
-          <div className="space-y-2 pt-4 border-t border-[#e3e2e0]/60">
+          <div className="pt-4 border-t border-[#e3e2e0]/60">
             <button
               type="button"
-              onClick={() => setIsDeletedOpen(!isDeletedOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 bg-rose-50/50 hover:bg-rose-50 border border-rose-100 rounded-full transition-all text-left active:scale-[0.99]"
+              onClick={() => {
+                onClose();
+                onOpenRecentlyDeleted();
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-3 bg-rose-50/60 hover:bg-rose-100/60 border border-rose-200/60 rounded-2xl transition-all text-left active:scale-[0.99] cursor-pointer"
             >
-              <div className="flex items-center gap-2">
-                <Trash2 size={14} className="text-[#ea4335]" />
-                <span className="text-[12px] font-bold text-[#1f1f1f]">Recently Deleted</span>
-                {deletedMedicines.length > 0 && (
-                  <span className="text-[9px] font-extrabold text-white bg-[#ea4335] px-2 py-0.5 rounded-full min-w-[16px] text-center uppercase tracking-wider">
-                    {deletedMedicines.length}
-                  </span>
-                )}
-              </div>
-              {isDeletedOpen ? <ChevronUp size={14} className="text-[#ea4335]" /> : <ChevronDown size={14} className="text-[#ea4335]" />}
+              <Trash2 size={15} className="text-[#ea4335] shrink-0" />
+              <span className="text-[12px] font-bold text-[#1f1f1f]">Recently Deleted</span>
             </button>
-            
-            <AnimatePresence>
-              {isDeletedOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="bg-[#faf8f5] border border-[#e3e2e0] rounded-xl p-2.5 space-y-2">
-                    {deletedMedicines.length === 0 ? (
-                      <p className="text-[11px] text-slate-400 italic text-center py-1">No recently deleted items.</p>
-                    ) : (
-                      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                        {deletedMedicines.map((med, idx) => {
-                          const daysLeft = med.deletedAt ? Math.max(0, 15 - Math.floor((Date.now() - med.deletedAt) / (1000 * 60 * 60 * 24))) : 15;
-                          return (
-                            <div key={`deleted-med-${med.id || idx}-${idx}`} className="flex items-center justify-between bg-white p-2 rounded-lg border border-[#e3e2e0]">
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-[12px] font-bold text-[#1f1f1f] truncate">{med.name}</span>
-                                <span className="text-[9px] text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
-                                  <AlertTriangle size={10} className="text-[#ea4335]" />
-                                  {daysLeft} days remaining
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button 
-                                  onClick={() => onRestore(med.id)}
-                                  className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors"
-                                  title="Restore"
-                                >
-                                  <RotateCcw size={12} />
-                                </button>
-                                <button 
-                                  onClick={() => onPermanentDelete(med.id)}
-                                  className="p-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition-colors"
-                                  title="Delete Permanently"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
 
           {/* RESOURCES & LEGAL PILL BUTTONS */}

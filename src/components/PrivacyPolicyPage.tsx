@@ -74,7 +74,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           {/* Legal Identity Summary */}
           <div className="text-sm sm:text-base text-[#2c2824] space-y-3 leading-relaxed">
             <p>
-              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</strong>, Operating Entity and Data Controller of <strong>DawaSnap AI</strong> (&ldquo;DawaSnap AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+              This Privacy Policy and Data Safety Declaration (&ldquo;Policy&rdquo;) is a binding legal agreement between you (&ldquo;User&rdquo;, &ldquo;Data Principal&rdquo;, or &ldquo;you&rdquo;) and <strong>Noor Technologies (MD Hassan)</strong>, Operating Entity and Data Controller of <strong>DawaSnap AI</strong> (&ldquo;DawaSnap AI&rdquo;, &ldquo;Application&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
             </p>
             <p>
               DawaSnap AI is available as a native Android application distributed via the Google Play Store (Package: <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">in.dawasnap.app</code>) and as a Progressive Web Application accessible at{' '}
@@ -247,16 +247,19 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                 <code className="font-mono text-xs sm:text-sm bg-[#ede5d6] px-1.5 py-0.5 rounded text-[#1c1917] break-all">android.permission.CAMERA</code>
                 <span className="text-[#57534e] font-normal">&mdash; Optical Character Recognition (OCR) Only</span>
               </div>
-              <p className="text-[#44403c] leading-relaxed">
-                <strong>Justification &amp; Purpose:</strong> The camera permission is invoked solely when you initiate scanning of a medicine carton, blister pack, syrup bottle, or pharmaceutical label.
-                <br />
-                <strong>Hybrid Image Architecture &amp; Physical Local Storage:</strong>
-                <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 mt-1.5">
-                  <li><strong>Local Vault Storage:</strong> Medicine photos associated with your saved inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaSnapLocalImages</code>). They are NEVER stored in Firebase Cloud Storage, AWS S3, or remote database disks.</li>
-                  <li><strong>Online AI Extraction:</strong> During real-time scanning in online mode, the captured packaging image is transmitted over encrypted TLS 1.3 HTTPS to our backend proxy and Google Gemini 2.5 Flash for multimodal packaging character recognition and validation. No PII (no name, email, or user identifier) is ever transmitted with the photo. The image is processed ephemerally in RAM and is never persisted or saved to server disks.</li>
-                  <li><strong>100% Offline On-Device Fallback:</strong> If offline or when cloud API access is unavailable, image OCR and packaging classification run entirely on-device via client-side text recognition, native Android TextBridge, and our local rule-based formulary engine with zero remote transmission.</li>
-                </ul>
-              </p>
+              <div className="text-[#44403c] leading-relaxed space-y-2">
+                <p>
+                  <strong>Justification &amp; Purpose:</strong> The camera permission is invoked solely when you initiate scanning of a medicine carton, blister pack, syrup bottle, or pharmaceutical label.
+                </p>
+                <div>
+                  <strong>Hybrid Image Architecture &amp; Physical Local Storage:</strong>
+                  <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 mt-1.5">
+                    <li><strong>Local Vault Storage:</strong> Medicine photos associated with your saved inventory are stored 100% locally on your physical device in sandboxed IndexedDB storage (<code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">DawaSnapLocalImages</code>). They are NEVER stored in Firebase Cloud Storage, AWS S3, or remote database disks.</li>
+                    <li><strong>Online AI Extraction:</strong> During real-time scanning in online mode, the captured packaging image is transmitted over encrypted TLS 1.3 HTTPS to our backend proxy and Google Gemini 2.5 Flash for multimodal packaging character recognition and validation. No PII (no name, email, or user identifier) is ever transmitted with the photo. The image is processed ephemerally in RAM and is never persisted or saved to server disks.</li>
+                    <li><strong>100% Offline On-Device Fallback:</strong> If offline or when cloud API access is unavailable, image OCR and packaging classification run entirely on-device via client-side text recognition, native Android TextBridge, and our local rule-based formulary engine with zero remote transmission.</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             <div className="border-l-4 border-blue-600 bg-[#f4f7fa]/80 border border-[#d3dfed]/80 p-4 rounded-r-xl space-y-2.5 shadow-2xs">
@@ -455,8 +458,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               <h4 className="font-bold text-[#1c1917] text-base sm:text-lg">6.3 Email Deletion Request:</h4>
               <p className="text-[#44403c] leading-relaxed">
                 You may also send an email request directly to our developer at{' '}
-                <a href="mailto:[TODO_USER_INPUT: CONTACT_EMAIL]?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
-                  [TODO_USER_INPUT: CONTACT_EMAIL]
+                <a href="mailto:mdhassan1738@gmail.com?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
+                  mdhassan1738@gmail.com
                 </a>{' '}
                 with the subject line <em>&ldquo;Account Deletion Request&rdquo;</em> from your registered account email. All associated records will be purged within 48 to 72 hours of verification.
               </p>
@@ -580,7 +583,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Officer Name
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 font-bold text-[#1c1917] align-middle">
-                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME]
+                      MD Hassan
                     </td>
                   </tr>
 
@@ -589,7 +592,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Designation
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
-                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_DESIGNATION]
+                      Grievance Redressal Officer
                     </td>
                   </tr>
 
@@ -599,7 +602,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
                       <span className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
-                        [TODO_USER_INPUT: GRIEVANCE_OFFICER_EMAIL]
+                        mdhassan1738@gmail.com
                       </span>
                     </td>
                   </tr>
@@ -609,7 +612,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                       Postal Address
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 text-[#2c2824] font-medium align-middle">
-                      [TODO_USER_INPUT: GRIEVANCE_OFFICER_POSTAL_ADDRESS]
+                      India
                     </td>
                   </tr>
 
@@ -708,8 +711,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
             For questions, legal notices, or assistance regarding our privacy practices and data safety compliance:
           </p>
           <div className="text-sm sm:text-base text-[#44403c] space-y-1.5 pt-1 bg-[#f5efe4] border border-[#e2d9c8] p-4 rounded-xl shadow-2xs">
-            <p><strong>Entity / Operator:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</p>
-            <p><strong>Official Contact Email:</strong> [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]</p>
+            <p><strong>Entity / Operator:</strong> Noor Technologies (MD Hassan)</p>
+            <p><strong>Official Contact Email:</strong> mdhassan1738@gmail.com</p>
             <p><strong>Official Web Domain:</strong> <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">https://dawasnap.vercel.app</a></p>
             <p><strong>Account Deletion Portal:</strong> <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">https://dawasnap.vercel.app/delete-account</a></p>
           </div>

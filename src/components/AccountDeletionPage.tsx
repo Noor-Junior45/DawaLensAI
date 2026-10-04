@@ -30,7 +30,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
   onExecuteAccountDeletion
 }) => {
   useEdgeSwipeBack({ onBack });
-  const supportEmail = '[TODO_USER_INPUT: CONTACT_EMAIL (e.g. privacy@dawasnap.in)]';
+  const supportEmail = 'mdhassan1738@gmail.com';
 
   // State for logged-in deletion confirmation
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -380,10 +380,10 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
         {/* Compliance & Contact */}
         <div className="p-6 rounded-2xl bg-slate-100 border border-slate-200 text-xs text-slate-600 space-y-2">
           <div className="font-bold text-slate-800">Operator &amp; Grievance Redressal</div>
-          <div><strong>Operator:</strong> [TODO_USER_INPUT: OPERATOR_LEGAL_NAME]</div>
-          <div><strong>Grievance Officer:</strong> [TODO_USER_INPUT: GRIEVANCE_OFFICER_NAME]</div>
+          <div><strong>Operator:</strong> Noor Technologies (MD Hassan)</div>
+          <div><strong>Grievance Officer:</strong> MD Hassan</div>
           <div><strong>Contact Email:</strong> {supportEmail}</div>
-          <div><strong>Physical Address:</strong> [TODO_USER_INPUT: PHYSICAL_ADDRESS]</div>
+          <div><strong>Physical Address:</strong> India</div>
           <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-200">
             You may also revoke Google Account OAuth access directly via Google Account Security: <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] underline">https://myaccount.google.com/permissions</a>
           </div>

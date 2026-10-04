@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, CheckCircle2, Mail, Pill, Shield, LogIn, Eye, EyeOff, Lock, Check, ChevronDown, RefreshCw, ArrowDown, ArrowUp, ArrowUpDown, ShieldCheck, BookOpen, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
@@ -34,6 +34,7 @@ import { UserGuidePage } from './components/UserGuidePage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { AccountDeletionPage } from './components/AccountDeletionPage';
+import { RecentlyDeletedPage } from './components/RecentlyDeletedPage';
 
 import { triggerLightHaptic, triggerSuccessHaptic } from './utils/haptics';
 import { localImageStorage } from './services/localImageStorage';
@@ -49,7 +50,7 @@ import { initNativeNotifications, scheduleNativeMedicineAlerts } from './service
 import { useEdgeSwipeBack, usePullToRefresh } from './utils/mobileGestures';
 import { getApiUrl } from './utils/apiConfig';
 
-type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | null;
+type PublicPageType = 'guide' | 'privacy' | 'terms' | 'delete-account' | 'recently-deleted' | null;
 
 const getInitialPublicPage = (): PublicPageType => {
   try {
@@ -59,12 +60,14 @@ const getInitialPublicPage = (): PublicPageType => {
     if (pageParam === 'privacy') return 'privacy';
     if (pageParam === 'terms') return 'terms';
     if (pageParam === 'delete-account' || pageParam === 'account-delete' || pageParam === 'deleteaccount') return 'delete-account';
+    if (pageParam === 'recently-deleted' || pageParam === 'deleted' || pageParam === 'trash') return 'recently-deleted';
 
     const pathname = window.location.pathname.toLowerCase();
     if (pathname.includes('/guide') || pathname.includes('/manual')) return 'guide';
     if (pathname.includes('/privacy')) return 'privacy';
     if (pathname.includes('/terms')) return 'terms';
     if (pathname.includes('/delete-account') || pathname.includes('/account-delete') || pathname.includes('/accountdelete')) return 'delete-account';
+    if (pathname.includes('/recently-deleted') || pathname.includes('/deleted') || pathname.includes('/trash')) return 'recently-deleted';
   } catch (e) {
     console.warn('Failed to parse URL for public page:', e);
   }
@@ -1886,6 +1889,16 @@ export default function App() {
       />
     );
   }
+  if (publicPage === 'recently-deleted') {
+    return (
+      <RecentlyDeletedPage 
+        deletedMedicines={deletedMedicines}
+        onRestore={handleRestore}
+        onPermanentDelete={handlePermanentDelete}
+        onBack={handleBackFromPublicPage}
+      />
+    );
+  }
 
   if (!user) {
     const handleContinueEmail = (e?: React.FormEvent) => {
@@ -2100,7 +2113,7 @@ export default function App() {
               </>
             ) : (
               <>
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <button
                   type="button"
                   onClick={() => {
@@ -2768,6 +2781,7 @@ export default function App() {
             onOpenPrivacy={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('privacy'); }}
             onOpenTerms={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('terms'); }}
             onOpenDeleteAccount={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('delete-account'); }}
+            onOpenRecentlyDeleted={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('recently-deleted'); }}
           />
         )}
 
@@ -3093,7 +3107,7 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <h5 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Contact &amp; Data Protection</h5>
-                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">[TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]</span></p>
+                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">mdhassan1738@gmail.com</span></p>
                         </div>
                         <button
                           type="button"
@@ -3147,10 +3161,10 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100">
                         <h5 className="font-extrabold text-slate-800 text-[13px] uppercase tracking-wider mb-1">4. Governing Law &amp; Contact</h5>
                         <p className="text-slate-500 leading-relaxed">
-                          Operator: <strong>[TODO_USER_INPUT: OPERATOR_LEGAL_NAME (e.g. DawaSnap Technologies Private Limited)]</strong>
+                          Operator: <strong>Noor Technologies (MD Hassan)</strong>
                         </p>
                         <p className="font-bold text-slate-800 mt-1 select-all">
-                          Contact Email: [TODO_USER_INPUT: CONTACT_EMAIL (e.g. support@dawasnap.in)]
+                          Contact Email: mdhassan1738@gmail.com
                         </p>
                       </div>
                     </div>
