@@ -10,21 +10,29 @@ import { initNativeNotifications } from './nativeNotificationService';
 
 export function isBrowserNotificationSupported(): boolean {
   if (typeof window === 'undefined') return false;
-  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+  if (Capacitor.isNativePlatform()) {
     return true;
   }
-  return 'Notification' in window || ('serviceWorker' in navigator && 'PushManager' in window);
+  try {
+    return 'Notification' in window && typeof Notification.requestPermission === 'function';
+  } catch {
+    return false;
+  }
 }
 
 export function getBrowserNotificationPermission(): NotificationPermission | 'unsupported' {
   if (typeof window === 'undefined') return 'unsupported';
-  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+  if (Capacitor.isNativePlatform()) {
     return 'granted';
   }
   if (!('Notification' in window)) {
     return 'unsupported';
   }
-  return Notification.permission;
+  try {
+    return Notification.permission;
+  } catch {
+    return 'unsupported';
+  }
 }
 
 /**
@@ -77,7 +85,7 @@ export async function showBrowserNotification(
   options: NotificationOptionsExtended = {}
 ): Promise<boolean> {
   // 1. If running in Native Android app, trigger via LocalNotifications
-  if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications')) {
+  if (Capacitor.isNativePlatform()) {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       await LocalNotifications.schedule({

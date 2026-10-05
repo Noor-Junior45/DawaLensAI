@@ -24,6 +24,7 @@ export interface ExtractedMedicine {
   quantity?: number;
   form?: MedicineForm;
   category?: string;
+  categories?: string[];
   tags?: string[];
 }
 
@@ -87,8 +88,8 @@ function getClientApiKey(): string {
   return '';
 }
 
-// Resilient model fallback list for client calls
-const RESILIENT_MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
+// Resilient model fallback list for client calls per Gemini API guidelines
+const RESILIENT_MODELS = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
 
 async function generateContentWithModelFallbackClient(
   ai: GoogleGenAI,
@@ -134,10 +135,19 @@ async function generateContentWithModelFallbackClient(
   throw lastError;
 }
 
-export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<string> {
+export async function chatWithGeminiClient(messages: ChatMessage[], medicines?: any[]): Promise<string> {
   const apiKey = getClientApiKey();
   if (!apiKey) {
     throw new Error("Gemini API Key is missing. Please configure it in your environment or local storage.");
+  }
+
+  let userMedicinesContext = "";
+  if (medicines && Array.isArray(medicines) && medicines.length > 0) {
+    const activeList = medicines.filter(m => !m.isDeleted);
+    const medsStr = activeList.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'tablet'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 1})`).join('\n');
+    userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT (${activeList.length} unique medicines):\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about total medicines, count, what they have, or ask for a remedy, meticulously check this list first.`;
+  } else {
+    userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: 0 active medicines. The user's vault is currently empty.`;
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -147,13 +157,13 @@ export async function chatWithGeminiClient(messages: ChatMessage[]): Promise<str
   }));
 
   const response = await generateContentWithModelFallbackClient(ai, {
-    preferredModel: "gemini-2.5-flash",
+    preferredModel: "gemini-3.8-flash",
     contents: [
       ...history,
       { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }
     ],
     config: {
-      systemInstruction: SYSTEM_INSTRUCTION
+      systemInstruction: SYSTEM_INSTRUCTION + userMedicinesContext
     }
   });
 
@@ -192,7 +202,9 @@ CRITICAL RULES:
    - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month).
    - Usage Instructions: Daily frequency/instructions/storage warnings.
    - Form: tablet, capsule, syrup, ampule, powder, tape, liquid, or other.
-   - Quantity: Number of units in the strip or pack.`;
+   - Quantity: Number of units in the strip or pack.
+   - Categories: Array of clinical categories (e.g. ["Fever", "Pain Relief"] for Zerodol-P, Dolo, Combiflam).
+   - Category: Comma-separated string of categories.`;
 
     const response = await generateContentWithModelFallbackClient(ai, {
       preferredModel: "gemini-3.8-flash",
@@ -207,7 +219,9 @@ CRITICAL RULES:
             expirationDate: { type: 'STRING' as any },
             usageInstructions: { type: 'STRING' as any },
             form: { type: 'STRING' as any, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
-            quantity: { type: 'NUMBER' as any }
+            quantity: { type: 'NUMBER' as any },
+            categories: { type: 'ARRAY' as any, items: { type: 'STRING' as any } },
+            category: { type: 'STRING' as any }
           },
           required: ["name", "dosage", "expirationDate", "form"]
         }
@@ -251,7 +265,9 @@ CRITICAL RULES:
         - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month, e.g. 2026-05-01 if May 2026 is given).
         - Usage Instructions: Daily frequency/instructions.
         - Form: tablet, capsule, syrup, ampule, powder, liquid, or other.
-        - Quantity: Number of units in the strip or pack.` 
+        - Quantity: Number of units in the strip or pack.
+        - Categories: Array of clinical categories (e.g. ["Fever", "Pain Relief"] for Zerodol-P, Dolo, Combiflam, Paracetamol + Aceclofenac).
+        - Category: Comma-separated string of categories.` 
       }
     ],
     config: {
@@ -264,7 +280,9 @@ CRITICAL RULES:
           expirationDate: { type: 'STRING' as any },
           usageInstructions: { type: 'STRING' as any },
           form: { type: 'STRING' as any, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
-          quantity: { type: 'NUMBER' as any }
+          quantity: { type: 'NUMBER' as any },
+          categories: { type: 'ARRAY' as any, items: { type: 'STRING' as any } },
+          category: { type: 'STRING' as any }
         },
         required: ["name", "dosage", "expirationDate", "form"]
       }
@@ -519,6 +537,190 @@ export interface AIChatResponse {
   provider: 'gemini' | 'slm';
 }
 
+export interface SpecialistInfo {
+  name: 'Dr. Jack' | 'Dr. Ross';
+  displayName: string;
+  headerDisplay: string;
+  taskTitle: string;
+  provider: 'gemini' | 'slm';
+  badgeColor: 'emerald' | 'indigo' | 'amber' | 'teal' | 'rose' | 'blue';
+}
+
+/**
+ * Dynamically resolves the active specialist (Dr. Ross vs Dr. Jack) and task title
+ * based on user query intent, pharmacological task domain, and AI provider.
+ * - Dr. Ross: Inventory counts ("total medicine i have"), vault listings, stock, expiry checks, schedule, greetings.
+ * - Dr. Jack: Clinical advice, drug interactions, side effects, pharmacological queries, medical explanations.
+ */
+export function getSpecialistForTask(queryText: string, provider?: 'gemini' | 'slm'): SpecialistInfo {
+  const lower = (queryText || '').toLowerCase().trim();
+
+  // 1. Inventory & Stock counts
+  if (
+    /\btotal\s+(?:all\s+)?(?:of\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|inventory|vault|prescription|stock)/i.test(lower) ||
+    /(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)\s+(?:count|number|quantity|total)/i.test(lower) ||
+    /(?:count|number|quantity)\s+(?:of\s+)?(?:all\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)/i.test(lower) ||
+    /how\s+many\s+(?:medicines?|meds?|pills?|tablets?|drugs?|do\s+i\s+have|in\s+my|total|stored|have)/i.test(lower) ||
+    /how\s+much\s+(?:medicine|meds?|stock|quantity)/i.test(lower) ||
+    /(?:list|show|what)\s+(?:all\s+)?(?:my\s+)?(?:medicines?|meds?|vault|inventory)/i.test(lower) ||
+    /(?:kitni|kitne|kitna)\s+(?:dawai|dawa|medicine)/i.test(lower) ||
+    /(?:total|kul)\s+(?:dawai|dawa|medicine|kitni)/i.test(lower) ||
+    /(?:mere\s+paas\s+)?kitni\s+(?:dawai|dawa|medicine)/i.test(lower) ||
+    /count\s+(?:my\s+)?(?:medicines?|meds?)/i.test(lower) ||
+    /(?:how\s+many|quantity\s+of|stock\s+of)\s+[a-z]+/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Ross',
+      taskTitle: 'Medicine Inventory',
+      displayName: 'Dr. Ross • Inventory',
+      headerDisplay: 'DR. ROSS • INVENTORY',
+      provider: 'slm',
+      badgeColor: 'emerald'
+    };
+  }
+
+  // 2. Expiry & Shelf Life
+  if (
+    /(?:expir|expired|expiry|shelf\s*life|bad\s*date|out\s*of\s*date|validity)/i.test(lower) ||
+    /(?:which\s+medicines?\s+(?:are\s+)?expir)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Ross',
+      taskTitle: 'Expiry Monitor',
+      displayName: 'Dr. Ross • Expiry Monitor',
+      headerDisplay: 'DR. ROSS • EXPIRY MONITOR',
+      provider: 'slm',
+      badgeColor: 'amber'
+    };
+  }
+
+  // 3. Intake Schedule, Timings & Daily Routine
+  if (
+    /(?:daily\s+schedule|when\s+(?:should|to)\s+i\s+take|timing|routine|morning|afternoon|night|before\s+food|after\s+food|empty\s+stomach|reminder)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Ross',
+      taskTitle: 'Intake Schedule',
+      displayName: 'Dr. Ross • Intake Schedule',
+      headerDisplay: 'DR. ROSS • INTAKE SCHEDULE',
+      provider: 'slm',
+      badgeColor: 'teal'
+    };
+  }
+
+  // 4. Low Stock & Refills
+  if (
+    /(?:low\s+stock|refill|shortage|running\s+out|restock)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Ross',
+      taskTitle: 'Stock Alert',
+      displayName: 'Dr. Ross • Stock Alert',
+      headerDisplay: 'DR. ROSS • STOCK ALERT',
+      provider: 'slm',
+      badgeColor: 'emerald'
+    };
+  }
+
+  // 5. Drug Interactions & Contraindications
+  if (
+    /(?:interact|contraindicat|mix|together|combine|combination|clash|safe\s+with|along\s+with|conflict)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Jack',
+      taskTitle: 'Drug Interactions',
+      displayName: 'Dr. Jack • Drug Interactions',
+      headerDisplay: 'DR. JACK • DRUG INTERACTIONS',
+      provider: 'gemini',
+      badgeColor: 'indigo'
+    };
+  }
+
+  // 6. Side Effects, Adverse Reactions & Safety Warnings
+  if (
+    /(?:side\s*effects?|adverse|reaction|harmful|danger|risk|poison|toxicity|toxic|allergy|allergic)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Jack',
+      taskTitle: 'Safety & Side Effects',
+      displayName: 'Dr. Jack • Side Effects',
+      headerDisplay: 'DR. JACK • SIDE EFFECTS',
+      provider: 'gemini',
+      badgeColor: 'rose'
+    };
+  }
+
+  // 7. Dosage, Administration & Overdose
+  if (
+    /(?:dosage|how\s+much\s+(?:mg|ml|dose|tablets?)|maximum\s+dose|overdose|frequency|times\s+a\s+day)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Jack',
+      taskTitle: 'Dosage Guidelines',
+      displayName: 'Dr. Jack • Dosage Specialist',
+      headerDisplay: 'DR. JACK • DOSAGE SPECIALIST',
+      provider: 'gemini',
+      badgeColor: 'blue'
+    };
+  }
+
+  // 8. General Clinical Pharmacology & Medical Inquiries
+  if (
+    /(?:what\s+is|used\s+for|purpose|treatment|cure|prescribe|symptom|disease|condition|fever|pain|cough|cold|infection|antibiotic|paracetamol|ibuprofen|aspirin|amoxicillin|metformin|atorvastatin)/i.test(lower)
+  ) {
+    return {
+      name: 'Dr. Jack',
+      taskTitle: 'Clinical Pharmacology',
+      displayName: 'Dr. Jack • Clinical Specialist',
+      headerDisplay: 'DR. JACK • CLINICAL SPECIALIST',
+      provider: 'gemini',
+      badgeColor: 'indigo'
+    };
+  }
+
+  // 9. Greetings & Polite Pleasantries
+  if (/^(hi|hello|hey|namaste|good\s*(morning|evening|afternoon)|salam|greetings|how\s*are\s*you|who\s*are\s*you|thank\s*you|thanks|ok|okay)\b/i.test(lower) && lower.length < 40) {
+    return {
+      name: 'Dr. Ross',
+      taskTitle: 'AI Consultation',
+      displayName: 'Dr. Ross • On-Device SLM',
+      headerDisplay: 'DR. ROSS • ON-DEVICE SLM',
+      provider: 'slm',
+      badgeColor: 'emerald'
+    };
+  }
+
+  // Default fallback based on provider or query length
+  if (provider === 'gemini') {
+    return {
+      name: 'Dr. Jack',
+      taskTitle: 'Clinical AI',
+      displayName: 'Dr. Jack • Clinical Specialist',
+      headerDisplay: 'DR. JACK • CLINICAL SPECIALIST',
+      provider: 'gemini',
+      badgeColor: 'indigo'
+    };
+  }
+
+  return {
+    name: 'Dr. Ross',
+    taskTitle: 'Vault & Stock',
+    displayName: 'Dr. Ross • Vault & Stock',
+    headerDisplay: 'DR. ROSS • VAULT & STOCK',
+    provider: 'slm',
+    badgeColor: 'emerald'
+  };
+}
+
+/**
+ * Determines whether a task should be handled by Dr. Ross (On-Device SLM)
+ * vs Dr. Jack (Cloud Gemini AI).
+ */
+export function isSlmSpecializedTask(queryText: string): boolean {
+  const spec = getSpecialistForTask(queryText);
+  return spec.provider === 'slm';
+}
+
 export async function chatWithAI(
   messages: ChatMessage[], 
   provider: 'gemini' | 'slm' = 'gemini', 
@@ -527,30 +729,29 @@ export async function chatWithAI(
 ): Promise<AIChatResponse> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
 
-  // 1. Dynamic Routing: If normal chat is going on, answer directly with On-Device SLM (Ross)
-  const isNormal = isNormalChat(lastUserMsg, medicines || []);
-
-  if (isNormal) {
-    console.log('[SLM ROUTER ACTIVE] Normal pharmacist chat turn. Answering directly with On-Device SLM (Ross)...');
+  // 1. Dynamic Routing by Task:
+  // If user selected SLM or the task is an on-device specialty (inventory counts, expiry, schedule, greetings):
+  if (provider === 'slm' || isSlmSpecializedTask(lastUserMsg)) {
+    console.log('[SLM ROUTER ACTIVE] Task routed to On-Device SLM (Dr. Ross)...');
     const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
-    // STRICT ZERO-TRAINING: No user conversations are stored or used for model training
     return { content: slmResponse, provider: 'slm' };
   }
 
-  // 2. Complex Question (Hospital, clinical triage, or specialized pharmacology):
-  console.log('[GEMINI ROUTER ACTIVE] Complex question detected. Escalate to Gemini API...');
-
-  let geminiResponse = '';
+  // 2. Complex Clinical, Pharmacological, or General Medical Questions:
+  // Routed to Cloud Gemini AI (Dr. Jack) with full medicines context
+  console.log('[GEMINI ROUTER ACTIVE] Task routed to Gemini Cloud AI (Dr. Jack)...');
   try {
-    geminiResponse = await chatWithGemini(messages, userId, medicines);
+    const geminiResponse = await chatWithGemini(messages, userId, medicines);
+    if (geminiResponse && geminiResponse.trim()) {
+      return { content: geminiResponse, provider: 'gemini' };
+    }
   } catch (geminiErr) {
-    console.warn('Gemini complex question failed, falling back to SLM model (Ross):', geminiErr);
-    const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
-    return { content: slmFallback, provider: 'slm' };
+    console.warn('Gemini chat attempt failed, falling back to On-Device SLM (Dr. Ross):', geminiErr);
   }
 
-  // STRICT ZERO-TRAINING: No distillation or model retraining on user queries
-  return { content: geminiResponse, provider: 'gemini' };
+  // 3. Fallback: On-Device SLM (Dr. Ross)
+  const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
+  return { content: slmFallback, provider: 'slm' };
 }
 
 export async function chatWithGemini(messages: ChatMessage[], userId?: string, medicines?: any[]): Promise<string> {
@@ -596,7 +797,7 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
       const errText = response ? await response.text() : '';
       if (!response || errText.trim().startsWith('<') || response.status === 404) {
         console.warn("Server API returned HTML or 404. Falling back to client-side chat...");
-        return await chatWithGeminiClient(messages);
+        return await chatWithGeminiClient(messages, medicines);
       }
       
       let errData;
@@ -615,7 +816,7 @@ export async function chatWithGemini(messages: ChatMessage[], userId?: string, m
     
     if (getClientApiKey()) {
       try {
-        return await chatWithGeminiClient(messages);
+        return await chatWithGeminiClient(messages, medicines);
       } catch (fallbackError: any) {
         console.warn('Client-side Gemini also unavailable, switching to On-Device Clinical SLM Model:', fallbackError);
       }
@@ -635,23 +836,36 @@ export async function getChatCountToday(userId: string): Promise<number> {
 export interface CategorizedMedicineItem {
   id: string;
   category: string;
+  categories?: string[];
   form?: MedicineForm;
   tags?: string[];
 }
 
 export function classifyMedicineLocally(
   m: { id?: string; name: string; dosage?: string; usageInstructions?: string; form?: string }
-): { id: string; category: string; form: MedicineForm } {
+): { id: string; category: string; categories?: string[]; form: MedicineForm } {
   const rawName = (m.name || '').trim().toLowerCase();
   const rawUsage = (m.usageInstructions || '').trim().toLowerCase();
   const rawDosage = (m.dosage || '').trim().toLowerCase();
   const fullText = `${rawName} ${rawUsage} ${rawDosage}`.trim();
 
   let category = '';
+  let categories: string[] = [];
   let form: MedicineForm | undefined = undefined;
 
-  // 1. Direct lookup in PHARMA_KNOWLEDGE_BASE (150+ drugs & brand names)
-  if (Array.isArray(PHARMA_KNOWLEDGE_BASE)) {
+  // 1. Direct check for dual-action combinations (e.g. Zerodol-P, Dolo, Combiflam, Paracetamol + Aceclofenac)
+  if (
+    fullText.includes('zerodol p') || fullText.includes('zerodol-p') || fullText.includes('combiflam') ||
+    fullText.includes('dolo') || fullText.includes('crocin') || fullText.includes('paracetamol') ||
+    fullText.includes('calpol') || fullText.includes('aceclofenac') || fullText.includes('ibuprofen')
+  ) {
+    categories.push('Fever');
+    categories.push('Pain Relief');
+    category = 'Fever, Pain Relief';
+  }
+
+  // 2. Direct lookup in PHARMA_KNOWLEDGE_BASE (150+ drugs & brand names)
+  if (!category && Array.isArray(PHARMA_KNOWLEDGE_BASE)) {
     for (const item of PHARMA_KNOWLEDGE_BASE) {
       const itemName = (item.name || '').toLowerCase();
       const generic = (item.genericName || '').toLowerCase();
@@ -664,13 +878,14 @@ export function classifyMedicineLocally(
           (generic && (rawName.includes(generic) || fullText.includes(generic))) ||
           matchesSynonym) {
         category = item.category;
+        categories = [category];
         if (item.defaultForm) form = item.defaultForm;
         break;
       }
     }
   }
 
-  // 2. Comprehensive clinical therapeutic classification regexes
+  // 3. Comprehensive clinical therapeutic classification regexes
   if (!category) {
     if (/card|pressur|bp\b|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart|propranolol|atenolol|metoprolol|diltiazem|nitroglycerin/i.test(fullText)) {
       category = 'Heart';
@@ -697,9 +912,10 @@ export function classifyMedicineLocally(
     } else {
       category = 'General Care';
     }
+    if (categories.length === 0) categories = [category];
   }
 
-  // 3. Allot/verify dosage form
+  // 4. Allot/verify dosage form
   if (!form) {
     const existingForm = m.form as MedicineForm | undefined;
     if (existingForm && existingForm !== 'other') {
@@ -726,6 +942,7 @@ export function classifyMedicineLocally(
   return {
     id: m.id || '',
     category,
+    categories,
     form
   };
 }

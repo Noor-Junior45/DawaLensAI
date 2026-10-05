@@ -26,7 +26,8 @@ export interface Medicine {
   deletedAt?: number;
   form?: MedicineForm;
   liked?: boolean;
-  category?: string; // Medicine category e.g., 'Heart', 'Vitamins', 'Pain Relief'
+  category?: string; // Medicine category e.g., 'Heart', 'Vitamins', 'Pain Relief' or comma-separated
+  categories?: string[]; // Multiple categories e.g., ['Fever', 'Pain Relief']
   tags?: string[]; // Custom tags e.g., ['Daily', 'Blood Pressure', 'Morning']
   enableLowStockAlert?: boolean; // toggle low stock alert per individual medicine
   lowStockThreshold?: number; // custom threshold per medicine if specified

@@ -14,7 +14,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Medicine, ChatMessage, ChatSession, AIProvider } from '../types';
-import { chatWithAI, isProviderKeyMissing, getChatCountToday } from '../services/geminiService';
+import { 
+  chatWithAI, 
+  isProviderKeyMissing, 
+  getChatCountToday, 
+  isSlmSpecializedTask,
+  getSpecialistForTask,
+  SpecialistInfo
+} from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import { DoctorLogo } from './DoctorLogo';
 import { sendEmailAlert, getConsultationReportEmailHTML } from '../services/emailService';
@@ -47,6 +54,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const [activeProvider] = useState<AIProvider>('gemini');
   const [isOnline, setIsOnline] = useState(true);
   const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(true);
+  const [activeSpecialist, setActiveSpecialist] = useState<SpecialistInfo>(() => getSpecialistForTask('', 'slm'));
   const [activeAiName, setActiveAiName] = useState<'Jack' | 'Ross'>('Ross');
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const [keyStatus, setKeyStatus] = useState<{ hasKey: boolean; checkedAt?: string; error?: string } | null>(null);
@@ -109,11 +117,31 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   };
 
   useEffect(() => {
-    const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
-    if (lastAssistantMsg) {
-      setActiveAiName(lastAssistantMsg.provider === 'gemini' ? 'Jack' : 'Ross');
-    } else {
+    if (messages.length === 0) {
+      const defaultSpec = getSpecialistForTask('', 'slm');
+      setActiveSpecialist(defaultSpec);
       setActiveAiName('Ross');
+      return;
+    }
+
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.role === 'user') {
+      // User just submitted a question/task: resolve specialist immediately for this active query
+      const spec = getSpecialistForTask(lastMsg.content, isSlmSpecializedTask(lastMsg.content) ? 'slm' : 'gemini');
+      setActiveSpecialist(spec);
+      setActiveAiName(spec.name === 'Dr. Jack' ? 'Jack' : 'Ross');
+    } else {
+      // Latest message is assistant reply: find user query that prompted this response
+      let promptQuery = '';
+      for (let i = messages.length - 2; i >= 0; i--) {
+        if (messages[i].role === 'user') {
+          promptQuery = messages[i].content;
+          break;
+        }
+      }
+      const spec = getSpecialistForTask(promptQuery, lastMsg.provider);
+      setActiveSpecialist(spec);
+      setActiveAiName(spec.name === 'Dr. Jack' ? 'Jack' : 'Ross');
     }
   }, [messages]);
 
@@ -216,16 +244,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
     if (!user) return;
     
     const ensureSession = async () => {
-      const sessionRef = doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID);
-      const snap = await getDoc(sessionRef);
-      if (!snap.exists()) {
+      try {
+        const sessionRef = doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID);
         await setDoc(sessionRef, {
           id: MAIN_SESSION_ID,
           userId: user.uid,
           title: 'Direct AI Consultation',
           createdAt: Date.now(),
           lastMessageAt: Date.now()
-        });
+        }, { merge: true });
+      } catch (err) {
+        console.warn('Session init notice:', err);
       }
     };
     ensureSession();
@@ -239,15 +268,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         id: doc.id,
         ...doc.data()
       })) as ChatMessage[];
-      const uniqueMsgs = Array.from(new Map(msgData.map(m => [m.id, m])).values());
-      setMessages(uniqueMsgs);
+      if (msgData.length > 0) {
+        setMessages(msgData);
+      }
+    }, (error) => {
+      console.warn('Chat messages onSnapshot notice:', error);
     });
     return unsubscribe;
   }, [user]);
 
   const handleSendMessage = async (customPrompt?: string) => {
-    const textToSend = customPrompt || input;
-    if (!textToSend.trim() || isLoading || !user) return;
+    const textToSend = (customPrompt || input).trim();
+    if (!textToSend || isLoading) return;
 
     const messageId = crypto.randomUUID();
     const userMsg: ChatMessage = {
@@ -257,30 +289,53 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
       timestamp: Date.now()
     };
 
-    // Save user message
-    await setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', messageId), userMsg);
-    
-    // Update session timestamp
-    const sessionRef = doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID);
-    await updateDoc(sessionRef, { lastMessageAt: Date.now() });
-
+    // 1. Optimistically update local message state immediately for zero-lag UI response
+    const isSlmTask = isSlmSpecializedTask(textToSend);
+    const pendingSpec = getSpecialistForTask(textToSend, isSlmTask ? 'slm' : 'gemini');
+    setActiveSpecialist(pendingSpec);
+    setActiveAiName(pendingSpec.name === 'Dr. Jack' ? 'Jack' : 'Ross');
+    setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
-    setShowMedicalDisclaimerBanner(false); // Hide medical disclaimer after one chat to maximize screen space
+    setShowMedicalDisclaimerBanner(false);
+
+    // 2. Safe background persistence for user message
+    if (user?.uid) {
+      const sessionRef = doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID);
+      setDoc(sessionRef, {
+        id: MAIN_SESSION_ID,
+        userId: user.uid,
+        title: 'Direct AI Consultation',
+        lastMessageAt: Date.now(),
+        createdAt: Date.now()
+      }, { merge: true }).catch(e => console.warn('Session timestamp touch error:', e));
+
+      setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', messageId), userMsg)
+        .catch(e => console.warn('User message save notice:', e));
+    }
 
     try {
-      // Build history
+      // Build conversation history for AI context
       const historyContext: ChatMessage[] = messages.concat(userMsg).map(m => ({
         role: m.role,
         content: m.content,
         timestamp: m.timestamp
       }));
 
-      const aiResult = await chatWithAI(historyContext, activeProvider, user.uid, medicines);
-      const aiResponse = typeof aiResult === 'string' ? aiResult : aiResult.content;
-      const responseProvider: AIProvider = typeof aiResult === 'object' && aiResult.provider ? aiResult.provider : activeProvider;
+      // Call AI Engine (Primary Gemini with full medicines context, or on-device SLM)
+      const aiResult = await chatWithAI(historyContext, activeProvider, user?.uid, medicines || []);
+      let aiResponse = typeof aiResult === 'string' ? aiResult : aiResult?.content;
+      
+      if (!aiResponse || !aiResponse.trim()) {
+        const { generateOfflineSlmConsultation } = await import('../services/slmPharmacistModel');
+        aiResponse = generateOfflineSlmConsultation(textToSend, medicines || [], messages);
+      }
 
-      setActiveAiName(responseProvider === 'gemini' ? 'Jack' : 'Ross');
+      const responseProvider: AIProvider = typeof aiResult === 'object' && aiResult?.provider ? aiResult.provider : 'slm';
+      const resolvedSpec = getSpecialistForTask(textToSend, responseProvider);
+
+      setActiveSpecialist(resolvedSpec);
+      setActiveAiName(resolvedSpec.name === 'Dr. Jack' ? 'Jack' : 'Ross');
       if (responseProvider === 'gemini') {
         setHasGeminiKey(true);
       }
@@ -295,10 +350,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         provider: responseProvider
       };
 
-      await setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg);
-      await updateDoc(sessionRef, { lastMessageAt: Date.now() });
+      // 3. Immediately display AI response in the UI
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === aiMsgId);
+        return exists ? prev : [...prev, aiMsg];
+      });
+
+      // 4. Save to Firestore in background
+      if (user?.uid) {
+        setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg)
+          .catch(e => console.warn('AI message save notice:', e));
+      }
     } catch (error: any) {
-      console.error("Chat Error:", error);
+      console.warn("Chat Error, generating on-device SLM answer:", error);
+      const fallbackSpec = getSpecialistForTask(textToSend, 'slm');
+      setActiveSpecialist(fallbackSpec);
       setActiveAiName('Ross');
       
       const errorMessage = error.message || String(error);
@@ -306,17 +372,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
       if (errLower.includes('key') || errLower.includes('api_key') || errLower.includes('unauthorized') || errLower.includes('401') || errLower.includes('403')) {
         setHasGeminiKey(false);
       }
-      const isSpendCapExceeded = 
-        errLower.includes("spending cap") || 
-        errLower.includes("resource_exhausted") || 
-        errLower.includes("monthly spending cap") ||
-        errLower.includes("quota") ||
-        errLower.includes("billing");
 
       // Auto-recover using On-Device Small Language Model (SLM)
       const { generateOfflineSlmConsultation, loadUserSlmKnowledge } = await import('../services/slmPharmacistModel');
-      const userKnowledge = await loadUserSlmKnowledge(user.uid);
-      const content = generateOfflineSlmConsultation(textToSend, medicines, messages, userKnowledge);
+      const userKnowledge = user?.uid ? await loadUserSlmKnowledge(user.uid).catch(() => []) : [];
+      const content = generateOfflineSlmConsultation(textToSend, medicines || [], messages, userKnowledge);
 
       const aiMsgId = crypto.randomUUID();
       const aiMsg: ChatMessage = {
@@ -326,7 +386,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         timestamp: Date.now(),
         provider: 'slm'
       };
-      await setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg);
+
+      // Display SLM response immediately
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === aiMsgId);
+        return exists ? prev : [...prev, aiMsg];
+      });
+
+      if (user?.uid) {
+        setDoc(doc(db, 'users', user.uid, 'chats', MAIN_SESSION_ID, 'messages', aiMsgId), aiMsg)
+          .catch(e => console.warn('Fallback SLM message save notice:', e));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -477,17 +547,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
               <span className="font-extrabold text-white text-base tracking-tight leading-tight">AI Pharmacist</span>
               <div 
                 className="flex items-center gap-1.5 mt-0.5"
-                title={hasGeminiKey ? "Gemini API Key: Present" : "Gemini API Key: Missing"}
+                title={`${activeSpecialist.name} - AI Pharmacist`}
               >
                 <span 
                   className={`inline-block w-2 h-2 rounded-full transition-all duration-300 ${
-                    hasGeminiKey 
-                      ? 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]' 
-                      : 'bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                    activeSpecialist.name === 'Dr. Jack'
+                      ? 'bg-[#60a5fa] shadow-[0_0_8px_rgba(96,165,250,0.8)]'
+                      : 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]'
                   }`} 
                 />
-                <span className="text-[11px] text-[#e0e1f9] font-black uppercase tracking-wider leading-none">
-                  {activeAiName}
+                <span className="text-[12px] text-[#e0e1f9] font-black tracking-wide leading-none">
+                  {activeSpecialist.name}
                 </span>
               </div>
             </div>
@@ -588,6 +658,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                 const exactDateStr = formatMessageDateString(msg.timestamp);
                 const isTodayStr = currentDateStr === 'Today';
 
+                const precedingUserQuery = msg.role === 'assistant' 
+                  ? (messages.slice(0, idx).reverse().find(m => m.role === 'user')?.content || '')
+                  : '';
+                const msgSpecialist = msg.role === 'assistant'
+                  ? getSpecialistForTask(precedingUserQuery, msg.provider)
+                  : null;
+
                 return (
                   <React.Fragment key={`chat-msg-${msg.id || ''}-${idx}`}>
                     {showDate && (
@@ -625,6 +702,19 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
                       {/* Flex column for Chat Bubble and action buttons below */}
                       <div className="flex flex-col max-w-[80%] md:max-w-[72%]">
+                        {/* Specialist Badge for Assistant Message */}
+                        {msg.role === 'assistant' && msgSpecialist && (
+                          <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
+                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 shadow-3xs ${
+                              msgSpecialist.name === 'Dr. Jack'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                            }`}>
+                              <span>{msgSpecialist.name}</span>
+                            </span>
+                          </div>
+                        )}
+
                         {/* Chat Bubble */}
                         <div className={`relative px-4 py-3 shadow-3xs flex flex-col ${
                           msg.role === 'user' 
@@ -710,11 +800,22 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                   <div className="w-9 h-9 rounded-full bg-[#0f9d58]/10 flex items-center justify-center text-[#0f9d58] shrink-0 border border-[#0f9d58]/20 shadow-3xs">
                     <DoctorLogo className="w-6 h-6 text-[#0f9d58]" />
                   </div>
-                  <div className="bg-white px-4 py-3 rounded-[18px] rounded-tl-none shadow-3xs border border-slate-100">
-                    <div className="flex gap-1.5 py-1">
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
-                      <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 shadow-3xs ${
+                        activeSpecialist.name === 'Dr. Jack'
+                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
+                          : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                      }`}>
+                        <span>{activeSpecialist.name}</span>
+                      </span>
+                    </div>
+                    <div className="bg-white px-4 py-3 rounded-[18px] rounded-tl-none shadow-3xs border border-slate-100">
+                      <div className="flex gap-1.5 py-1">
+                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />
+                      </div>
                     </div>
                   </div>
                 </div>

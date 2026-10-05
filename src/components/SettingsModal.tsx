@@ -136,27 +136,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // Auto-sync notifications state with current OS / browser permission on modal open
   React.useEffect(() => {
     const checkNativePerms = async () => {
-      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+      if (Capacitor.isNativePlatform()) {
         try {
           let granted = false;
           if (Capacitor.isPluginAvailable('LocalNotifications')) {
-            const l = await LocalNotifications.checkPermissions();
-            if (l.display === 'granted') granted = true;
+            const l = await LocalNotifications.checkPermissions().catch(() => null);
+            if (l?.display === 'granted') granted = true;
           }
           if (Capacitor.isPluginAvailable('PushNotifications')) {
-            const p = await PushNotifications.checkPermissions();
-            if (p.receive === 'granted') granted = true;
+            const p = await PushNotifications.checkPermissions().catch(() => null);
+            if (p?.receive === 'granted') granted = true;
           }
           if (granted) {
             setBrowserNotificationsEnabled(true);
           }
         } catch {}
       } else if (typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'granted') {
-          setBrowserNotificationsEnabled(true);
-        } else if (Notification.permission === 'denied') {
-          setBrowserNotificationsEnabled(false);
-        }
+        try {
+          if (Notification.permission === 'granted') {
+            setBrowserNotificationsEnabled(true);
+          } else if (Notification.permission === 'denied') {
+            setBrowserNotificationsEnabled(false);
+          }
+        } catch {}
       }
     };
     checkNativePerms();
@@ -170,48 +172,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return;
     }
 
-    // Explicitly request native notification permissions using Capacitor APIs
-    try {
-      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+    // Explicitly request native notification permissions using Capacitor APIs when on native device
+    if (Capacitor.isNativePlatform()) {
+      try {
         let isGranted = false;
 
         // 1. Check & request Local Notifications (Android 13+ POST_NOTIFICATIONS)
         try {
           if (Capacitor.isPluginAvailable('LocalNotifications')) {
-            let localPerm = await LocalNotifications.checkPermissions();
-            if (localPerm.display !== 'granted') {
-              localPerm = await LocalNotifications.requestPermissions();
+            let localPerm = await LocalNotifications.checkPermissions().catch(() => null);
+            if (!localPerm || localPerm.display !== 'granted') {
+              localPerm = await LocalNotifications.requestPermissions().catch(() => null);
             }
-            if (localPerm.display === 'granted') {
+            if (localPerm?.display === 'granted') {
               isGranted = true;
             }
           }
         } catch (err) {
-          console.warn('LocalNotifications permission request warning:', err);
+          console.warn('LocalNotifications permission request notice:', err);
         }
 
         // 2. Also register device with FCM
         try {
           if (Capacitor.isPluginAvailable('PushNotifications')) {
-            let pushPerm = await PushNotifications.checkPermissions();
-            if (pushPerm.receive !== 'granted') {
-              pushPerm = await PushNotifications.requestPermissions();
+            let pushPerm = await PushNotifications.checkPermissions().catch(() => null);
+            if (!pushPerm || pushPerm.receive !== 'granted') {
+              pushPerm = await PushNotifications.requestPermissions().catch(() => null);
             }
-            if (pushPerm.receive === 'granted') {
+            if (pushPerm?.receive === 'granted') {
               isGranted = true;
               await PushNotifications.register().catch(() => {});
             }
           }
         } catch (err) {
-          console.warn('PushNotifications register warning:', err);
+          console.warn('PushNotifications register notice:', err);
         }
 
         // If either local or push notification permission is granted, enable notifications
         setBrowserNotificationsEnabled(isGranted);
         return;
+      } catch (err) {
+        console.warn('Native notification permission notice:', err);
       }
-    } catch (err) {
-      console.warn('Native notification permission error:', err);
     }
 
     // Direct Web / Chrome system dialog fallback (no alert-based flow)

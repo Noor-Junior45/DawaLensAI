@@ -2,10 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Medicine, MedicineForm } from '../types';
 import { 
   ChevronLeft, Plus, Minus, Calendar, Package, Clock, 
-  Sparkles, Mail, AlertTriangle, Image as ImageIcon, X
+  Sparkles, Mail, AlertTriangle, Image as ImageIcon, X, RefreshCw
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  MEDICINE_FORM_ICONS, 
+  MEDICINE_FORM_LABELS, 
+  MEDICINE_CATEGORIES, 
+  getCategoryStyle, 
+  POPULAR_TAGS, 
+  getMedicineCategories 
+} from '../constants';
+import { categorizeMedicinesWithAI } from '../services/geminiService';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
 import { triggerLightHaptic, triggerSuccessHaptic, triggerSelectionHaptic } from '../utils/haptics';
 
@@ -54,6 +62,9 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
     schedule: initialData?.schedule || '',
     usageInstructions: initialData?.usageInstructions || '',
     category: initialData?.category || 'Other',
+    categories: Array.isArray(initialData?.categories) 
+      ? [...initialData.categories] 
+      : (initialData?.category ? initialData.category.split(/[,/&]/).map(s => s.trim()).filter(Boolean) : ['Other']),
     tags: Array.isArray(initialData?.tags) ? [...initialData.tags] : [],
     enableLowStockAlert: initialData?.enableLowStockAlert !== false,
     lowStockThreshold: initialData?.lowStockThreshold ?? globalLowQuantityThreshold,
@@ -64,7 +75,48 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
   });
 
   const [suggestions, setSuggestions] = useState<Medicine[]>([]);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [isGeminiCategorizing, setIsGeminiCategorizing] = useState(false);
+  const [geminiNotice, setGeminiNotice] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleGeminiCategorize = async () => {
+    if (isGeminiCategorizing || !formData.name?.trim()) return;
+    setIsGeminiCategorizing(true);
+    setGeminiNotice(null);
+    try {
+      const results = await categorizeMedicinesWithAI([{
+        id: 'new',
+        name: formData.name,
+        dosage: formData.dosage,
+        usageInstructions: formData.usageInstructions,
+        form: formData.form
+      }]);
+
+      if (results && results.length > 0) {
+        const item = results[0];
+        const cats = Array.isArray(item.categories) && item.categories.length > 0
+          ? item.categories
+          : (item.category ? item.category.split(/[,/&]/).map(s => s.trim()).filter(Boolean) : []);
+        
+        if (cats.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            categories: cats,
+            category: cats.join(', '),
+            tags: Array.from(new Set([...(prev.tags || []), ...cats.filter(c => c !== 'Other')]))
+          }));
+          setGeminiNotice(`Categories set to "${cats.join(', ')}" by Gemini AI!`);
+          setTimeout(() => setGeminiNotice(null), 4000);
+        }
+      }
+    } catch (e: any) {
+      console.error("Gemini categorize error:", e);
+      setGeminiNotice("AI classification failed: " + (e.message || String(e)));
+    } finally {
+      setIsGeminiCategorizing(false);
+    }
+  };
 
   // Auto-expand textarea according to text length (no scrollbar)
   const adjustTextareaHeight = () => {
@@ -80,6 +132,10 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
 
   useEffect(() => {
     if (initialData) {
+      const initialCats = Array.isArray(initialData.categories) && initialData.categories.length > 0
+        ? [...initialData.categories]
+        : (initialData.category ? initialData.category.split(/[,/&]/).map(s => s.trim()).filter(Boolean) : ['Other']);
+
       setFormData({
         name: initialData.name || '',
         dosage: initialData.dosage || '',
@@ -88,7 +144,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
         expirationDate: initialData.expirationDate || '',
         schedule: initialData.schedule || '',
         usageInstructions: initialData.usageInstructions || '',
-        category: initialData.category || 'Other',
+        category: initialData.category || initialCats.join(', ') || 'Other',
+        categories: initialCats,
         tags: Array.isArray(initialData.tags) ? [...initialData.tags] : [],
         enableLowStockAlert: initialData.enableLowStockAlert !== false,
         lowStockThreshold: initialData.lowStockThreshold ?? globalLowQuantityThreshold,
@@ -104,8 +161,76 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const currentCategories = React.useMemo(() => {
+    return getMedicineCategories(formData);
+  }, [formData.categories, formData.category, formData.tags, formData.name]);
+
+  const toggleCategory = (catKey: string) => {
+    triggerSelectionHaptic();
+    const isAlreadySelected = currentCategories.some(c => c.toLowerCase() === catKey.toLowerCase());
+    let nextCats: string[];
+    if (isAlreadySelected) {
+      nextCats = currentCategories.filter(c => c.toLowerCase() !== catKey.toLowerCase());
+      if (nextCats.length === 0) nextCats = ['Other'];
+    } else {
+      nextCats = [...currentCategories.filter(c => c.toLowerCase() !== 'other'), catKey];
+    }
+    setFormData(prev => ({
+      ...prev,
+      categories: nextCats,
+      category: nextCats.join(', '),
+      tags: Array.from(new Set([...(prev.tags || []), ...nextCats.filter(c => c !== 'Other')]))
+    }));
+  };
+
+  const handleAddTag = (tagToAdd: string) => {
+    const clean = tagToAdd.trim();
+    if (!clean) return;
+    triggerSelectionHaptic();
+    setFormData(prev => {
+      const currentTags = Array.isArray(prev.tags) ? [...prev.tags] : [];
+      if (currentTags.some(t => t.toLowerCase() === clean.toLowerCase())) return prev;
+      return {
+        ...prev,
+        tags: [...currentTags, clean]
+      };
+    });
+    setCustomTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    triggerLightHaptic();
+    setFormData(prev => ({
+      ...prev,
+      tags: (prev.tags || []).filter(t => t.toLowerCase() !== tagToRemove.toLowerCase())
+    }));
+  };
+
   const handleNameChange = (name: string) => {
     updateField('name', name);
+
+    // Auto-detect dual-indication categories if user hasn't explicitly customized yet
+    const nameLower = name.trim().toLowerCase();
+    if (
+      nameLower.includes('zerodol p') || nameLower.includes('zerodol-p') || nameLower.includes('combiflam') ||
+      nameLower.includes('dolo') || nameLower.includes('crocin') || nameLower.includes('paracetamol') ||
+      nameLower.includes('calpol') || nameLower.includes('aceclofenac') || nameLower.includes('ibuprofen')
+    ) {
+      setFormData(prev => {
+        const isDefault = !prev.categories || prev.categories.length === 0 || (prev.categories.length === 1 && prev.categories[0] === 'Other');
+        if (isDefault) {
+          const dualCats = ['Fever', 'Pain Relief'];
+          return {
+            ...prev,
+            name,
+            categories: dualCats,
+            category: dualCats.join(', '),
+            tags: Array.from(new Set([...(prev.tags || []), ...dualCats]))
+          };
+        }
+        return { ...prev, name };
+      });
+    }
 
     if (name.length > 1) {
       const filtered = allMedicines.filter(m => 
@@ -141,7 +266,14 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim()) return;
-    onSave(formData);
+    const finalCats = getMedicineCategories(formData);
+    const cleanFormData = {
+      ...formData,
+      categories: finalCats,
+      category: finalCats.join(', '),
+      tags: Array.from(new Set([...(formData.tags || []), ...finalCats.filter(c => c !== 'Other')]))
+    };
+    onSave(cleanFormData);
   };
 
   return (
@@ -326,32 +458,152 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
             </div>
           </div>
 
-          {/* Category Selection */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center justify-between">
-              <span>Category</span>
-              <span className="text-[11px] text-slate-500 font-normal lowercase">e.g. Heart, Vitamins, Pain Relief</span>
-            </label>
+          {/* Category Selection (Multi-select) */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Categories (Select One or More)
+                </label>
+                <span className="text-[11px] font-bold text-[#0f9d58] bg-[#0f9d58]/10 px-2 py-0.5 rounded-full">
+                  {currentCategories.length} selected
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleGeminiCategorize}
+                disabled={isGeminiCategorizing || !formData.name?.trim()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all active:scale-95 disabled:opacity-50 shadow-2xs cursor-pointer"
+                title="Let Gemini AI detect categories for this medicine"
+              >
+                {isGeminiCategorizing ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin text-indigo-600" />
+                    <span>Detecting with AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={12} className="text-indigo-600" />
+                    <span>AI Detect Categories</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* AI Feedback Notice */}
+            <AnimatePresence>
+              {geminiNotice && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between gap-2 shadow-2xs"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-emerald-600 shrink-0" />
+                    <span>{geminiNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGeminiNotice(null)}
+                    className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <p className="text-[11.5px] text-slate-500">
+              Select multiple categories if this medicine has dual therapeutic uses (e.g. Zerodol-P as both <strong>Fever</strong> and <strong>Pain Relief</strong>).
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {MEDICINE_CATEGORIES.map(catKey => {
-                const isSelected = (formData.category || 'Other').toLowerCase() === catKey.toLowerCase();
+                const isSelected = currentCategories.some(c => c.toLowerCase() === catKey.toLowerCase());
                 const style = getCategoryStyle(catKey);
                 return (
                   <button
                     key={`add-cat-${catKey}`}
                     type="button"
-                    onClick={() => updateField('category', catKey)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left ${
+                    onClick={() => toggleCategory(catKey)}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer active:scale-95 ${
                       isSelected
                         ? `${style.badgeBg} ${style.badgeText} border-current ring-1 ring-current shadow-xs`
                         : 'bg-white border-[#e3e2e0] text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
-                    <span className="truncate">{catKey}</span>
+                    <div className="flex items-center gap-2 truncate">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
+                      <span className="truncate">{catKey}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[10px] font-black shrink-0">✓</span>
+                    )}
                   </button>
                 );
               })}
+            </div>
+
+            {/* Custom Tags Section */}
+            <div className="pt-2 space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Custom Tags
+              </label>
+              {Array.isArray(formData.tags) && formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {formData.tags.map((tag, tIdx) => (
+                    <span 
+                      key={`tag-${tag}-${tIdx}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-emerald-600 hover:text-emerald-900 ml-0.5 p-0.5 cursor-pointer"
+                        title={`Remove tag ${tag}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag(customTagInput);
+                    }
+                  }}
+                  placeholder="Add custom tag (e.g. Prescription, SOS, Daily)"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-white border border-[#e3e2e0] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0f9d58]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddTag(customTagInput)}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  + Add Tag
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10.5px] text-slate-400 font-medium">Quick add:</span>
+                {POPULAR_TAGS.filter(t => !(formData.tags || []).includes(t)).slice(0, 6).map((popTag, pIdx) => (
+                  <button
+                    key={`poptag-${popTag}-${pIdx}`}
+                    type="button"
+                    onClick={() => handleAddTag(popTag)}
+                    className="text-[10px] font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                  >
+                    + {popTag}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

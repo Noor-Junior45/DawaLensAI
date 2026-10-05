@@ -6,7 +6,7 @@ import {
   FileText, Settings, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, getCategoryStyle } from '../constants';
+import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, getCategoryStyle, getMedicineCategories } from '../constants';
 import { LocalImage } from './LocalImage';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
 import { triggerLightHaptic, triggerSelectionHaptic } from '../utils/haptics';
@@ -209,12 +209,28 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
             </span>
           </div>
 
-          {/* Selected Category Display */}
-          <div className="pt-2 flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${getCategoryStyle(medicine.category).badgeBg} ${getCategoryStyle(medicine.category).badgeText} ${getCategoryStyle(medicine.category).badgeBorder}`}>
-              <span className={`w-2 h-2 rounded-full ${getCategoryStyle(medicine.category).dotColor}`} />
-              <span>{medicine.category || 'General'}</span>
-            </span>
+          {/* Selected Categories and Tags Display */}
+          <div className="pt-2 flex flex-wrap items-center gap-2">
+            {Array.from(new Set(getMedicineCategories(medicine))).map((cat, cIdx) => {
+              const style = getCategoryStyle(cat);
+              return (
+                <span 
+                  key={`det-cat-${cat}-${cIdx}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${style.badgeBg} ${style.badgeText} ${style.badgeBorder}`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${style.dotColor}`} />
+                  <span>{cat}</span>
+                </span>
+              );
+            })}
+            {Array.isArray(medicine.tags) && Array.from(new Set(medicine.tags)).filter(t => !getMedicineCategories(medicine).includes(t)).map((tag, tIdx) => (
+              <span
+                key={`det-tag-${tag}-${tIdx}`}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+              >
+                #{tag}
+              </span>
+            ))}
           </div>
         </section>
 

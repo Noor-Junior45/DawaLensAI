@@ -52,9 +52,8 @@ async function runWithRotation<T>(
 
 // Models to try in priority order when experiencing 503 high demand, 404, or 429 rate limit
 const RESILIENT_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-3.1-flash-lite',
   'gemini-3.8-flash',
+  'gemini-3.1-flash-lite',
   'gemini-flash-latest'
 ];
 
@@ -118,7 +117,36 @@ function sanitizeExtractedMedicine(
     quantity = hints?.potentialQuantity || 1;
   }
 
-  let category = sanitizeStr(raw?.category, '');
+  let rawCategory = sanitizeStr(raw?.category, '');
+  let categories: string[] = [];
+  if (Array.isArray(raw?.categories)) {
+    categories = raw.categories
+      .map((c: any) => String(c).trim())
+      .filter((c: string) => c.length > 0 && c.toLowerCase() !== 'other');
+  } else if (rawCategory) {
+    categories = rawCategory
+      .split(/[,/&]/)
+      .map((c: string) => c.trim())
+      .filter((c: string) => c.length > 0 && c.toLowerCase() !== 'other');
+  }
+
+  // Automatic dual-action combination detection (e.g. Zerodol-P, Dolo, Combiflam, Paracetamol + Aceclofenac)
+  const nameLower = name.toLowerCase();
+  if (
+    nameLower.includes('zerodol p') || nameLower.includes('zerodol-p') || nameLower.includes('combiflam') ||
+    nameLower.includes('dolo') || nameLower.includes('crocin') || nameLower.includes('paracetamol') ||
+    nameLower.includes('calpol') || nameLower.includes('aceclofenac') || nameLower.includes('ibuprofen')
+  ) {
+    if (!categories.includes('Fever')) categories.push('Fever');
+    if (!categories.includes('Pain Relief')) categories.push('Pain Relief');
+  }
+
+  if (categories.length === 0 && rawCategory) {
+    categories = [rawCategory];
+  }
+
+  const category = categories.join(', ') || rawCategory;
+
   let tags: string[] = [];
   if (Array.isArray(raw?.tags)) {
     tags = raw.tags
@@ -126,6 +154,12 @@ function sanitizeExtractedMedicine(
       .filter((t: string) => t.length > 0 && t.length < 30)
       .slice(0, 5);
   }
+  // Ensure detected categories are in tags
+  categories.forEach(c => {
+    if (c !== 'Other' && !tags.includes(c)) {
+      tags.push(c);
+    }
+  });
 
   return {
     name,
@@ -134,6 +168,7 @@ function sanitizeExtractedMedicine(
     usageInstructions,
     form,
     quantity,
+    ...(categories.length > 0 ? { categories } : {}),
     ...(category ? { category } : {}),
     ...(tags.length > 0 ? { tags } : {})
   };
@@ -361,10 +396,14 @@ FIELD-BY-FIELD INSTRUCTIONS:
 6. "usageInstructions":
    - Extract clinical guidance if printed (e.g., "As directed by physician", "Take after food", "Store below 25°C protected from moisture").
 
-7. "category":
-   - Classify this medicine into one standard category: "Heart", "Pain Relief", "Vitamins", "Antibiotics", "Diabetes", "Digestive", "Allergy", "Respiratory", "Mental Health", "Skin Care", "Eye & Ear", or "Other".
+7. "categories":
+   - Classify this medicine into all applicable clinical categories as a JSON array of strings from: "Fever", "Pain Relief", "Heart", "Vitamins", "Antibiotics", "Diabetes", "Digestive", "Allergy", "Respiratory", "Mental Health", "Skin Care", "Eye & Ear", or "Other".
+   - CRITICAL: For combination medications or dual-indication drugs (e.g. Zerodol-P, Dolo 650, Combiflam, Crocin, Calpol, Paracetamol + Aceclofenac), assign BOTH ["Fever", "Pain Relief"].
 
-8. "tags":
+8. "category":
+   - Provide a comma-separated string of the assigned categories (e.g. "Fever, Pain Relief" or "Antibiotics").
+
+9. "tags":
    - Provide 2-4 concise relevant tags (e.g. ["Pain Relief", "Fever", "OTC"] or ["Heart", "Blood Pressure", "Daily"]).`;
 
       // Multimodal execution: Send both the image and the OCR text so Gemini Vision can see the label directly
@@ -395,6 +434,10 @@ FIELD-BY-FIELD INSTRUCTIONS:
               usageInstructions: { type: Type.STRING },
               form: { type: Type.STRING, enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"] },
               quantity: { type: Type.NUMBER },
+              categories: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING }
+              },
               category: { type: Type.STRING },
               tags: {
                 type: Type.ARRAY,
@@ -465,19 +508,10 @@ For each of the following medicines:
    - "other": Creams, ointments, inhalers, eye/ear drops, sprays
    If the existing form is already provided and correct, keep it. If it is missing, empty, or 'other', allot the true dosage form.
 
-2. Assign an accurate primary clinical category (category):
-   - "Heart" (cardiovascular, blood pressure, cholesterol, hypertension, angina, blood thinners)
-   - "Pain Relief" (analgesics, NSAIDs, antipyretics, headache, body ache, fever, arthritis)
-   - "Vitamins" (multivitamins, minerals, calcium, vitamin D, zinc, dietary supplements)
-   - "Antibiotics" (antibacterial, antifungal, antiviral, antiparasitic, infections)
-   - "Diabetes" (insulin, metformin, blood sugar control, antidiabetic)
-   - "Digestive" (antacids, PPIs, laxatives, nausea, IBS, acid reflux, stomach)
-   - "Allergy" (antihistamines, cetirizine, anti-allergy, rhinitis, urticaria)
-   - "Respiratory" (asthma, cough, bronchodilators, inhalers, cold, chest congestion)
-   - "Mental Health" (antidepressants, anxiolytics, sleep aids, neurology, mood)
-   - "Skin Care" (dermatology, creams, ointments, eczema, acne)
-   - "Eye & Ear" (ophthalmic drops, ear drops)
-   - "Other" (if not matching any above)
+2. Assign all accurate clinical categories:
+   - categories: Array of matching categories from: "Fever", "Pain Relief", "Heart", "Vitamins", "Antibiotics", "Diabetes", "Digestive", "Allergy", "Respiratory", "Mental Health", "Skin Care", "Eye & Ear", "Other".
+   - CRITICAL DUAL INDICATION RULE: If the medication is a combination drug or dual therapeutic agent (e.g. Zerodol-P, Dolo 650, Combiflam, Crocin, Calpol, Paracetamol + Aceclofenac), assign BOTH ["Fever", "Pain Relief"].
+   - category: Comma-separated string of the categories (e.g. "Fever, Pain Relief" or "Antibiotics").
 
 Medicines to classify & verify:
 ${JSON.stringify(medicines.map(m => ({
@@ -492,7 +526,8 @@ Return a JSON array of objects with schema:
 [
   {
     "id": string (the exact id passed in),
-    "category": string (must be one of the standard categories),
+    "category": string (e.g. "Fever, Pain Relief"),
+    "categories": string[] (e.g. ["Fever", "Pain Relief"]),
     "form": string (must be one of: "tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other")
   }
 ]`;
@@ -509,6 +544,10 @@ Return a JSON array of objects with schema:
               properties: {
                 id: { type: Type.STRING },
                 category: { type: Type.STRING },
+                categories: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
                 form: { 
                   type: Type.STRING,
                   enum: ["tablet", "capsule", "syrup", "ampule", "powder", "tape", "liquid", "other"]
@@ -528,32 +567,55 @@ Return a JSON array of objects with schema:
       }
 
       const results = JSON.parse(cleanedJson);
-      return { success: true, categorized: results };
+      // Ensure each item has both categories array and category string
+      const sanitizedResults = results.map((item: any) => {
+        let cats: string[] = Array.isArray(item.categories) ? item.categories : [];
+        if (cats.length === 0 && item.category) {
+          cats = item.category.split(/[,/&]/).map((s: string) => s.trim()).filter(Boolean);
+        }
+        return {
+          ...item,
+          categories: cats.length > 0 ? cats : [item.category || 'Other'],
+          category: cats.length > 0 ? cats.join(', ') : (item.category || 'Other')
+        };
+      });
+      return { success: true, categorized: sanitizedResults };
     });
   } catch (error: any) {
     console.error("Server categorization error:", error);
     // Graceful clinical heuristic fallback so categorization and form verification never fail
     const fallbackCategorized = medicines.map(m => {
       const lower = (m.name + ' ' + (m.usageInstructions || '') + ' ' + (m.dosage || '')).toLowerCase();
-      let category = 'Other';
+      let cats: string[] = [];
 
-      if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
-        category = 'Heart';
-      } else if (/paracet|dolo|ibupro|combiflam|tramad|diclo|aceclo|aspirin|pain|fever|headache|analgesic/i.test(lower)) {
-        category = 'Pain Relief';
+      // Check for dual-action combinations (Zerodol-P, Dolo, Combiflam, Paracetamol + Aceclofenac)
+      if (
+        lower.includes('zerodol p') || lower.includes('zerodol-p') || lower.includes('combiflam') ||
+        lower.includes('dolo') || lower.includes('crocin') || lower.includes('paracetamol') ||
+        lower.includes('calpol') || lower.includes('aceclofenac') || lower.includes('ibuprofen')
+      ) {
+        cats.push('Fever');
+        cats.push('Pain Relief');
+      } else if (/card|pressur|bp|amlod|losart|telmis|atorv|statin|aspirin|clopid|hyperten|heart/i.test(lower)) {
+        cats.push('Heart');
+      } else if (/tramad|diclo|pain|headache|analgesic/i.test(lower)) {
+        cats.push('Pain Relief');
       } else if (/vit|zinc|calcium|multivit|b12|d3|iron|folic|supple|omega/i.test(lower)) {
-        category = 'Vitamins';
+        cats.push('Vitamins');
       } else if (/cillin|amox|clav|azith|cefix|cipro|levo|oflox|antibiotic|infect|fungal/i.test(lower)) {
-        category = 'Antibiotics';
+        cats.push('Antibiotics');
       } else if (/metformin|glim|insulin|sugar|diabet|januvia|vildag/i.test(lower)) {
-        category = 'Diabetes';
+        cats.push('Diabetes');
       } else if (/panto|omepra|rabep|esom|antacid|gel|digene|gas|reflux|vomit|domperi|ibs|digest/i.test(lower)) {
-        category = 'Digestive';
+        cats.push('Digestive');
       } else if (/cetir|levocet|allegra|fexo|allergy|cough|cold|montel|sneez/i.test(lower)) {
-        category = 'Allergy';
+        cats.push('Allergy');
       } else if (/inhaler|salbut|budesonide|asthma|respirat|breath|cough/i.test(lower)) {
-        category = 'Respiratory';
+        cats.push('Respiratory');
       }
+
+      if (cats.length === 0) cats.push('Other');
+      const category = cats.join(', ');
 
       // Verify or allot dosage form
       let form: string = m.form || 'other';
@@ -580,6 +642,7 @@ Return a JSON array of objects with schema:
       return {
         id: m.id,
         category,
+        categories: cats,
         form
       };
     });
@@ -638,23 +701,27 @@ export async function chatWithGeminiServer(messages: any[], userId?: string, med
     let userMedicinesContext = "";
     
     if (medicines && Array.isArray(medicines) && medicines.length > 0) {
-      const medsStr = medicines.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'N/A'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 'N/A'})`).join('\n');
-      userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT:\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about what they have, or ask for a remedy, meticulously check if they have it here first.`;
+      const activeList = medicines.filter(m => !m.isDeleted);
+      const totalUnits = activeList.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
+      const medsStr = activeList.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'tablet'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 1})`).join('\n');
+      userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT (${activeList.length} unique medicines, ${totalUnits} total units/tablets):\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about total medicines, count, what they have, or ask for a remedy, meticulously check this list first and provide exact counts and details.`;
     } else if (userId) {
       try {
         const meds = await getUserMedicines(userId);
         if (meds && meds.length > 0) {
-          const medsStr = meds.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'N/A'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 'N/A'})`).join('\n');
-          userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT:\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about what they have, or ask for a remedy, meticulously check if they have it here first.`;
+          const activeList = meds.filter(m => !m.isDeleted);
+          const totalUnits = activeList.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
+          const medsStr = activeList.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'tablet'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 1})`).join('\n');
+          userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT (${activeList.length} unique medicines, ${totalUnits} total units/tablets):\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about total medicines, count, what they have, or ask for a remedy, meticulously check this list first and provide exact counts and details.`;
         } else {
-          userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: No medicines found.`;
+          userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: 0 active medicines. The user's vault is currently empty.`;
         }
       } catch (err) {
         console.warn("Error fetching user medicines for chatbot context (permissions or offline), proceeding without database sync:", err);
         userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: Database temporary sync unavailable.`;
       }
     } else {
-      userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: No medicines found.`;
+      userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: 0 active medicines. The user's vault is currently empty.`;
     }
 
     const systemInstructionWithMeds = SYSTEM_INSTRUCTION + userMedicinesContext;
@@ -666,7 +733,7 @@ export async function chatWithGeminiServer(messages: any[], userId?: string, med
       }));
 
       const response = await generateContentWithModelFallback(ai, {
-        preferredModel: "gemini-2.5-flash",
+        preferredModel: "gemini-3.8-flash",
         contents: [
           ...history,
           { role: 'user', parts: [{ text: messages[messages.length - 1].content }] }

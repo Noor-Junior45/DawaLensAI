@@ -904,14 +904,17 @@ export function generateOfflineSlmConsultation(
   const activeMeds = userMedicines.filter(m => !m.isDeleted);
   const now = Date.now();
 
-  // 2A. Inventory Count Query ("how many medicine i have?", "tell me how many medicine i have", "count my medicines", "kitni dawaiyan hain?")
+  // 2A. Inventory Count Query ("total medicine i have", "how many medicine i have?", "tell me how many medicine i have", "count my medicines", "kitni dawaiyan hain?")
   const isCountQuery = 
+    /\btotal\s+(?:all\s+)?(?:of\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|inventory|vault|prescription|stock)/i.test(lower) ||
+    /(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)\s+(?:count|number|quantity|total)/i.test(lower) ||
+    /(?:count|number|quantity)\s+(?:of\s+)?(?:all\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)/i.test(lower) ||
     (/how\s+many\b/i.test(lower) && /(?:medicine|med|drug|tablet|pill|item|inventory|vault|prescription|stock)/i.test(lower)) ||
-    /how\s+many\s+(?:do\s+i|are\s+there|in\s+my|total|stored)/i.test(lower) ||
+    /how\s+many\s+(?:do\s+i|are\s+there|in\s+my|total|stored|have)/i.test(lower) ||
     /how\s+much\s+(?:medicine|meds?|stock|quantity)/i.test(lower) ||
-    /(?:count|number|total|quantity)\s+(?:of\s+)?(?:all\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)/i.test(lower) ||
-    /(?:medicines?|meds?|drugs?|tablets?|pills?|items?|inventory|vault)\s+(?:count|number|quantity|total)/i.test(lower) ||
     /(?:tell|show|give)\s+(?:me\s+)?(?:the\s+)?(?:total\s+)?(?:count|number|quantity|how\s+many)/i.test(lower) ||
+    /(?:what\s+(?:are|is)\s+(?:the\s+)?total\s+(?:medicines?|meds?))/i.test(lower) ||
+    /(?:all\s+medicines?\s+(?:i\s+have|in\s+my\s+vault))/i.test(lower) ||
     /(?:kitni|kitne|kitna)\s+(?:dawai|dawa|medicine|meds?|tablet|goli|item)/i.test(lower) ||
     /(?:dawai|dawa|medicine|tablet|goli)\s+(?:ki\s+sankhya|count|kitni|kitne|kitna)/i.test(lower) ||
     /(?:total|kul)\s+(?:dawai|dawa|medicine|kitni)/i.test(lower) ||

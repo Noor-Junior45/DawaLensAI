@@ -25,8 +25,9 @@ export const MEDICINE_FORM_LABELS: Record<MedicineForm, string> = {
 };
 
 export const MEDICINE_CATEGORIES = [
-  'Heart',
+  'Fever',
   'Pain Relief',
+  'Heart',
   'Vitamins',
   'Antibiotics',
   'Diabetes',
@@ -51,6 +52,14 @@ export interface CategoryStyle {
 }
 
 export const CATEGORY_STYLES: Record<string, CategoryStyle> = {
+  'Fever': {
+    label: 'Fever',
+    badgeBg: 'bg-orange-50',
+    badgeText: 'text-orange-800',
+    badgeBorder: 'border-orange-200',
+    dotColor: 'bg-orange-500',
+    accent: '#ea580c'
+  },
   'Heart': {
     label: 'Heart',
     badgeBg: 'bg-rose-50',
@@ -188,13 +197,16 @@ export const POPULAR_TAGS = [
 ];
 
 export const CATEGORY_SYNONYMS: Record<string, string[]> = {
+  'Fever': [
+    'fever', 'pyrexia', 'antipyretic', 'antipyretics', 'high temp', 'temperature', 'fever relief', 'fever and chills', 'chills'
+  ],
   'Heart': [
     'heart', 'cardio', 'cardiovascular', 'cardiac', 'blood pressure', 'hypertension',
     'cholesterol', 'angina', 'blood thinner', 'blood thinners', 'antiarrhythmic'
   ],
   'Pain Relief': [
     'pain relief', 'pain', 'painkiller', 'painkillers', 'analgesic', 'analgesics',
-    'nsaid', 'nsaids', 'antipyretic', 'antipyretics', 'headache', 'body ache', 'fever', 'arthritis', 'anti-inflammatory'
+    'nsaid', 'nsaids', 'headache', 'body ache', 'arthritis', 'anti-inflammatory', 'joint pain', 'muscle pain'
   ],
   'Vitamins': [
     'vitamins', 'vitamin', 'supplement', 'supplements', 'multivitamin', 'multivitamins',
@@ -405,25 +417,132 @@ export function getCanonicalCategory(rawCategory?: string, _form?: string, tags?
   return normalizeCategory(rawCategory);
 }
 
+/**
+ * Extracts and normalizes all applicable clinical categories for a medicine.
+ * Supports multi-category medications (e.g. Zerodol-P as both Fever and Pain Relief).
+ */
+export function getMedicineCategories(item: { 
+  name?: string; 
+  category?: string; 
+  categories?: string[]; 
+  dosage?: string;
+  form?: string;
+  tags?: string[] 
+}): string[] {
+  const result = new Set<string>();
+
+  // 1. From categories array if explicitly assigned
+  if (Array.isArray(item.categories) && item.categories.length > 0) {
+    for (const c of item.categories) {
+      if (c && typeof c === 'string' && c.trim()) {
+        const norm = normalizeCategory(c);
+        if (norm && norm !== 'Other') result.add(norm);
+      }
+    }
+  }
+
+  // 2. From category string (could be comma, slash, plus, or amp-separated: "Fever, Pain Relief" or "Fever / Pain Relief")
+  if (item.category && typeof item.category === 'string' && item.category.trim() !== '') {
+    const parts = item.category.split(/[,/&+]/);
+    for (const p of parts) {
+      if (p.trim()) {
+        const norm = normalizeCategory(p.trim());
+        if (norm && norm !== 'Other') result.add(norm);
+      }
+    }
+  }
+
+  // 3. Clinical brand / salt detection for dual-action combinations (e.g. Zerodol-P, Dolo, Crocin, Combiflam)
+  const name = (item.name || '').trim().toLowerCase();
+  if (
+    name.includes('zerodol p') || name.includes('zerodol-p') || name.includes('combiflam') ||
+    name.includes('dolo') || name.includes('crocin') || name.includes('paracetamol') ||
+    name.includes('calpol') || name.includes('aceclofenac') || name.includes('ibuprofen')
+  ) {
+    result.add('Fever');
+    result.add('Pain Relief');
+  }
+
+  // 4. From tags that match clinical categories
+  if (Array.isArray(item.tags)) {
+    for (const t of item.tags) {
+      if (t && typeof t === 'string' && t.trim()) {
+        const norm = normalizeCategory(t.trim());
+        if (norm && norm !== 'Other') {
+          result.add(norm);
+        }
+      }
+    }
+  }
+
+  // 5. Therapeutic brand heuristics for well-known medications
+  if (name.includes('amox') || name.includes('augmentin') || name.includes('azith') || name.includes('cipro') || name.includes('cefix') || name.includes('antibiotic')) {
+    result.add('Antibiotics');
+  }
+  if (name.includes('panto') || name.includes('pan 40') || name.includes('pan-40') || name.includes('omepra') || name.includes('antacid') || name.includes('digene') || name.includes('gelusil')) {
+    result.add('Digestive');
+  }
+  if (name.includes('telmis') || name.includes('amlod') || name.includes('losart') || name.includes('atorv') || name.includes('statin') || name.includes('clopid') || name.includes('aspirin')) {
+    result.add('Heart');
+  }
+  if (name.includes('metformin') || name.includes('glycomet') || name.includes('insulin') || name.includes('glim')) {
+    result.add('Diabetes');
+  }
+  if (name.includes('cetirizine') || name.includes('levocet') || name.includes('allegra') || name.includes('fexo') || name.includes('montel')) {
+    result.add('Allergy');
+  }
+  if (name.includes('inhaler') || name.includes('asthalin') || name.includes('salbut') || name.includes('budecort') || name.includes('cough')) {
+    result.add('Respiratory');
+  }
+  if (name.includes('vit') || name.includes('zinc') || name.includes('calcium') || name.includes('shelcal') || name.includes('becosules') || name.includes('limcee') || name.includes('d3') || name.includes('b12')) {
+    result.add('Vitamins');
+  }
+
+  // Clean up 'Other' if specific categories are present
+  if (result.size > 1 && result.has('Other')) {
+    result.delete('Other');
+  }
+
+  // Fallback if none found
+  if (result.size === 0) {
+    const single = getMedicineCategory(item);
+    if (single) result.add(single);
+  }
+
+  return Array.from(result);
+}
+
 export function isCategoryMatch(
-  item: { name?: string; category?: string; form?: string; tags?: string[]; allBatches?: Array<{ name?: string; category?: string; form?: string; tags?: string[] }> },
+  item: { 
+    name?: string; 
+    category?: string; 
+    categories?: string[]; 
+    form?: string; 
+    tags?: string[]; 
+    allBatches?: Array<{ name?: string; category?: string; categories?: string[]; form?: string; tags?: string[] }> 
+  },
   selectedCategory: string
 ): boolean {
   if (!selectedCategory || selectedCategory === 'ALL') return true;
 
-  const targetCategory = normalizeCategory(selectedCategory);
+  const targetCategory = normalizeCategory(selectedCategory).toLowerCase();
 
-  // Check the medicine item itself
-  const itemCategory = getMedicineCategory(item);
-  if (itemCategory.toLowerCase() === targetCategory.toLowerCase()) {
+  // Check the medicine item itself across all its assigned categories
+  const itemCats = getMedicineCategories(item);
+  if (itemCats.some(c => c.toLowerCase() === targetCategory)) {
     return true;
   }
 
   // If item is a GroupedMedicine with allBatches, check if ANY batch matches
   if (Array.isArray(item.allBatches) && item.allBatches.length > 0) {
     return item.allBatches.some(b => {
-      const batchCat = getMedicineCategory({ name: b.name || item.name, category: b.category, tags: b.tags });
-      return batchCat.toLowerCase() === targetCategory.toLowerCase();
+      const batchCats = getMedicineCategories({ 
+        name: b.name || item.name, 
+        category: b.category, 
+        categories: b.categories, 
+        tags: b.tags 
+      });
+      return batchCats.some(c => c.toLowerCase() === targetCategory);
     });
   }
 

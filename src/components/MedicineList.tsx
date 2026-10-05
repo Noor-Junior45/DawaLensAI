@@ -3,10 +3,10 @@ import { Medicine, MedicineForm } from '../types';
 import { 
   Calendar, Package, AlertTriangle, CheckCircle2, Clock, Trash2, 
   CheckSquare, Square, Minus, Heart, Layers, Edit3, XCircle, AlertCircle, 
-  ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw, X
+  ChevronDown, ChevronUp, Sparkles, Filter, RefreshCw, X, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MEDICINE_FORM_ICONS, getCategoryStyle, isCategoryMatch } from '../constants';
+import { MEDICINE_FORM_ICONS, getCategoryStyle, isCategoryMatch, getMedicineCategories } from '../constants';
 import { LocalImage } from './LocalImage';
 import { triggerLightHaptic, triggerMediumHaptic, triggerSelectionHaptic, triggerSuccessHaptic } from '../utils/haptics';
 
@@ -41,6 +41,7 @@ interface GroupedMedicine {
   imageUrl?: string;
   liked?: boolean;
   category?: string;
+  categories?: string[];
   tags: string[];
   enableLowStockAlert?: boolean;
   lowStockThreshold?: number;
@@ -252,12 +253,16 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       if (!group.usageInstructions && med.usageInstructions) group.usageInstructions = med.usageInstructions;
       if (!group.imageUrl && med.imageUrl) group.imageUrl = med.imageUrl;
 
-      // Inherit category and tags across batches for this medication group
-      if ((!group.category || group.category === 'Other') && med.category && med.category !== 'Other') {
-        group.category = med.category;
-      } else if (!group.category && med.category) {
-        group.category = med.category;
-      }
+      // Inherit and collect all categories and tags across batches for this medication group
+      if (!group.categories) group.categories = [];
+      const medCats = getMedicineCategories(med);
+      medCats.forEach(c => {
+        if (!group.categories!.includes(c)) {
+          group.categories!.push(c);
+        }
+      });
+      group.category = group.categories.join(', ');
+
       if (med.tags && Array.isArray(med.tags)) {
         med.tags.forEach(t => {
           const clean = t.trim();
@@ -519,24 +524,62 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 </span>
               </div>
 
-              {/* Category Badge (No tags on medicine card) */}
-              {group.category && (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectCategory) {
-                        onSelectCategory(selectedCategory.toLowerCase() === (group.category || '').toLowerCase() ? 'ALL' : group.category || 'ALL');
-                      }
-                    }}
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${getCategoryStyle(group.category).badgeBg} ${getCategoryStyle(group.category).badgeText} ${getCategoryStyle(group.category).badgeBorder}`}
-                    title={`Filter by category: ${group.category}`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${getCategoryStyle(group.category).dotColor}`} />
-                    {group.category}
-                  </span>
-                </div>
-              )}
+              {/* Category Badges & Tags (Supports multiple categories e.g. Fever & Pain Relief) */}
+              {(() => {
+                const cats = Array.from(new Set(getMedicineCategories(group)));
+                const extraTags = Array.isArray(group.tags)
+                  ? Array.from(new Set(group.tags)).filter(t => !cats.some(c => c.toLowerCase() === t.toLowerCase()))
+                  : [];
+                if (cats.length === 0 && extraTags.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {cats.map((cat, cIdx) => {
+                      const style = getCategoryStyle(cat);
+                      const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
+                      return (
+                        <span 
+                          key={`cat-${group.groupKey}-${cat}-${cIdx}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onSelectCategory) {
+                              onSelectCategory(isSelected ? 'ALL' : cat);
+                            }
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${style.badgeBg} ${style.badgeText} ${style.badgeBorder} ${isSelected ? 'ring-1 ring-current' : ''}`}
+                          title={`Filter by category: ${cat}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${style.dotColor}`} />
+                          {cat}
+                        </span>
+                      );
+                    })}
+
+                    {extraTags.slice(0, 3).map((tag, tIdx) => (
+                      <span
+                        key={`tag-${group.groupKey}-${tag}-${tIdx}`}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+
+                    {!isSelectionMode && nearestBatch && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(nearestBatch);
+                        }}
+                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-50 text-slate-500 border border-dashed border-slate-300 hover:border-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
+                        title="Add or edit categories for this medicine"
+                      >
+                        <Plus size={10} />
+                        <span>Category</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -684,24 +727,35 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 </span>
               </div>
 
-              {/* Category Badge (No tags on medicine card) */}
-              {group.category && (
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectCategory) {
-                        onSelectCategory(selectedCategory.toLowerCase() === (group.category || '').toLowerCase() ? 'ALL' : group.category || 'ALL');
-                      }
-                    }}
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${getCategoryStyle(group.category).badgeBg} ${getCategoryStyle(group.category).badgeText} ${getCategoryStyle(group.category).badgeBorder}`}
-                    title={`Filter by category: ${group.category}`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${getCategoryStyle(group.category).dotColor}`} />
-                    {group.category}
-                  </span>
-                </div>
-              )}
+              {/* Category Badges (Supports multiple categories e.g. Fever & Pain Relief) */}
+              {(() => {
+                const cats = Array.from(new Set(getMedicineCategories(group)));
+                if (cats.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {cats.map((cat, cIdx) => {
+                      const style = getCategoryStyle(cat);
+                      const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
+                      return (
+                        <span 
+                          key={`cat-exp-${group.groupKey}-${cat}-${cIdx}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onSelectCategory) {
+                              onSelectCategory(isSelected ? 'ALL' : cat);
+                            }
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all cursor-pointer hover:opacity-90 ${style.badgeBg} ${style.badgeText} ${style.badgeBorder} ${isSelected ? 'ring-1 ring-current' : ''}`}
+                          title={`Filter by category: ${cat}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${style.dotColor}`} />
+                          {cat}
+                        </span>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

@@ -5,7 +5,14 @@ import {
   Sparkles, Bell, BellOff, Mail, Check, X, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MEDICINE_FORM_ICONS, MEDICINE_FORM_LABELS, MEDICINE_CATEGORIES, getCategoryStyle } from '../constants';
+import { 
+  MEDICINE_FORM_ICONS, 
+  MEDICINE_FORM_LABELS, 
+  MEDICINE_CATEGORIES, 
+  getCategoryStyle,
+  POPULAR_TAGS,
+  getMedicineCategories
+} from '../constants';
 import { localImageStorage } from '../services/localImageStorage';
 import { categorizeMedicinesWithAI } from '../services/geminiService';
 import { useEdgeSwipeBack } from '../utils/mobileGestures';
@@ -54,6 +61,10 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
     schedule: medicine.schedule || '',
     usageInstructions: medicine.usageInstructions || '',
     category: medicine.category || 'Other',
+    categories: Array.isArray(medicine.categories) && medicine.categories.length > 0 
+      ? [...medicine.categories] 
+      : (medicine.category ? medicine.category.split(/[,/&]/).map(s => s.trim()).filter(Boolean) : ['Other']),
+    tags: Array.isArray(medicine.tags) ? [...medicine.tags] : [],
     enableLowStockAlert: medicine.enableLowStockAlert !== false,
     lowStockThreshold: medicine.lowStockThreshold ?? globalLowQuantityThreshold,
     enableEmailExpiryAlert: medicine.enableEmailExpiryAlert !== false,
@@ -63,9 +74,55 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   });
 
   const [suggestions, setSuggestions] = useState<Medicine[]>([]);
+  const [customTagInput, setCustomTagInput] = useState('');
   const [isGeminiCategorizing, setIsGeminiCategorizing] = useState(false);
   const [geminiNotice, setGeminiNotice] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const currentCategories = React.useMemo(() => {
+    return getMedicineCategories(formData);
+  }, [formData.categories, formData.category, formData.tags, formData.name]);
+
+  const toggleCategory = (catKey: string) => {
+    triggerSelectionHaptic();
+    const isAlreadySelected = currentCategories.some(c => c.toLowerCase() === catKey.toLowerCase());
+    let nextCats: string[];
+    if (isAlreadySelected) {
+      nextCats = currentCategories.filter(c => c.toLowerCase() !== catKey.toLowerCase());
+      if (nextCats.length === 0) nextCats = ['Other'];
+    } else {
+      nextCats = [...currentCategories.filter(c => c.toLowerCase() !== 'other'), catKey];
+    }
+    setFormData(prev => ({
+      ...prev,
+      categories: nextCats,
+      category: nextCats.join(', '),
+      tags: Array.from(new Set([...(prev.tags || []), ...nextCats.filter(c => c !== 'Other')]))
+    }));
+  };
+
+  const handleAddTag = (tagToAdd: string) => {
+    const clean = tagToAdd.trim();
+    if (!clean) return;
+    triggerSelectionHaptic();
+    setFormData(prev => {
+      const currentTags = Array.isArray(prev.tags) ? [...prev.tags] : [];
+      if (currentTags.some(t => t.toLowerCase() === clean.toLowerCase())) return prev;
+      return {
+        ...prev,
+        tags: [...currentTags, clean]
+      };
+    });
+    setCustomTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    triggerLightHaptic();
+    setFormData(prev => ({
+      ...prev,
+      tags: (prev.tags || []).filter(t => t.toLowerCase() !== tagToRemove.toLowerCase())
+    }));
+  };
 
   const handleGeminiCategorize = async () => {
     if (isGeminiCategorizing) return;
@@ -80,11 +137,22 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
         form: formData.form || medicine.form
       }]);
 
-      if (results && results.length > 0 && results[0]?.category) {
-        const detectedCat = results[0].category;
-        updateField('category', detectedCat);
-        setGeminiNotice(`Category set to "${detectedCat}" by Gemini AI!`);
-        setTimeout(() => setGeminiNotice(null), 4000);
+      if (results && results.length > 0) {
+        const item = results[0];
+        const cats = Array.isArray(item.categories) && item.categories.length > 0
+          ? item.categories
+          : (item.category ? item.category.split(/[,/&]/).map(s => s.trim()).filter(Boolean) : []);
+        
+        if (cats.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            categories: cats,
+            category: cats.join(', '),
+            tags: Array.from(new Set([...(prev.tags || []), ...cats.filter(c => c !== 'Other')]))
+          }));
+          setGeminiNotice(`Categories set to "${cats.join(', ')}" by Gemini AI!`);
+          setTimeout(() => setGeminiNotice(null), 4000);
+        }
       }
     } catch (e: any) {
       console.error("Gemini categorize error:", e);
@@ -158,7 +226,14 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim()) return;
-    onSave(formData);
+    const finalCats = getMedicineCategories(formData);
+    const cleanFormData = {
+      ...formData,
+      categories: finalCats,
+      category: finalCats.join(', '),
+      tags: Array.from(new Set([...(formData.tags || []), ...finalCats.filter(c => c !== 'Other')]))
+    };
+    onSave(cleanFormData);
   };
 
   return (
@@ -357,26 +432,102 @@ export const MedicineEditPage: React.FC<MedicineEditPageProps> = ({
               )}
             </AnimatePresence>
 
+            <div className="flex items-center justify-between">
+              <span className="text-[11.5px] text-slate-500">
+                Select multiple categories if applicable (e.g. Zerodol-P as both <strong>Fever</strong> and <strong>Pain Relief</strong>).
+              </span>
+              <span className="text-[11px] font-bold text-[#0f9d58] bg-[#0f9d58]/10 px-2 py-0.5 rounded-full shrink-0">
+                {currentCategories.length} selected
+              </span>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
               {MEDICINE_CATEGORIES.map(catKey => {
-                const isSelected = (formData.category || 'Other').toLowerCase() === catKey.toLowerCase();
+                const isSelected = currentCategories.some(c => c.toLowerCase() === catKey.toLowerCase());
                 const style = getCategoryStyle(catKey);
                 return (
                   <button
                     key={`edit-cat-${catKey}`}
                     type="button"
-                    onClick={() => updateField('category', catKey)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all text-left ${
+                    onClick={() => toggleCategory(catKey)}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer active:scale-95 ${
                       isSelected
                         ? `${style.badgeBg} ${style.badgeText} border-current ring-1 ring-current shadow-xs`
                         : 'bg-white border-[#e3e2e0] text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
-                    <span className="truncate">{catKey}</span>
+                    <div className="flex items-center gap-2 truncate">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${style.dotColor}`} />
+                      <span className="truncate">{catKey}</span>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[10px] font-black shrink-0">✓</span>
+                    )}
                   </button>
                 );
               })}
+            </div>
+
+            {/* Custom Tags Section */}
+            <div className="pt-2 space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Custom Tags
+              </label>
+              {Array.isArray(formData.tags) && formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {formData.tags.map((tag, tIdx) => (
+                    <span 
+                      key={`edit-tag-${tag}-${tIdx}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    >
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-emerald-600 hover:text-emerald-900 ml-0.5 p-0.5 cursor-pointer"
+                        title={`Remove tag ${tag}`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag(customTagInput);
+                    }
+                  }}
+                  placeholder="Add custom tag (e.g. Prescription, SOS, Daily)"
+                  className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-white border border-[#e3e2e0] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0f9d58]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddTag(customTagInput)}
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  + Add Tag
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10.5px] text-slate-400 font-medium">Quick add:</span>
+                {POPULAR_TAGS.filter(t => !(formData.tags || []).includes(t)).slice(0, 6).map((popTag, pIdx) => (
+                  <button
+                    key={`poptag-${popTag}-${pIdx}`}
+                    type="button"
+                    onClick={() => handleAddTag(popTag)}
+                    className="text-[10px] font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                  >
+                    + {popTag}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

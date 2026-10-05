@@ -3,7 +3,7 @@ import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, 
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
-import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getMedicineCategory, calculateDiffDays } from './constants';
+import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getMedicineCategory, getMedicineCategories, calculateDiffDays } from './constants';
 import { CameraCapture } from './components/CameraCapture';
 import { MedicineList } from './components/MedicineList';
 import { SettingsModal } from './components/SettingsModal';
@@ -515,7 +515,7 @@ export default function App() {
   // Requests Android POST_NOTIFICATIONS permission, creates notification channels, and syncs toggle
   useEffect(() => {
     const setupNative = async () => {
-      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications')) {
+      if (Capacitor.isNativePlatform()) {
         try {
           const granted = await initNativeNotifications();
           if (granted) {
@@ -525,7 +525,7 @@ export default function App() {
             }
           }
         } catch (e) {
-          console.warn('Native init error:', e);
+          console.warn('Native init notice:', e);
         }
       }
     };
@@ -535,7 +535,7 @@ export default function App() {
   // Synchronize scheduled local notifications for medicine expiry dates
   // Ensures heads-up reminders appear on user's phone even when the app is closed
   useEffect(() => {
-    if (medicines.length > 0) {
+    if (medicines.length > 0 && Capacitor.isNativePlatform()) {
       scheduleNativeMedicineAlerts(medicines, alertThreshold);
     }
   }, [medicines, alertThreshold]);
@@ -593,21 +593,21 @@ export default function App() {
   // Synchronize Notifications toggle state with Android / OS system notification permission
   useEffect(() => {
     const syncNotificationPermissionWithSystem = async () => {
-      if (Capacitor.isNativePlatform() || Capacitor.isPluginAvailable('LocalNotifications') || Capacitor.isPluginAvailable('PushNotifications')) {
+      if (Capacitor.isNativePlatform()) {
         try {
           let isGranted = false;
           let isDenied = false;
 
           if (Capacitor.isPluginAvailable('LocalNotifications')) {
-            const localPerm = await LocalNotifications.checkPermissions();
-            if (localPerm.display === 'granted') isGranted = true;
-            if (localPerm.display === 'denied') isDenied = true;
+            const localPerm = await LocalNotifications.checkPermissions().catch(() => null);
+            if (localPerm?.display === 'granted') isGranted = true;
+            if (localPerm?.display === 'denied') isDenied = true;
           }
 
           if (Capacitor.isPluginAvailable('PushNotifications')) {
-            const pushPerm = await PushNotifications.checkPermissions();
-            if (pushPerm.receive === 'granted') isGranted = true;
-            if (pushPerm.receive === 'denied') isDenied = true;
+            const pushPerm = await PushNotifications.checkPermissions().catch(() => null);
+            if (pushPerm?.receive === 'granted') isGranted = true;
+            if (pushPerm?.receive === 'denied') isDenied = true;
           }
 
           if (isGranted) {
@@ -623,18 +623,20 @@ export default function App() {
           }
           return;
         } catch (e) {
-          console.warn('Native permission sync warning:', e);
+          console.warn('Native permission sync notice:', e);
         }
       }
 
       if (typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'denied') {
-          // If closed in Android phone settings, show closed/off in the app
-          setBrowserNotificationsEnabled(false);
-        } else if (Notification.permission === 'granted') {
-          // If allowed in Android phone settings, show on in the app
-          setBrowserNotificationsEnabled(true);
-        }
+        try {
+          if (Notification.permission === 'denied') {
+            // If closed in phone settings, show closed/off in the app
+            setBrowserNotificationsEnabled(false);
+          } else if (Notification.permission === 'granted') {
+            // If allowed in phone settings, show on in the app
+            setBrowserNotificationsEnabled(true);
+          }
+        } catch {}
       }
     };
 
@@ -696,7 +698,11 @@ export default function App() {
           const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
           
           if (diffDays >= 0 && diffDays <= 7) {
-            if (hasNotification && Notification.permission === 'granted') {
+            let isPermGranted = false;
+            try {
+              isPermGranted = hasNotification && Notification.permission === 'granted';
+            } catch {}
+            if (isPermGranted) {
               try {
                 if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
                   navigator.serviceWorker.ready.then(reg => {
@@ -871,22 +877,58 @@ export default function App() {
       }
 
       const medRef = doc(db, 'medicines', currentDetailsMedicine.id);
-      const updateData: any = { 
-        ...currentDetailsMedicine, 
-        ...firestoreData, 
+      
+      // Clean and sanitize updateData strictly matching Firestore schema
+      const updateData: any = {
+        id: currentDetailsMedicine.id,
+        name: (firestoreData.name ?? currentDetailsMedicine.name ?? 'Unknown').trim(),
+        dosage: (firestoreData.dosage ?? currentDetailsMedicine.dosage ?? 'N/A').trim(),
+        expirationDate: firestoreData.expirationDate ?? currentDetailsMedicine.expirationDate,
         userId: user.uid,
+        createdAt: currentDetailsMedicine.createdAt || Date.now(),
+        updatedAt: serverTimestamp(),
+        usageInstructions: firestoreData.usageInstructions ?? currentDetailsMedicine.usageInstructions ?? '',
+        schedule: firestoreData.schedule ?? currentDetailsMedicine.schedule ?? '',
+        form: firestoreData.form ?? currentDetailsMedicine.form ?? 'tablet',
+        quantity: typeof firestoreData.quantity === 'number' ? firestoreData.quantity : (currentDetailsMedicine.quantity ?? 1),
         imageUrl: imageUrl || currentDetailsMedicine.imageUrl || null,
-        updatedAt: serverTimestamp()
+        category: firestoreData.category ?? currentDetailsMedicine.category ?? 'Other',
+        categories: Array.isArray(firestoreData.categories) && firestoreData.categories.length > 0
+          ? firestoreData.categories
+          : (Array.isArray(currentDetailsMedicine.categories) && currentDetailsMedicine.categories.length > 0
+              ? currentDetailsMedicine.categories
+              : (currentDetailsMedicine.category ? [currentDetailsMedicine.category] : ['Other'])),
+        tags: Array.isArray(firestoreData.tags)
+          ? firestoreData.tags
+          : (Array.isArray(currentDetailsMedicine.tags) ? currentDetailsMedicine.tags : []),
+        enableLowStockAlert: firestoreData.enableLowStockAlert !== undefined
+          ? firestoreData.enableLowStockAlert
+          : (currentDetailsMedicine.enableLowStockAlert !== false),
+        lowStockThreshold: firestoreData.lowStockThreshold !== undefined
+          ? firestoreData.lowStockThreshold
+          : (currentDetailsMedicine.lowStockThreshold ?? lowQuantityThreshold),
+        enableEmailExpiryAlert: firestoreData.enableEmailExpiryAlert !== undefined
+          ? firestoreData.enableEmailExpiryAlert
+          : (currentDetailsMedicine.enableEmailExpiryAlert !== false),
+        enableEmailLowStockAlert: firestoreData.enableEmailLowStockAlert !== undefined
+          ? firestoreData.enableEmailLowStockAlert
+          : (currentDetailsMedicine.enableEmailLowStockAlert !== false)
       };
 
+      if (currentDetailsMedicine.taken !== undefined) updateData.taken = currentDetailsMedicine.taken;
+      if (currentDetailsMedicine.liked !== undefined) updateData.liked = currentDetailsMedicine.liked;
+      if (currentDetailsMedicine.isDeleted !== undefined) updateData.isDeleted = currentDetailsMedicine.isDeleted;
+      if (currentDetailsMedicine.deletedAt !== undefined) updateData.deletedAt = currentDetailsMedicine.deletedAt;
+
+      // Ensure no undefined values exist
       Object.keys(updateData).forEach(key => {
         if (updateData[key] === undefined) {
-          updateData[key] = deleteField();
+          delete updateData[key];
         }
       });
 
-      const batch = writeBatch(db);
-      batch.set(medRef, updateData, { merge: true });
+      // Save updated medicine to Firestore
+      await setDoc(medRef, updateData, { merge: true });
 
       const changes: string[] = [];
       if (data.name && currentDetailsMedicine.name !== data.name) {
@@ -920,17 +962,20 @@ export default function App() {
         changes.push(`Usage Instructions updated`);
       }
       
-      const historyId = crypto.randomUUID();
-      batch.set(doc(db, `medicines/${currentDetailsMedicine.id}/history`, historyId), {
-        id: historyId,
-        medicineId: currentDetailsMedicine.id,
-        userId: user.uid,
-        timestamp: Date.now(),
-        actionType: 'EDIT',
-        details: `Updated: ${changes.join(', ') || 'Medication details modified'}`
-      });
-
-      await batch.commit();
+      // Non-blocking history record
+      try {
+        const historyId = crypto.randomUUID();
+        await setDoc(doc(db, `medicines/${currentDetailsMedicine.id}/history`, historyId), {
+          id: historyId,
+          medicineId: currentDetailsMedicine.id,
+          userId: user.uid,
+          timestamp: Date.now(),
+          actionType: 'EDIT',
+          details: (`Updated: ${changes.join(', ') || 'Medication details modified'}`).slice(0, 1500)
+        });
+      } catch (histErr) {
+        console.warn('History logging notice:', histErr);
+      }
 
       if (localImageToSave) {
         await localImageStorage.saveImage(currentDetailsMedicine.id, localImageToSave);
@@ -1022,6 +1067,9 @@ export default function App() {
         }
         if (firestoreData.category || existingMed.category) {
           updateData.category = firestoreData.category || existingMed.category;
+        }
+        if (firestoreData.categories || existingMed.categories) {
+          updateData.categories = firestoreData.categories || existingMed.categories;
         }
         if (firestoreData.tags || existingMed.tags) {
           const mergedTags = Array.from(new Set([...(existingMed.tags || []), ...(firestoreData.tags || [])]));
@@ -1123,6 +1171,9 @@ export default function App() {
         }
         if (firestoreData.category) {
           newMed.category = firestoreData.category;
+        }
+        if (firestoreData.categories && Array.isArray(firestoreData.categories)) {
+          newMed.categories = firestoreData.categories;
         }
         if (firestoreData.tags && Array.isArray(firestoreData.tags)) {
           newMed.tags = firestoreData.tags;
@@ -1413,6 +1464,14 @@ export default function App() {
       defaultDate.setFullYear(defaultDate.getFullYear() + 1);
       const fallbackExpiry = `${defaultDate.getFullYear()}-${String(defaultDate.getMonth() + 1).padStart(2, '0')}-01`;
 
+      const extractedCats = Array.isArray(result.medicine.categories) && result.medicine.categories.length > 0
+        ? result.medicine.categories
+        : (result.medicine.category ? result.medicine.category.split(/[,/&]/).map((s: string) => s.trim()).filter(Boolean) : []);
+
+      const detectedCategories = extractedCats.length > 0
+        ? extractedCats
+        : getMedicineCategories({ name: result.medicine.name, dosage: result.medicine.dosage });
+
       const tempMed: Partial<Medicine> = {
         name: cleanString(result.medicine.name, 'Scanned Medicine'),
         dosage: cleanString(result.medicine.dosage, 'N/A'),
@@ -1421,6 +1480,11 @@ export default function App() {
         capturedImage: `data:image/jpeg;base64,${base64}`,
         quantity: typeof result.medicine.quantity === 'number' && result.medicine.quantity > 0 ? result.medicine.quantity : 1,
         form: cleanString(result.medicine.form, 'tablet') as any,
+        categories: detectedCategories,
+        category: detectedCategories.join(', '),
+        tags: Array.isArray(result.medicine.tags) && result.medicine.tags.length > 0 
+          ? result.medicine.tags 
+          : detectedCategories.filter(c => c !== 'Other'),
       };
       // We don't save immediately, we let user verify in form
       setEditingMedicine(tempMed as Medicine);
@@ -1669,6 +1733,7 @@ export default function App() {
           (m.dosage || '').toLowerCase().includes(searchLower) ||
           (m.usageInstructions || '').toLowerCase().includes(searchLower) ||
           (m.category || '').toLowerCase().includes(searchLower) ||
+          (Array.isArray(m.categories) && m.categories.some(c => c.toLowerCase().includes(searchLower))) ||
           (m.form || '').toLowerCase().includes(searchLower) ||
           (Array.isArray(m.tags) && m.tags.some(t => t.toLowerCase().includes(searchLower)));
 
@@ -1716,11 +1781,13 @@ export default function App() {
   const categoryDropdownItems = React.useMemo(() => {
     const counts = new Map<string, number>();
 
-    // Count medicines per clinical category
+    // Count medicines per clinical category (supports combination medications under both categories)
     medicines.forEach(m => {
       if (m.isDeleted) return;
-      const canon = getMedicineCategory(m);
-      counts.set(canon, (counts.get(canon) || 0) + 1);
+      const cats = getMedicineCategories(m);
+      cats.forEach(canon => {
+        counts.set(canon, (counts.get(canon) || 0) + 1);
+      });
     });
 
     const items: { category: string; count: number; accentColor: string }[] = [];

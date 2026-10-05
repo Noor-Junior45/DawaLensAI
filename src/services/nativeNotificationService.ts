@@ -56,20 +56,20 @@ export async function requestNativePushPermission(): Promise<boolean> {
  * Checks if native notifications are currently granted by the user or OS.
  */
 export async function checkNativeNotificationPermission(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform() && !Capacitor.isPluginAvailable('LocalNotifications')) {
+  if (!Capacitor.isNativePlatform()) {
     return false;
   }
   try {
     if (Capacitor.isPluginAvailable('LocalNotifications')) {
-      const localPerm = await LocalNotifications.checkPermissions();
-      if (localPerm.display === 'granted') return true;
+      const localPerm = await LocalNotifications.checkPermissions().catch(() => null);
+      if (localPerm?.display === 'granted') return true;
     }
     if (Capacitor.isPluginAvailable('PushNotifications')) {
-      const pushPerm = await PushNotifications.checkPermissions();
-      if (pushPerm.receive === 'granted') return true;
+      const pushPerm = await PushNotifications.checkPermissions().catch(() => null);
+      if (pushPerm?.receive === 'granted') return true;
     }
   } catch (e) {
-    console.warn('checkNativeNotificationPermission error:', e);
+    console.warn('checkNativeNotificationPermission notice:', e);
   }
   return false;
 }
@@ -79,18 +79,18 @@ export async function checkNativeNotificationPermission(): Promise<boolean> {
  * This ensures Android will wake the device and display notifications even when the app is closed.
  */
 export async function initNativeNotifications(): Promise<boolean> {
-  if (!Capacitor.isNativePlatform() && !Capacitor.isPluginAvailable('LocalNotifications')) {
+  if (!Capacitor.isNativePlatform()) {
     return false;
   }
 
   try {
     // 1. Request Local Notification permissions (Android 13+ POST_NOTIFICATIONS)
-    let permStatus = await LocalNotifications.checkPermissions();
-    if (permStatus.display !== 'granted') {
-      permStatus = await LocalNotifications.requestPermissions();
+    let permStatus = await LocalNotifications.checkPermissions().catch(() => null);
+    if (!permStatus || permStatus.display !== 'granted') {
+      permStatus = await LocalNotifications.requestPermissions().catch(() => null);
     }
 
-    if (permStatus.display === 'granted') {
+    if (permStatus && permStatus.display === 'granted') {
       // 2. Create high-importance Android Notification Channels
       const alertsChannel: Channel = {
         id: 'medicine_alerts',
@@ -123,13 +123,13 @@ export async function initNativeNotifications(): Promise<boolean> {
     // 3. Register for Firebase Cloud Messaging (Push Notifications) and listen for messages
     try {
       if (Capacitor.isPluginAvailable('PushNotifications')) {
-        let pushPerm = await PushNotifications.checkPermissions();
-        if (pushPerm.receive !== 'granted') {
-          pushPerm = await PushNotifications.requestPermissions();
+        let pushPerm = await PushNotifications.checkPermissions().catch(() => null);
+        if (!pushPerm || pushPerm.receive !== 'granted') {
+          pushPerm = await PushNotifications.requestPermissions().catch(() => null);
         }
-        if (pushPerm.receive === 'granted') {
+        if (pushPerm && pushPerm.receive === 'granted') {
           // Remove existing listeners before re-attaching
-          await PushNotifications.removeAllListeners();
+          await PushNotifications.removeAllListeners().catch(() => {});
 
           // On successful FCM registration token received
           PushNotifications.addListener('registration', (token) => {
@@ -179,9 +179,9 @@ export async function initNativeNotifications(): Promise<boolean> {
       console.warn('Native push registration warning (non-fatal):', pushErr);
     }
 
-    return permStatus.display === 'granted';
+    return permStatus?.display === 'granted';
   } catch (error) {
-    console.error('Failed to initialize native notifications:', error);
+    console.warn('Native notification initialization notice:', error);
     return false;
   }
 }
