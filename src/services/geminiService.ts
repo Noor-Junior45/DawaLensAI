@@ -52,10 +52,10 @@ export interface InteractionResult {
 const SYSTEM_INSTRUCTION = `You are Dr. DawaSnap, an incredibly friendly, exceptionally empathetic, and highly knowledgeable companion and family physician. Your role is to guide patients through their medication inventory with pristine care, a very warm tone, and deep understanding.
 
 CRITICAL INSTRUCTIONS:
-1. . GREETING:
-   - If user ask questions then give answer remove greeeting.
-   - If the user starts with a simple greeting (e.g., "Hi", "Hello", "How are you?"), reply briefly with a friendly, single-sentence greeting and ask how you can help.
-   - For all other queries (i.e., medical questions, product questions), reply directly and immediately to the user's query. Do not add any extra conversational text.
+1. GREETING:
+   - If user asks questions then answer directly and remove pleasantries.
+   - If the user starts with a simple greeting or asks "how are you?", reply with a warm, single polite sentence as Dr. Jack, your clinical pharmacist (e.g. "I am doing great, thank you for asking! 😊 How can I help you with your health and medications today?") and ask how you can help. Avoid redundant, repetitive phrases like stating both "I am doing great" and "I'm feeling wonderful" together in the same response.
+   - For all other queries (i.e., medical questions, product questions), reply directly and immediately to the user's query. Do not add extra conversational filler.
    - Always start with a friendly greeting if it is the very first message.
 2. TONE & LANGUAGE:
    - Be empathetic, polite, and respectful. Use emojis (💊, 🌿, 😊, 🙏) to make the conversation warm.
@@ -552,173 +552,132 @@ export interface SpecialistInfo {
  * - Dr. Ross: Inventory counts ("total medicine i have"), vault listings, stock, expiry checks, schedule, greetings.
  * - Dr. Jack: Clinical advice, drug interactions, side effects, pharmacological queries, medical explanations.
  */
-export function getSpecialistForTask(queryText: string, provider?: 'gemini' | 'slm'): SpecialistInfo {
+/**
+ * Evaluates whether a user query is a "Complicated Question" requiring Dr. Jack (Cloud Gemini AI),
+ * or a "Greeting / Normal Message" handled locally by Dr. Ross (On-Device SLM).
+ * - Dr. Ross: Greeting messages (hi, hello, how are you) & normal messages (inventory counts, expiry, daily schedule, low stock, basic OTC queries, everyday conversation).
+ * - Dr. Jack: Complicated questions (drug interactions, contraindications, toxicity/overdose, complex systemic pathology, hospital/surgery, abnormal lab markers, advanced clinical pharmacology).
+ */
+export function isComplexQuestion(queryText: string): boolean {
   const lower = (queryText || '').toLowerCase().trim();
+  if (!lower) return false;
 
-  // 1. Inventory & Stock counts
+  // 1. Drug-to-Drug Interactions, Mixing & Contraindications
+  if (
+    /(?:interact|contraindicat|mix\b|together|combine|combination\s+safety|clash|safe\s+with|along\s+with|conflict\s+with|can\s+i\s+take\b.+with)/i.test(lower)
+  ) {
+    return true;
+  }
+
+  // 2. High-Risk Adverse Effects, Toxicity, Poisoning & Overdose
+  if (
+    /(?:adverse\s*reaction|toxicity|poisoning|overdose|toxic\s*dose|anaphylaxis|black\s*box|severe\s*reaction|serotonin\s*syndrome|fatal|lethal)/i.test(lower)
+  ) {
+    return true;
+  }
+
+  // 3. Complex Systemic Diseases, Oncology, Renal, Hepatic & Hospital / Surgical Procedures
+  if (
+    /(?:chemotherap|oncolog|cancer|malignan|dialysis|kidney\s*failure|renal\s*impair|cirrhosis|liver\s*failure|transplant|cardiac\s*arrest|myocardial|stroke|sepsis|icu\b|hospital\s*admit|surgery|surgical|anesthesia|biopsy|pathology\s*report|mri\s+with|endoscopy|colonoscopy|clinical\s*trial|creatinine|hba1c|sgpt|sgot|ecg\s*abnormal)/i.test(lower)
+  ) {
+    return true;
+  }
+
+  // 4. High-Risk Population Pharmacology (Pregnancy, Lactation, Pharmacokinetics)
+  if (
+    /(?:pregnan|breastfeed|lactat|mechanism\s*of\s*action|pharmacokinetic|half[- ]life|bioavailability|drug[- ]resistance)/i.test(lower)
+  ) {
+    return true;
+  }
+
+  // 5. Complex Multi-Sentence Clinical Queries (> 180 chars with multiple questions)
+  if (lower.split(/[?.!]/).filter(s => s.trim().length > 20).length >= 3 && lower.length > 180) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Dynamically resolves the active specialist (Dr. Ross vs Dr. Jack) and task title
+ * based on user query intent:
+ * - Dr. Ross: Greeting messages and normal everyday messages (inventory, expiry, schedule, simple OTC, well-being).
+ * - Dr. Jack: Complicated questions (drug interactions, contraindications, toxicity, overdose, complex pathology, advanced pharmacology).
+ */
+export function getSpecialistForTask(queryText: string, provider?: 'gemini' | 'slm'): SpecialistInfo {
+  const isComplex = isComplexQuestion(queryText);
+
+  // Complicated questions -> Always handled by Dr. Jack (Cloud Gemini AI)
+  if (isComplex && provider !== 'slm') {
+    const lower = (queryText || '').toLowerCase();
+    let taskTitle = 'Clinical Specialist';
+    let badgeColor: 'indigo' | 'rose' | 'blue' = 'indigo';
+
+    if (/(?:interact|contraindicat|mix|combine|clash|safe\s+with|along\s+with)/i.test(lower)) {
+      taskTitle = 'Drug Interactions';
+    } else if (/(?:side\s*effects?|adverse|poison|toxic|allergy|overdose)/i.test(lower)) {
+      taskTitle = 'Safety & Toxicity';
+      badgeColor = 'rose';
+    } else if (/(?:chemotherap|cancer|dialysis|kidney|surgery|cardiac|stroke)/i.test(lower)) {
+      taskTitle = 'Complex Pathology';
+      badgeColor = 'rose';
+    } else if (/(?:dosage|overdose|maximum\s+dose)/i.test(lower)) {
+      taskTitle = 'Dosage Specialist';
+      badgeColor = 'blue';
+    }
+
+    return {
+      name: 'Dr. Jack',
+      taskTitle,
+      displayName: 'Dr. Jack',
+      headerDisplay: 'DR. JACK',
+      provider: 'gemini',
+      badgeColor
+    };
+  }
+
+  // Greetings & Normal messages -> Always handled by Dr. Ross (On-Device SLM)
+  const lower = (queryText || '').toLowerCase().trim();
+  let taskTitle = 'On-Device SLM';
+  let badgeColor: 'emerald' | 'amber' | 'teal' = 'emerald';
+
   if (
     /\btotal\s+(?:all\s+)?(?:of\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|inventory|vault|prescription|stock)/i.test(lower) ||
     /(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)\s+(?:count|number|quantity|total)/i.test(lower) ||
-    /(?:count|number|quantity)\s+(?:of\s+)?(?:all\s+)?(?:the\s+)?(?:my\s+)?(?:medicines?|meds?|drugs?|tablets?|pills?|items?|vault|inventory)/i.test(lower) ||
     /how\s+many\s+(?:medicines?|meds?|pills?|tablets?|drugs?|do\s+i\s+have|in\s+my|total|stored|have)/i.test(lower) ||
-    /how\s+much\s+(?:medicine|meds?|stock|quantity)/i.test(lower) ||
-    /(?:list|show|what)\s+(?:all\s+)?(?:my\s+)?(?:medicines?|meds?|vault|inventory)/i.test(lower) ||
-    /(?:kitni|kitne|kitna)\s+(?:dawai|dawa|medicine)/i.test(lower) ||
-    /(?:total|kul)\s+(?:dawai|dawa|medicine|kitni)/i.test(lower) ||
-    /(?:mere\s+paas\s+)?kitni\s+(?:dawai|dawa|medicine)/i.test(lower) ||
-    /count\s+(?:my\s+)?(?:medicines?|meds?)/i.test(lower) ||
-    /(?:how\s+many|quantity\s+of|stock\s+of)\s+[a-z]+/i.test(lower)
+    /count\s+(?:my\s+)?(?:medicines?|meds?)/i.test(lower)
   ) {
-    return {
-      name: 'Dr. Ross',
-      taskTitle: 'Medicine Inventory',
-      displayName: 'Dr. Ross • Inventory',
-      headerDisplay: 'DR. ROSS • INVENTORY',
-      provider: 'slm',
-      badgeColor: 'emerald'
-    };
-  }
-
-  // 2. Expiry & Shelf Life
-  if (
-    /(?:expir|expired|expiry|shelf\s*life|bad\s*date|out\s*of\s*date|validity)/i.test(lower) ||
-    /(?:which\s+medicines?\s+(?:are\s+)?expir)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Ross',
-      taskTitle: 'Expiry Monitor',
-      displayName: 'Dr. Ross • Expiry Monitor',
-      headerDisplay: 'DR. ROSS • EXPIRY MONITOR',
-      provider: 'slm',
-      badgeColor: 'amber'
-    };
-  }
-
-  // 3. Intake Schedule, Timings & Daily Routine
-  if (
-    /(?:daily\s+schedule|when\s+(?:should|to)\s+i\s+take|timing|routine|morning|afternoon|night|before\s+food|after\s+food|empty\s+stomach|reminder)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Ross',
-      taskTitle: 'Intake Schedule',
-      displayName: 'Dr. Ross • Intake Schedule',
-      headerDisplay: 'DR. ROSS • INTAKE SCHEDULE',
-      provider: 'slm',
-      badgeColor: 'teal'
-    };
-  }
-
-  // 4. Low Stock & Refills
-  if (
-    /(?:low\s+stock|refill|shortage|running\s+out|restock)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Ross',
-      taskTitle: 'Stock Alert',
-      displayName: 'Dr. Ross • Stock Alert',
-      headerDisplay: 'DR. ROSS • STOCK ALERT',
-      provider: 'slm',
-      badgeColor: 'emerald'
-    };
-  }
-
-  // 5. Drug Interactions & Contraindications
-  if (
-    /(?:interact|contraindicat|mix|together|combine|combination|clash|safe\s+with|along\s+with|conflict)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Jack',
-      taskTitle: 'Drug Interactions',
-      displayName: 'Dr. Jack • Drug Interactions',
-      headerDisplay: 'DR. JACK • DRUG INTERACTIONS',
-      provider: 'gemini',
-      badgeColor: 'indigo'
-    };
-  }
-
-  // 6. Side Effects, Adverse Reactions & Safety Warnings
-  if (
-    /(?:side\s*effects?|adverse|reaction|harmful|danger|risk|poison|toxicity|toxic|allergy|allergic)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Jack',
-      taskTitle: 'Safety & Side Effects',
-      displayName: 'Dr. Jack • Side Effects',
-      headerDisplay: 'DR. JACK • SIDE EFFECTS',
-      provider: 'gemini',
-      badgeColor: 'rose'
-    };
-  }
-
-  // 7. Dosage, Administration & Overdose
-  if (
-    /(?:dosage|how\s+much\s+(?:mg|ml|dose|tablets?)|maximum\s+dose|overdose|frequency|times\s+a\s+day)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Jack',
-      taskTitle: 'Dosage Guidelines',
-      displayName: 'Dr. Jack • Dosage Specialist',
-      headerDisplay: 'DR. JACK • DOSAGE SPECIALIST',
-      provider: 'gemini',
-      badgeColor: 'blue'
-    };
-  }
-
-  // 8. General Clinical Pharmacology & Medical Inquiries
-  if (
-    /(?:what\s+is|used\s+for|purpose|treatment|cure|prescribe|symptom|disease|condition|fever|pain|cough|cold|infection|antibiotic|paracetamol|ibuprofen|aspirin|amoxicillin|metformin|atorvastatin)/i.test(lower)
-  ) {
-    return {
-      name: 'Dr. Jack',
-      taskTitle: 'Clinical Pharmacology',
-      displayName: 'Dr. Jack • Clinical Specialist',
-      headerDisplay: 'DR. JACK • CLINICAL SPECIALIST',
-      provider: 'gemini',
-      badgeColor: 'indigo'
-    };
-  }
-
-  // 9. Greetings & Polite Pleasantries
-  if (/^(hi|hello|hey|namaste|good\s*(morning|evening|afternoon)|salam|greetings|how\s*are\s*you|who\s*are\s*you|thank\s*you|thanks|ok|okay)\b/i.test(lower) && lower.length < 40) {
-    return {
-      name: 'Dr. Ross',
-      taskTitle: 'AI Consultation',
-      displayName: 'Dr. Ross • On-Device SLM',
-      headerDisplay: 'DR. ROSS • ON-DEVICE SLM',
-      provider: 'slm',
-      badgeColor: 'emerald'
-    };
-  }
-
-  // Default fallback based on provider or query length
-  if (provider === 'gemini') {
-    return {
-      name: 'Dr. Jack',
-      taskTitle: 'Clinical AI',
-      displayName: 'Dr. Jack • Clinical Specialist',
-      headerDisplay: 'DR. JACK • CLINICAL SPECIALIST',
-      provider: 'gemini',
-      badgeColor: 'indigo'
-    };
+    taskTitle = 'Inventory';
+  } else if (/(?:expir|expired|expiry|shelf\s*life|bad\s*date|out\s*of\s*date)/i.test(lower)) {
+    taskTitle = 'Expiry Monitor';
+    badgeColor = 'amber';
+  } else if (/(?:daily\s+schedule|when\s+(?:should|to)\s+i\s+take|timing|routine|morning|night|afternoon|before\s+food|after\s+food)/i.test(lower)) {
+    taskTitle = 'Intake Schedule';
+    badgeColor = 'teal';
+  } else if (/(?:low\s+stock|refill|shortage|running\s+out|restock)/i.test(lower)) {
+    taskTitle = 'Stock Alert';
+  } else if (/^(hi|hello|hey|namaste|good\s*(morning|evening|afternoon)|salam|greetings|how\s*are\s*you|who\s*are\s*you|thank\s*you|thanks|ok|okay)\b/i.test(lower)) {
+    taskTitle = 'On-Device SLM';
   }
 
   return {
     name: 'Dr. Ross',
-    taskTitle: 'Vault & Stock',
-    displayName: 'Dr. Ross • Vault & Stock',
-    headerDisplay: 'DR. ROSS • VAULT & STOCK',
+    taskTitle,
+    displayName: 'Dr. Ross',
+    headerDisplay: 'DR. ROSS',
     provider: 'slm',
-    badgeColor: 'emerald'
+    badgeColor
   };
 }
 
 /**
  * Determines whether a task should be handled by Dr. Ross (On-Device SLM)
  * vs Dr. Jack (Cloud Gemini AI).
+ * Greeting messages and normal messages are handled by Ross (SLM).
+ * Complicated questions are handled by Jack (Gemini).
  */
 export function isSlmSpecializedTask(queryText: string): boolean {
-  const spec = getSpecialistForTask(queryText);
-  return spec.provider === 'slm';
+  return !isComplexQuestion(queryText);
 }
 
 export async function chatWithAI(
@@ -728,28 +687,28 @@ export async function chatWithAI(
   medicines?: any[]
 ): Promise<AIChatResponse> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
+  const isComplex = isComplexQuestion(lastUserMsg);
 
-  // 1. Dynamic Routing by Task:
-  // If user selected SLM or the task is an on-device specialty (inventory counts, expiry, schedule, greetings):
-  if (provider === 'slm' || isSlmSpecializedTask(lastUserMsg)) {
-    console.log('[SLM ROUTER ACTIVE] Task routed to On-Device SLM (Dr. Ross)...');
+  // User requirement:
+  // "greeting message and normal message reply will given by ross and when user complicated question than use jack for answer"
+  if (!isComplex || provider === 'slm') {
+    console.log('[SLM ROUTER ACTIVE] Greeting or normal message -> routed to Dr. Ross (On-Device SLM)...');
     const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
     return { content: slmResponse, provider: 'slm' };
   }
 
-  // 2. Complex Clinical, Pharmacological, or General Medical Questions:
-  // Routed to Cloud Gemini AI (Dr. Jack) with full medicines context
-  console.log('[GEMINI ROUTER ACTIVE] Task routed to Gemini Cloud AI (Dr. Jack)...');
+  // Complicated question -> routed to Dr. Jack (Cloud Gemini AI)
+  console.log('[GEMINI ROUTER ACTIVE] Complicated question detected -> routed to Dr. Jack (Cloud Gemini AI)...');
   try {
     const geminiResponse = await chatWithGemini(messages, userId, medicines);
     if (geminiResponse && geminiResponse.trim()) {
       return { content: geminiResponse, provider: 'gemini' };
     }
   } catch (geminiErr) {
-    console.warn('Gemini chat attempt failed, falling back to On-Device SLM (Dr. Ross):', geminiErr);
+    console.warn('Gemini chat failed for complicated question, falling back to Dr. Ross:', geminiErr);
   }
 
-  // 3. Fallback: On-Device SLM (Dr. Ross)
+  // Fallback to Dr. Ross if Gemini is unavailable
   const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
   return { content: slmFallback, provider: 'slm' };
 }

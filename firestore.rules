@@ -30,14 +30,24 @@ service cloud.firestore {
     }
 
     function isValidMedicine(data) {
-      return data.keys().hasAll(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt']) &&
-             data.keys().hasOnly(['id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 'usageInstructions', 'imageUrl', 'capturedImage', 'taken', 'quantity', 'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert', 'category', 'categories', 'tags']) &&
+      return data.keys().hasAll(['id', 'name', 'userId']) &&
+             data.keys().hasOnly([
+               'id', 'name', 'dosage', 'expirationDate', 'userId', 'createdAt', 'updatedAt', 
+               'usageInstructions', 'imageUrl', 'capturedImage', 'taken', 'quantity', 
+               'isDeleted', 'deletedAt', 'form', 'schedule', 'liked', 'isEncrypted', 'ivMap', 
+               'enableLowStockAlert', 'lowStockThreshold', 'enableEmailExpiryAlert', 'enableEmailLowStockAlert', 
+               'category', 'categories', 'tags', 'notes', 'barcode', 'mfgDate', 'manufacturer', 
+               'price', 'groupKey', 'totalQuantity', 'batchId', 'batchCount', 'batches', 
+               'allBatches', 'activeBatches', 'expiredOrEmptyBatches', 'earliestExpiry', 
+               'dosageUnit', 'sideEffects', 'alertStage', 'lastEmailAlertStage', 'lastAlertSent', 
+               'serverProcessed', 'email'
+             ]) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
-             data.dosage is string && data.dosage.size() < 100 &&
-             data.expirationDate is string && data.expirationDate.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+             (!('dosage' in data) || (data.dosage is string && data.dosage.size() < 100)) &&
+             (!('expirationDate' in data) || (data.expirationDate is string && data.expirationDate.size() < 50)) &&
              data.userId == request.auth.uid &&
-             (data.createdAt is number || data.createdAt is timestamp) &&
+             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp) &&
              (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is number || data.updatedAt is timestamp) &&
              (!('usageInstructions' in data) || data.usageInstructions == null || (data.usageInstructions is string && data.usageInstructions.size() < 2000)) &&
              (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() < 2000)) &&
@@ -118,7 +128,7 @@ service cloud.firestore {
     match /medicines/{medicineId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && isValidMedicine(request.resource.data);
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || !('userId' in resource.data) || isAdmin()) && isValidMedicine(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || !('userId' in resource.data) || resource.data.userId == '' || isAdmin()) && isValidMedicine(request.resource.data);
       allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
 
       match /history/{historyId} {

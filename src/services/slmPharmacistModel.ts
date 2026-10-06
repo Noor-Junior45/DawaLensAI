@@ -850,9 +850,18 @@ export function generateOfflineSlmConsultation(
     /sab\s*theek/i.test(lower)
   ) {
     if (isHinglish) {
-      return `Main bilkul theek hoon, poochne ke liye shukriya! 🙏 \n\nAapki tabiyat kaisi hai aaj? Kya aapko koi dard, bukhar ya dawai ke baare me kuch poochna hai? Main aapki madad ke liye 100% offline taiyar hoon! 😊💊\n\n`;
+      const hinglishGreetings = [
+        `Main bilkul theek hoon, poochne ke liye shukriya! 🙏\n\nAapki tabiyat kaisi hai aaj? Kya aapko koi dard, bukhar ya dawai ke baare me kuch poochna hai? Main aapki madad ke liye taiyar hoon! 😊💊\n\n`,
+        `Sab badhiya hai, poochne ke liye dhanyawad! 🙏\n\nAap kaisa mehsoos kar rahe hain aaj? Kisi dawai ya daily schedule ke baare me koi sawal hai? 😊💊\n\n`
+      ];
+      return hinglishGreetings[Math.floor(Math.random() * hinglishGreetings.length)];
     }
-    return `I am doing great, thank you for asking! 😊 I'm feeling wonderful and ready to assist you.\n\nHow are you feeling today? Are you experiencing any symptoms, or do you have any questions about your medications or daily schedule? 💊🩺\n\n`;
+    const englishGreetings = [
+      `I am doing great, thank you for asking! 😊\n\nHow are you feeling today? Are you experiencing any symptoms, or do you have any questions about your medications or daily schedule? 💊🩺\n\n`,
+      `I am doing well, thank you for asking! 😊\n\nHow are you feeling today? Are you experiencing any symptoms, or do you have any questions about your medications or daily schedule? 💊🩺\n\n`,
+      `I am doing very well, thank you for asking! 😊\n\nHow are you feeling today? Are you experiencing any symptoms, or do you have any questions about your medications or daily schedule? 💊🩺\n\n`
+    ];
+    return englishGreetings[Math.floor(Math.random() * englishGreetings.length)];
   }
 
   // B. Work / Capabilities / Purpose ("what's work to do?", "what can you do?", "what is your work?", "who are you?", "kaam kya hai?")
@@ -923,6 +932,115 @@ export function generateOfflineSlmConsultation(
     /(?:do\s+i\s+have\s+any\s+(?:medicines?|meds?))/i.test(lower);
 
   if (isCountQuery) {
+    // Check if user is asking for a specific category or condition (e.g., "for fever", "for pain", "headache", "cough")
+    let targetCatKey: string | null = null;
+    let targetCatLabel = '';
+
+    if (/\b(?:fever|bukhar|temperature|pyrexia)\b/i.test(lower)) {
+      targetCatKey = 'fever';
+      targetCatLabel = 'Fever';
+    } else if (/\b(?:pain|dard|headache|sar\s*dard|body\s*ache|bodyache|backache|cramps?|analgesic)\b/i.test(lower)) {
+      targetCatKey = 'pain';
+      targetCatLabel = 'Pain Relief';
+    } else if (/\b(?:cough|cold|khansi|jukham|flu)\b/i.test(lower)) {
+      targetCatKey = 'cold';
+      targetCatLabel = 'Cold & Cough';
+    } else if (/\b(?:antibiotic|antibiotics|infection|fungal|bacterial)\b/i.test(lower)) {
+      targetCatKey = 'antibiotics';
+      targetCatLabel = 'Antibiotics';
+    } else if (/\b(?:heart|bp|blood\s*pressure|hypertension|cardiac)\b/i.test(lower)) {
+      targetCatKey = 'heart';
+      targetCatLabel = 'Heart & BP';
+    } else if (/\b(?:diabetes|sugar|diabetic|insulin)\b/i.test(lower)) {
+      targetCatKey = 'diabetes';
+      targetCatLabel = 'Diabetes';
+    } else if (/\b(?:acidity|gas|digestive|stomach|acid|reflux|antacid)\b/i.test(lower)) {
+      targetCatKey = 'digestive';
+      targetCatLabel = 'Digestive & Acidity';
+    } else if (/\b(?:allergy|allergic|allergies|itching|rash)\b/i.test(lower)) {
+      targetCatKey = 'allergy';
+      targetCatLabel = 'Allergy';
+    } else if (/\b(?:vitamin|vitamins|multivitamin|supplement|calcium|iron)\b/i.test(lower)) {
+      targetCatKey = 'vitamins';
+      targetCatLabel = 'Vitamins';
+    }
+
+    if (targetCatKey) {
+      const isMatch = (m: Medicine) => {
+        const name = (m.name || '').toLowerCase();
+        const cat = (m.category || '').toLowerCase();
+        const cats = Array.isArray(m.categories) ? m.categories.map(c => String(c).toLowerCase()).join(' ') : '';
+        const tags = Array.isArray(m.tags) ? m.tags.map(t => String(t).toLowerCase()).join(' ') : '';
+        const instr = (m.usageInstructions || '').toLowerCase();
+        const combined = `${name} ${cat} ${cats} ${tags} ${instr}`;
+
+        if (targetCatKey === 'fever') {
+          return combined.includes('fever') || combined.includes('bukhar') ||
+            /paracetamol|dolo|crocin|calpol|combiflam|acetaminophen|ibuprofen|zerodol\s*p/i.test(name);
+        }
+        if (targetCatKey === 'pain') {
+          return combined.includes('pain') || combined.includes('dard') || combined.includes('headache') ||
+            /paracetamol|dolo|combiflam|ibuprofen|diclofenac|tramadol|aceclofenac|aspirin/i.test(name);
+        }
+        if (targetCatKey === 'cold') {
+          return combined.includes('cold') || combined.includes('cough') || combined.includes('khansi') ||
+            /cetirizine|allegra|fexo|montelukast|benadryl|ascoril/i.test(name);
+        }
+        if (targetCatKey === 'antibiotics') {
+          return combined.includes('antibiotic') || combined.includes('infection') ||
+            /amox|clav|azith|cefix|cipro|levo|oflox/i.test(name);
+        }
+        if (targetCatKey === 'heart') {
+          return combined.includes('heart') || combined.includes('bp') || combined.includes('pressur') ||
+            /amlod|losart|telmis|atorv|statin/i.test(name);
+        }
+        if (targetCatKey === 'diabetes') {
+          return combined.includes('diabet') || combined.includes('sugar') ||
+            /metformin|glim|insulin|januvia/i.test(name);
+        }
+        if (targetCatKey === 'digestive') {
+          return combined.includes('digest') || combined.includes('gas') || combined.includes('acid') ||
+            /panto|omepra|rabep|esom|antacid|digene/i.test(name);
+        }
+        if (targetCatKey === 'allergy') {
+          return combined.includes('allerg') || /cetirizine|allegra|fexo|levocet/i.test(name);
+        }
+        if (targetCatKey === 'vitamins') {
+          return combined.includes('vitamin') || /zinc|calcium|b12|d3|iron|folic/i.test(name);
+        }
+        return combined.includes(targetCatKey);
+      };
+
+      const matchedMeds = activeMeds.filter(isMatch);
+      const catUnits = matchedMeds.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
+
+      if (matchedMeds.length === 0) {
+        return isHinglish
+          ? `Aapke vault mein **${targetCatLabel}** ke liye abhi **0** dawaiyan hain.\n\nAapke pass maujood ${activeMeds.length} dawaiyon mein se koi bhi ${targetCatLabel} category ki nahi hai. Aap 📸 **Camera Button** se scan karke apni ${targetCatLabel} ki dawai (jaise Dolo ya Paracetamol) add kar sakte hain!\n\n`
+          : `You have **0** medicines for **${targetCatLabel}** in your vault.\n\nNone of your ${activeMeds.length} active stored medicine(s) are designated for ${targetCatLabel}. You can tap the 📸 **Camera button** below to scan a strip (such as Paracetamol or Dolo 650) to catalog it!\n\n`;
+      }
+
+      const medRows = matchedMeds.map((m, idx) => 
+        `${idx + 1}. 💊 **${m.name}**\n` +
+        `   • **Quantity**: **${m.quantity || 1} units/tablets**\n` +
+        `   • **Dosage**: ${m.dosage || 'Standard'} (${m.form || 'tablet'})\n` +
+        `   • **Expiry**: **${m.expirationDate || 'N/A'}**\n` +
+        `   • **Category**: ${m.category || targetCatLabel}`
+      ).join('\n\n');
+
+      return isHinglish
+        ? `Aapke vault mein **${targetCatLabel}** ke liye kul **${catUnits}** units hain (**${matchedMeds.length}** unique dawaiyan):\n\n` +
+          `${medRows}\n\n` +
+          `### 💡 Zaroori Salaah:\n` +
+          `- Kisi bhi dawai ko lene se pehle uski expiry date aur doctor ki batai dosage zaroor check karein.\n` +
+          `- Khane ke baad paani ke sath lein aur overdosing se bachein. 💊🌿\n\n`
+        : `You have **${catUnits}** total units across **${matchedMeds.length}** medicine(s) for **${targetCatLabel}** in your vault:\n\n` +
+          `${medRows}\n\n` +
+          `### 💡 Clinical Guidance:\n` +
+          `- Always verify expiration dates before consumption.\n` +
+          `- Follow your healthcare provider's dosage schedule and stay hydrated. 💊🩺\n\n`;
+    }
+
     const totalUnits = activeMeds.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
     const uniqueCount = activeMeds.length;
     const categoriesMap = new Map<string, number>();

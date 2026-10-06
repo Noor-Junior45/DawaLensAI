@@ -3,7 +3,7 @@ import { Plus, Camera, Info, Settings, Search, X, History, Trash2, ShieldAlert, 
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
 import { Medicine, MedicineForm as MedicineFormType } from './types';
-import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getMedicineCategory, getMedicineCategories, calculateDiffDays } from './constants';
+import { MEDICINE_CATEGORIES, getCategoryStyle, isCategoryMatch, getMedicineCategory, getMedicineCategories, normalizeCategory, calculateDiffDays } from './constants';
 import { CameraCapture } from './components/CameraCapture';
 import { MedicineList } from './components/MedicineList';
 import { SettingsModal } from './components/SettingsModal';
@@ -878,14 +878,21 @@ export default function App() {
 
       const medRef = doc(db, 'medicines', currentDetailsMedicine.id);
       
+      let createdAt = currentDetailsMedicine.createdAt;
+      if (typeof createdAt !== 'number') {
+        createdAt = Number(createdAt) || Date.now();
+      }
+
+      const validExpirationDate = (firestoreData.expirationDate || currentDetailsMedicine.expirationDate || '').trim();
+
       // Clean and sanitize updateData strictly matching Firestore schema
       const updateData: any = {
         id: currentDetailsMedicine.id,
         name: (firestoreData.name ?? currentDetailsMedicine.name ?? 'Unknown').trim(),
         dosage: (firestoreData.dosage ?? currentDetailsMedicine.dosage ?? 'N/A').trim(),
-        expirationDate: firestoreData.expirationDate ?? currentDetailsMedicine.expirationDate,
+        expirationDate: validExpirationDate,
         userId: user.uid,
-        createdAt: currentDetailsMedicine.createdAt || Date.now(),
+        createdAt,
         updatedAt: serverTimestamp(),
         usageInstructions: firestoreData.usageInstructions ?? currentDetailsMedicine.usageInstructions ?? '',
         schedule: firestoreData.schedule ?? currentDetailsMedicine.schedule ?? '',
@@ -919,6 +926,9 @@ export default function App() {
       if (currentDetailsMedicine.liked !== undefined) updateData.liked = currentDetailsMedicine.liked;
       if (currentDetailsMedicine.isDeleted !== undefined) updateData.isDeleted = currentDetailsMedicine.isDeleted;
       if (currentDetailsMedicine.deletedAt !== undefined) updateData.deletedAt = currentDetailsMedicine.deletedAt;
+      if (currentDetailsMedicine.capturedImage && !capturedImage) {
+        updateData.capturedImage = currentDetailsMedicine.capturedImage;
+      }
 
       // Ensure no undefined values exist
       Object.keys(updateData).forEach(key => {
@@ -927,8 +937,16 @@ export default function App() {
         }
       });
 
-      // Save updated medicine to Firestore
-      await setDoc(medRef, updateData, { merge: true });
+      // Save updated medicine to Firestore with robust fallback
+      try {
+        await setDoc(medRef, updateData, { merge: true });
+      } catch (saveErr) {
+        console.warn('SetDoc merge notice, performing direct document write:', saveErr);
+        await setDoc(medRef, updateData);
+      }
+
+      // Optimistically update React state immediately for snappy user experience
+      setMedicines(prev => prev.map(m => m.id === currentDetailsMedicine.id ? { ...m, ...updateData, updatedAt: Date.now() } : m));
 
       const changes: string[] = [];
       if (data.name && currentDetailsMedicine.name !== data.name) {
@@ -1781,12 +1799,52 @@ export default function App() {
   const categoryDropdownItems = React.useMemo(() => {
     const counts = new Map<string, number>();
 
-    // Count medicines per clinical category (supports combination medications under both categories)
+    // Count medicines per clinical category and raw custom categories (supports combination medications under both categories)
     medicines.forEach(m => {
       if (m.isDeleted) return;
+      const medicineCats = new Set<string>();
+
+      // Clinical categories from multi-category extractor
       const cats = getMedicineCategories(m);
-      cats.forEach(canon => {
-        counts.set(canon, (counts.get(canon) || 0) + 1);
+      cats.forEach(canon => medicineCats.add(canon));
+
+      // Direct category property if assigned and non-empty
+      if (m.category && typeof m.category === 'string' && m.category.trim()) {
+        const parts = m.category.split(/[,/&+]/).map(s => s.trim()).filter(Boolean);
+        parts.forEach(p => {
+          const norm = normalizeCategory(p);
+          medicineCats.add(norm);
+        });
+      }
+
+      // Explicit categories array if set
+      if (Array.isArray(m.categories)) {
+        m.categories.forEach(c => {
+          if (c && typeof c === 'string' && c.trim()) {
+            medicineCats.add(normalizeCategory(c));
+          }
+        });
+      }
+
+      // Check allBatches if present on grouped item
+      const itemWithBatches = m as unknown as { allBatches?: Array<{ category?: string; categories?: string[] }> };
+      if (Array.isArray(itemWithBatches.allBatches)) {
+        itemWithBatches.allBatches.forEach(b => {
+          if (b.category && typeof b.category === 'string') {
+            medicineCats.add(normalizeCategory(b.category));
+          }
+          if (Array.isArray(b.categories)) {
+            b.categories.forEach(bc => {
+              if (bc && typeof bc === 'string') {
+                medicineCats.add(normalizeCategory(bc));
+              }
+            });
+          }
+        });
+      }
+
+      medicineCats.forEach(cat => {
+        counts.set(cat, (counts.get(cat) || 0) + 1);
       });
     });
 

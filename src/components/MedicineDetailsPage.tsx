@@ -87,7 +87,8 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
     const list = allMedicines.filter(
       m => !m.isDeleted && m.name.trim().toLowerCase() === normalizedName
     );
-    return list.sort((a, b) => {
+    const unique = Array.from(new Map(list.map(b => [b.id, b])).values());
+    return unique.sort((a, b) => {
       if (a.id === medicine.id) return -1;
       if (b.id === medicine.id) return 1;
       return getDiffDays(a.expirationDate) - getDiffDays(b.expirationDate);

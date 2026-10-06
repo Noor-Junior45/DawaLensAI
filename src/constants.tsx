@@ -37,6 +37,11 @@ export const MEDICINE_CATEGORIES = [
   'Mental Health',
   'Skin Care',
   'Eye & Ear',
+  'First Aid',
+  'Hormone',
+  'Neurological',
+  'General Care',
+  'Supplements',
   'Other'
 ] as const;
 
@@ -148,6 +153,46 @@ export const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     dotColor: 'bg-violet-500',
     accent: '#7c3aed'
   },
+  'First Aid': {
+    label: 'First Aid',
+    badgeBg: 'bg-red-50',
+    badgeText: 'text-red-700',
+    badgeBorder: 'border-red-200',
+    dotColor: 'bg-red-500',
+    accent: '#ef4444'
+  },
+  'Hormone': {
+    label: 'Hormone',
+    badgeBg: 'bg-fuchsia-50',
+    badgeText: 'text-fuchsia-700',
+    badgeBorder: 'border-fuchsia-200',
+    dotColor: 'bg-fuchsia-500',
+    accent: '#c026d3'
+  },
+  'Neurological': {
+    label: 'Neurological',
+    badgeBg: 'bg-purple-50',
+    badgeText: 'text-purple-700',
+    badgeBorder: 'border-purple-200',
+    dotColor: 'bg-purple-500',
+    accent: '#9333ea'
+  },
+  'General Care': {
+    label: 'General Care',
+    badgeBg: 'bg-emerald-50',
+    badgeText: 'text-emerald-700',
+    badgeBorder: 'border-emerald-200',
+    dotColor: 'bg-emerald-500',
+    accent: '#10b981'
+  },
+  'Supplements': {
+    label: 'Supplements',
+    badgeBg: 'bg-lime-50',
+    badgeText: 'text-lime-700',
+    badgeBorder: 'border-lime-200',
+    dotColor: 'bg-lime-500',
+    accent: '#84cc16'
+  },
   'Other': {
     label: 'Other',
     badgeBg: 'bg-slate-100',
@@ -242,6 +287,21 @@ export const CATEGORY_SYNONYMS: Record<string, string[]> = {
   'Eye & Ear': [
     'eye & ear', 'eye and ear', 'eye/ear', 'eye', 'eyes', 'ear', 'ears',
     'ophthalmic', 'eye drops', 'ear drops', 'otic', 'optometry'
+  ],
+  'First Aid': [
+    'first aid', 'bandage', 'antiseptic', 'dressing', 'gauze', 'savlon', 'dettol', 'betadine', 'burn', 'wound', 'plaster'
+  ],
+  'Hormone': [
+    'hormone', 'hormones', 'thyroid', 'thyroxine', 'levothyroxine', 'steroid', 'corticosteroid', 'estrogen', 'progesterone', 'testosterone', 'prednisolone'
+  ],
+  'Neurological': [
+    'neurological', 'neurology', 'neuro', 'seizure', 'epilepsy', 'gabapentin', 'pregabalin', 'nerve', 'migraine', 'convulsion'
+  ],
+  'General Care': [
+    'general care', 'wellness', 'daily care', 'health care'
+  ],
+  'Supplements': [
+    'supplements', 'supplement', 'protein', 'calcium supplement', 'iron supplement', 'omega 3', 'fish oil', 'whey'
   ]
 };
 
@@ -427,7 +487,8 @@ export function getMedicineCategories(item: {
   categories?: string[]; 
   dosage?: string;
   form?: string;
-  tags?: string[] 
+  tags?: string[];
+  allBatches?: Array<{ name?: string; category?: string; categories?: string[]; form?: string; tags?: string[] }>;
 }): string[] {
   const result = new Set<string>();
 
@@ -448,6 +509,27 @@ export function getMedicineCategories(item: {
       if (p.trim()) {
         const norm = normalizeCategory(p.trim());
         if (norm && norm !== 'Other') result.add(norm);
+      }
+    }
+  }
+
+  // 3. From all batches if this is a grouped medicine
+  if (Array.isArray(item.allBatches) && item.allBatches.length > 0) {
+    for (const b of item.allBatches) {
+      if (b) {
+        if (Array.isArray(b.categories)) {
+          for (const bc of b.categories) {
+            const norm = normalizeCategory(bc);
+            if (norm && norm !== 'Other') result.add(norm);
+          }
+        }
+        if (b.category && typeof b.category === 'string') {
+          const parts = b.category.split(/[,/&+]/);
+          for (const p of parts) {
+            const norm = normalizeCategory(p.trim());
+            if (norm && norm !== 'Other') result.add(norm);
+          }
+        }
       }
     }
   }

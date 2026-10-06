@@ -396,7 +396,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return (
       <motion.div
         layout
-        key={`group-${group.groupKey || 'med'}-${index}`}
+        key={`active-group-${group.groupKey}`}
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ 
           opacity: 1, 
@@ -524,13 +524,10 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                 </span>
               </div>
 
-              {/* Category Badges & Tags (Supports multiple categories e.g. Fever & Pain Relief) */}
+              {/* Category Badges (Supports multiple categories e.g. Fever & Pain Relief) */}
               {(() => {
                 const cats = Array.from(new Set(getMedicineCategories(group)));
-                const extraTags = Array.isArray(group.tags)
-                  ? Array.from(new Set(group.tags)).filter(t => !cats.some(c => c.toLowerCase() === t.toLowerCase()))
-                  : [];
-                if (cats.length === 0 && extraTags.length === 0) return null;
+                if (cats.length === 0) return null;
                 return (
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     {cats.map((cat, cIdx) => {
@@ -538,7 +535,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                       const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
                       return (
                         <span 
-                          key={`cat-${group.groupKey}-${cat}-${cIdx}`}
+                          key={`cat-${group.groupKey}-${cat.toLowerCase()}-${cIdx}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onSelectCategory) {
@@ -553,30 +550,6 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                         </span>
                       );
                     })}
-
-                    {extraTags.slice(0, 3).map((tag, tIdx) => (
-                      <span
-                        key={`tag-${group.groupKey}-${tag}-${tIdx}`}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-
-                    {!isSelectionMode && nearestBatch && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(nearestBatch);
-                        }}
-                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-slate-50 text-slate-500 border border-dashed border-slate-300 hover:border-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-all cursor-pointer"
-                        title="Add or edit categories for this medicine"
-                      >
-                        <Plus size={10} />
-                        <span>Category</span>
-                      </button>
-                    )}
                   </div>
                 );
               })()}
@@ -662,7 +635,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
     return (
       <motion.div
         layout
-        key={`expired-group-${group.groupKey || 'med'}-${index}`}
+        key={`expired-group-${group.groupKey}`}
         initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ 
           opacity: 0.85, 
@@ -738,7 +711,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
                       const isSelected = selectedCategory.toLowerCase() === cat.toLowerCase();
                       return (
                         <span 
-                          key={`cat-exp-${group.groupKey}-${cat}-${cIdx}`}
+                          key={`cat-exp-${group.groupKey}-${cat.toLowerCase()}-${cIdx}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onSelectCategory) {

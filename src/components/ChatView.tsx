@@ -269,7 +269,13 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         ...doc.data()
       })) as ChatMessage[];
       if (msgData.length > 0) {
-        setMessages(msgData);
+        setMessages(prev => {
+          // Safeguard: Merge incoming Firestore docs with pending local assistant/user messages
+          // so local AI replies are never erased/hidden before Firestore persistence completes
+          const remoteIds = new Set(msgData.map(m => m.id));
+          const localPending = prev.filter(m => !remoteIds.has(m.id));
+          return [...msgData, ...localPending].sort((a, b) => a.timestamp - b.timestamp);
+        });
       }
     }, (error) => {
       console.warn('Chat messages onSnapshot notice:', error);
@@ -504,11 +510,12 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
   const cleanMessageDisplay = (text: string) => {
     if (!text) return '';
-    return text
+    const cleaned = text
       .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*Your\s*On-Device\s*SLM\s*Pharmacist\s*[🧠🌿🩺💊]*/gi, '')
       .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens)[^\n`]*/gi, '')
       .replace(/\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*your\s*on-device\s*slm\s*pharmacist[^\n`]*/gi, '')
       .trim();
+    return cleaned || text;
   };
 
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -702,14 +709,17 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
                       {/* Flex column for Chat Bubble and action buttons below */}
                       <div className="flex flex-col max-w-[80%] md:max-w-[72%]">
-                        {/* Specialist Badge for Assistant Message */}
+                        {/* Multi-Model Specialist Badge for Assistant Message */}
                         {msg.role === 'assistant' && msgSpecialist && (
                           <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
-                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 shadow-3xs ${
+                            <span className={`text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1.5 shadow-3xs ${
                               msgSpecialist.name === 'Dr. Jack'
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
-                                : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200/90'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200/90'
                             }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                msgSpecialist.name === 'Dr. Jack' ? 'bg-indigo-500' : 'bg-emerald-500'
+                              }`} />
                               <span>{msgSpecialist.name}</span>
                             </span>
                           </div>
