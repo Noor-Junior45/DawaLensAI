@@ -16,15 +16,23 @@ export const getGeminiApiKey = (): string => {
   return '';
 };
 
+let hasLoggedKeyInit = false;
+
 // Backwards-compatible single-key loader
 export const getAvailableKeys = (): string[] => {
   const key = getGeminiApiKey();
   if (key) {
-    const masked = key.length > 10 ? key.substring(0, 6) + '...' + key.slice(-4) : '***';
-    console.log(`[GEMINI API] Initialized with single GEMINI_API_KEY (Masked: ${masked})`);
+    if (!hasLoggedKeyInit) {
+      const masked = key.length > 10 ? key.substring(0, 4) + '...' + key.slice(-4) : '***';
+      console.log(`[GEMINI API] Initialized with GEMINI_API_KEY (Masked: ${masked})`);
+      hasLoggedKeyInit = true;
+    }
     return [key];
   }
-  console.warn('[GEMINI API] Warning: GEMINI_API_KEY is not configured in environment variables.');
+  if (!hasLoggedKeyInit) {
+    console.warn('[GEMINI API] Warning: GEMINI_API_KEY is not configured in environment variables.');
+    hasLoggedKeyInit = true;
+  }
   return [];
 };
 

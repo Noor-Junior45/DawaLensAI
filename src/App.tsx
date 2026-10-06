@@ -2406,6 +2406,7 @@ export default function App() {
         <AnimatePresence>
           {alertMessage && (
             <motion.div 
+              key="auth-alert-message"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2429,6 +2430,7 @@ export default function App() {
 
           {passwordResetEmailSent && (
             <motion.div 
+              key="auth-password-reset-sent"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2836,6 +2838,7 @@ export default function App() {
       <AnimatePresence>
         {activeSystemPage === 'details' && currentDetailsMedicine && (
           <MedicineDetailsPage
+            key="details-page"
             medicine={currentDetailsMedicine}
             allMedicines={medicines}
             globalLowQuantityThreshold={lowQuantityThreshold}
@@ -2856,6 +2859,7 @@ export default function App() {
 
         {activeSystemPage === 'history' && currentDetailsMedicine && (
           <MedicineHistoryPage
+            key="history-page"
             medicine={currentDetailsMedicine}
             onBack={() => setActiveSystemPage('details')}
           />
@@ -2863,6 +2867,7 @@ export default function App() {
 
         {activeSystemPage === 'edit' && currentDetailsMedicine && (
           <MedicineEditPage
+            key="edit-page"
             medicine={currentDetailsMedicine}
             allMedicines={medicines}
             globalLowQuantityThreshold={lowQuantityThreshold}
@@ -2874,6 +2879,7 @@ export default function App() {
 
         {activeSystemPage === 'add' && (
           <MedicineAddPage
+            key="add-page"
             initialData={editingMedicine}
             extractionWarning={extractionWarning}
             allMedicines={medicines}
@@ -2890,6 +2896,7 @@ export default function App() {
 
         {isCameraOpen && (
           <CameraCapture 
+            key="camera-capture-page"
             onCapture={handleCapture}
             onClose={() => {
               setIsCameraOpen(false);
@@ -2902,82 +2909,92 @@ export default function App() {
 
         {isChatOpen && (
           <ChatView 
+            key="chat-view-page"
             medicines={medicines}
             onClose={() => setIsChatOpen(false)}
             user={user}
             userPhoto={user?.photoURL}
           />
         )}
+      </AnimatePresence>
 
+      <AnimatePresence>
         {isSettingsOpen && (
           <SettingsModal 
+            key="settings-modal-page"
             onClose={() => setIsSettingsOpen(false)}
-            onClearData={confirmClearData}
-            alertThreshold={alertThreshold}
-            setAlertThreshold={(val) => handleUpdateConfig({ alertThreshold: val })}
-            lowQuantityThreshold={lowQuantityThreshold}
-            setLowQuantityThreshold={(val) => handleUpdateConfig({ lowQuantityThreshold: val })}
-            accentColor={accentColor}
-            setAccentColor={(val) => handleUpdateConfig({ accentColor: val })}
-            emailNotificationsEnabled={emailNotificationsEnabled}
-            setEmailNotificationsEnabled={(val) => handleUpdateConfig({ emailNotificationsEnabled: val })}
-            browserNotificationsEnabled={browserNotificationsEnabled}
-            setBrowserNotificationsEnabled={async (val) => {
-              setBrowserNotificationsEnabled(val);
-              handleUpdateConfig({ browserNotificationsEnabled: val });
+              onClearData={confirmClearData}
+              alertThreshold={alertThreshold}
+              setAlertThreshold={(val) => handleUpdateConfig({ alertThreshold: val })}
+              lowQuantityThreshold={lowQuantityThreshold}
+              setLowQuantityThreshold={(val) => handleUpdateConfig({ lowQuantityThreshold: val })}
+              accentColor={accentColor}
+              setAccentColor={(val) => handleUpdateConfig({ accentColor: val })}
+              emailNotificationsEnabled={emailNotificationsEnabled}
+              setEmailNotificationsEnabled={(val) => handleUpdateConfig({ emailNotificationsEnabled: val })}
+              browserNotificationsEnabled={browserNotificationsEnabled}
+              setBrowserNotificationsEnabled={async (val) => {
+                setBrowserNotificationsEnabled(val);
+                handleUpdateConfig({ browserNotificationsEnabled: val });
 
-              if (val) {
-                if (Capacitor.isNativePlatform()) {
-                  scheduleNativeMedicineAlerts(medicines, alertThreshold).catch(() => {});
-                } else {
-                  checkAndTriggerBrowserExpiryNotifications(medicines, alertThreshold).catch(() => {});
-                  if (user?.uid) {
-                    registerBrowserPushTokenWithServer(user.uid, `web_${user.uid}`).catch(() => {});
+                if (val) {
+                  if (Capacitor.isNativePlatform()) {
+                    scheduleNativeMedicineAlerts(medicines, alertThreshold).catch(() => {});
+                  } else {
+                    checkAndTriggerBrowserExpiryNotifications(medicines, alertThreshold).catch(() => {});
+                    if (user?.uid) {
+                      registerBrowserPushTokenWithServer(user.uid, `web_${user.uid}`).catch(() => {});
+                    }
                   }
                 }
-              }
-            }}
-            photoURL={user?.photoURL || undefined}
-            userEmail={user.email || ''}
-            onLogout={handleLogout}
-            medicines={medicines}
-            deletedMedicines={deletedMedicines}
-            onRestore={handleRestore}
-            onPermanentDelete={handlePermanentDelete}
-            // Integrations
-            onImportCSV={handleImport}
-            onExportCSV={exportToSheets}
-            onOpenMailbox={() => setIsMailboxOpen(true)}
-            // Screenshot navigation matching
-            onResetToHome={() => { setFilter('all'); setSearchQuery(''); setIsLikedOnly(false); }}
-            onToggleLikedOnly={() => setIsLikedOnly(!isLikedOnly)}
-            isLikedOnly={isLikedOnly}
-            onOpenGuide={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('guide'); }}
-            onOpenPrivacy={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('privacy'); }}
-            onOpenTerms={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('terms'); }}
-            onOpenDeleteAccount={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('delete-account'); }}
-            onOpenRecentlyDeleted={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('recently-deleted'); }}
-          />
-        )}
+              }}
+              photoURL={user?.photoURL || undefined}
+              userEmail={user.email || ''}
+              onLogout={handleLogout}
+              medicines={medicines}
+              deletedMedicines={deletedMedicines}
+              onRestore={handleRestore}
+              onPermanentDelete={handlePermanentDelete}
+              // Integrations
+              onImportCSV={handleImport}
+              onExportCSV={exportToSheets}
+              onOpenMailbox={() => setIsMailboxOpen(true)}
+              // Screenshot navigation matching
+              onResetToHome={() => { setFilter('all'); setSearchQuery(''); setIsLikedOnly(false); }}
+              onToggleLikedOnly={() => setIsLikedOnly(!isLikedOnly)}
+              isLikedOnly={isLikedOnly}
+              onOpenGuide={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('guide'); }}
+              onOpenPrivacy={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('privacy'); }}
+              onOpenTerms={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('terms'); }}
+              onOpenDeleteAccount={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('delete-account'); }}
+              onOpenRecentlyDeleted={() => { triggerLightHaptic(); setOpenedFromSettings(true); setIsSettingsOpen(false); navigateToPublicPage('recently-deleted'); }}
+            />
+          )}
+        </AnimatePresence>
 
-        {isMailboxOpen && (
-          <MailboxModal 
-            onClose={() => {
-              setIsMailboxOpen(false);
-              setIsSettingsOpen(true);
-            }}
-            user={user}
-            medicines={medicines}
-          />
-        )}
+        <AnimatePresence>
+          {isMailboxOpen && (
+            <MailboxModal 
+              key="mailbox-modal-page"
+              onClose={() => {
+                setIsMailboxOpen(false);
+                setIsSettingsOpen(true);
+              }}
+              user={user}
+              medicines={medicines}
+            />
+          )}
+        </AnimatePresence>
 
-        {isInteractionModalOpen && interactionResult && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm overflow-y-auto"
-          >
+        <AnimatePresence>
+          {isInteractionModalOpen && interactionResult && (
+            <motion.div 
+              key="modal-safety-analysis"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm overflow-y-auto"
+            >
             <div className="w-full max-w-lg bg-[#faf8f5] border border-[#e3e2e0] rounded-[32px] p-8 shadow-2xl my-auto">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
@@ -3050,6 +3067,7 @@ export default function App() {
 
         {alertMessage && (
           <motion.div 
+            key="dashboard-alert-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -3073,6 +3091,7 @@ export default function App() {
 
         {passwordResetEmailSent && (
           <motion.div 
+            key="dashboard-password-reset-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -3113,6 +3132,7 @@ export default function App() {
 
         {activeFooterModal && (
           <motion.div 
+            key={`dashboard-footer-modal-${activeFooterModal}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -3363,6 +3383,7 @@ export default function App() {
         {/* Mandatory First-Launch Medical & Safety Disclaimer Modal */}
         {!hasAcceptedMedicalDisclaimer && publicPage === null && (
           <motion.div 
+            key="mandatory-medical-disclaimer-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

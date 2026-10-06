@@ -809,6 +809,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       <AnimatePresence>
         {isSelectionMode && (
           <motion.div 
+            key="selection-mode-toolbar"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -970,7 +971,7 @@ export const MedicineList: React.FC<MedicineListProps> = ({
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div key="delete-confirm-modal" className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

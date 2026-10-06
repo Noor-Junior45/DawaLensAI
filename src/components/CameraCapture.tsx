@@ -192,6 +192,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
               <AnimatePresence>
                 {showShutterFlash && (
                   <motion.div 
+                    key="shutter-flash-overlay"
                     initial={{ opacity: 0.95 }}
                     animate={{ opacity: 0 }}
                     exit={{ opacity: 0 }}
@@ -222,6 +223,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
               <AnimatePresence>
                 {isProcessing && capturedPhotoUrl && (
                   <motion.div 
+                    key="processing-camera-banner"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -272,6 +274,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
             <AnimatePresence>
               {extractionError && (
                 <motion.div 
+                  key="extraction-error-banner"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}

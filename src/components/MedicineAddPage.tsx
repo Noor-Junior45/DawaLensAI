@@ -494,6 +494,7 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
             <AnimatePresence>
               {geminiNotice && (
                 <motion.div
+                  key="add-gemini-notice"
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
@@ -518,12 +519,12 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
               Select multiple categories if this medicine has dual therapeutic uses (e.g. Zerodol-P as both <strong>Fever</strong> and <strong>Pain Relief</strong>).
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {MEDICINE_CATEGORIES.map(catKey => {
+              {MEDICINE_CATEGORIES.map((catKey, cIdx) => {
                 const isSelected = currentCategories.some(c => c.toLowerCase() === catKey.toLowerCase());
                 const style = getCategoryStyle(catKey);
                 return (
                   <button
-                    key={`add-cat-${catKey}`}
+                    key={`add-cat-${catKey}-${cIdx}`}
                     type="button"
                     onClick={() => toggleCategory(catKey)}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-bold transition-all text-left cursor-pointer active:scale-95 ${

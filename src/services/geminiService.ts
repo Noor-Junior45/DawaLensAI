@@ -73,17 +73,9 @@ CRITICAL INSTRUCTIONS:
 8. CONTEXT AWARENESS: Always prioritize the medicines the user already owns. Treat the provided inventory as the absolute source of truth for their 'vault'.`;
 
 function getClientApiKey(): string {
-  // Check localStorage first
+  // Check localStorage if developer or user explicitly provided an override key
   const stored = typeof window !== 'undefined' ? window.localStorage.getItem('GEMINI_API_KEY') : null;
   if (stored) return stored;
-
-  // Check env variable defined by Vite config
-  const envKey = typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : '';
-  if (envKey) return envKey;
-
-  // Check import.meta.env
-  const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  if (viteKey) return viteKey;
 
   return '';
 }

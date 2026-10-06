@@ -171,27 +171,33 @@ service cloud.firestore {
     }
 
     match /server_chat_limits/{limitId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated() && (limitId.matches('^' + request.auth.uid + '_.*') || isAdmin());
     }
 
     match /medicine_cache/{name} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() || isAdmin();
     }
 
     match /extraction_cache/{hash} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() || isAdmin();
     }
 
     match /server_expiry_schedules/{scheduleId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated() && (request.auth.uid == scheduleId || isAdmin());
     }
 
     match /server_sent_expiry_alerts/{alertId} {
-      allow read, write: if true;
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /user_push_tokens/{tokenId} {
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /test/connection {
-      allow read: if true;
+      allow read: if isAuthenticated();
     }
 
     match /aiReports/{reportId} {

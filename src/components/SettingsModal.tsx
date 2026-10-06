@@ -5,6 +5,7 @@ import { Medicine } from '../types';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { useEdgeSwipeBack } from '../utils/mobileGestures';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -77,6 +78,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onOpenDeleteAccount,
   onOpenRecentlyDeleted
 }) => {
+  // Mobile Edge-Swipe from left to navigate back
+  useEdgeSwipeBack({ onBack: onClose });
+
   const [showConfirmClear, setShowConfirmClear] = React.useState(false);
   const [isDangerZoneOpen, setIsDangerZoneOpen] = React.useState(false);
   const [isPreferencesOpen, setIsPreferencesOpen] = React.useState(false);
@@ -242,35 +246,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   }, [userEmail]);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
-      {/* Backdrop */}
-      <div 
-        onClick={onClose} 
-        className="absolute inset-0 bg-black/25 backdrop-blur-[2px] pointer-events-auto cursor-default transition-opacity" 
-      />
-      
-      {/* Soft Cream-White Google Profile Style Dropdown */}
-      <motion.div 
-        initial={{ opacity: 0, y: -12, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -12, scale: 0.96 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute right-4 sm:right-8 top-[72px] w-[calc(100vw-32px)] max-w-[390px] bg-[#faf8f5] border border-[#e3e2e0] rounded-[32px] shadow-[0_24px_60px_rgba(0,0,0,0.12)] flex flex-col max-h-[82vh] overflow-hidden pointer-events-auto z-50 ring-1 ring-black/5"
-      >
-        {/* Floating Close Button */}
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 p-1.5 hover:bg-[#e9e8e5]/60 rounded-full text-slate-500 hover:text-slate-800 transition-all z-50 pointer-events-auto bg-white/40 backdrop-blur-xs border border-[#e3e2e0]/60 shadow-xs"
-          title="Close"
-        >
-          <X size={16} />
-        </button>
-
-        {/* Scrollable Content Pane */}
-        <div className="flex-1 overflow-y-auto px-6 pt-8 pb-6 space-y-4 custom-scrollbar">
+    <motion.div 
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className="fixed inset-0 z-50 bg-[#faf8f5] overflow-y-auto flex flex-col text-[#1f1f1f]"
+    >
+      {/* Main Full Page Content Pane */}
+      <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 pt-5 sm:pt-7 pb-8 space-y-5 custom-scrollbar">
           
-          {/* Centered Google Card Profile Section */}
-          <div className="flex flex-col items-center text-center pb-4 border-b border-[#e3e2e0]/60">
+          {/* Centered Profile Section with Close [x] Button on Right */}
+          <div className="relative flex flex-col items-center text-center pb-4 border-b border-[#e3e2e0]/60">
+            {/* Close [x] button on right side */}
+            <button 
+              type="button"
+              onClick={onClose} 
+              className="absolute right-0 top-2 p-1.5 hover:bg-[#e9e8e5]/60 rounded-full text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center bg-white/40 backdrop-blur-xs border border-[#e3e2e0]/60 shadow-xs active:scale-95"
+              title="Close"
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+
             {/* Circular Avatar */}
             <div className="w-20 h-20 rounded-full relative shadow-xs border border-[#d0d4dc] mb-3">
               <img 
@@ -560,8 +558,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
-        </div>
-      </motion.div>
-    </div>
+      </main>
+    </motion.div>
   );
 };

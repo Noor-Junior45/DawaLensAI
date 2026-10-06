@@ -604,6 +604,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         <AnimatePresence>
           {showMedicalDisclaimerBanner && (
             <motion.div 
+              key="chat-medical-disclaimer-banner"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -871,6 +872,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
           {/* Safety & Compliance: Report AI Response Modal */}
           {reportingMessage && (
             <motion.div
+              key="chat-report-modal"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -965,6 +967,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
           {showDeleteConfirm && (
             <motion.div
+              key="chat-clear-confirm-modal"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

@@ -36,8 +36,16 @@ app.set('trust proxy', true);
 const PORT = Number(process.env.PORT) || 3000;
 
 // ============================================================
-// 1. CORS ALLOWLIST CONFIGURATION
+// 1. CORS ALLOWLIST CONFIGURATION & SECURITY HEADERS
 // ============================================================
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "0");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
 const ALLOWED_ORIGIN_PATTERNS = [
   /^http:\/\/localhost:\d+$/,
   /^https:\/\/localhost(:\d+)?$/,
@@ -120,6 +128,12 @@ function createRateLimiter(maxPerMinute: number = 100, burst: number = 20) {
 
 const generalRateLimiter = createRateLimiter(120, 20);
 const aiRateLimiter = createRateLimiter(30, 5);
+const strictPublicFormRateLimiter = createRateLimiter(6, 2);
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/;
+function isValidEmailInput(email: unknown): boolean {
+  return typeof email === 'string' && email.length <= 100 && !/[\r\n\t]/.test(email) && EMAIL_REGEX.test(email.trim());
+}
 
 // ============================================================
 // 3. BODY PARSERS WITH STRICT LIMITS
@@ -196,30 +210,33 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "DawaSnap AI Server is running securely" });
 });
 
-// Public Account Deletion Request Submission (for visitors without app installed)
-app.post("/api/account/deletion-request", async (req, res) => {
+// Public Account Deletion Request Submission (Protected against email bombing & spam relay)
+app.post("/api/account/deletion-request", strictPublicFormRateLimiter, async (req, res) => {
   try {
     const { email, reason, confirmed } = req.body;
-    if (!email || !String(email).includes('@')) {
-      return res.status(400).json({ error: "Valid email address is required" });
+    if (!email || !isValidEmailInput(email)) {
+      return res.status(400).json({ error: "A valid, sanitized email address (max 100 characters) is required." });
     }
     if (!confirmed) {
-      return res.status(400).json({ error: "Confirmation is required" });
+      return res.status(400).json({ error: "Explicit user confirmation is required." });
     }
 
-    const referenceId = `DEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    console.log(`[ACCOUNT DELETION REQUEST] Received request for ${email}. Reference ID: ${referenceId}`);
+    const sanitizedEmail = String(email).trim().toLowerCase();
+    const sanitizedReason = typeof reason === 'string' ? reason.slice(0, 500) : '';
 
-    // If Resend API key is available, send confirmation receipt
+    const referenceId = `DEL-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    console.log(`[ACCOUNT DELETION REQUEST] Verified request for ${sanitizedEmail}. Reference ID: ${referenceId}`);
+
+    // If Resend API key is available, send confirmation receipt strictly to sanitizedEmail
     const apiKey = process.env.RESEND_API_KEY?.trim();
     if (apiKey && apiKey !== 'YOUR_API_KEY' && !apiKey.includes('YOUR_RESEND_API_KEY')) {
       try {
         const resend = new Resend(apiKey);
         await resend.emails.send({
           from: "DawaSnap AI <alerts@noorpos.in>",
-          to: [email],
+          to: [sanitizedEmail],
           subject: `DawaSnap AI - Account Deletion Request Received (${referenceId})`,
-          text: `Hello,\n\nWe have received your account and data deletion request for ${email}.\nReference ID: ${referenceId}\n\nOur compliance team processes all deletion requests within 7 business days. All associated medicines, schedules, push tokens, and cloud data will be permanently wiped.\n\nThank you,\nDawaSnap AI Data Privacy Officer`,
+          text: `Hello,\n\nWe have received your account and data deletion request for ${sanitizedEmail}.\nReference ID: ${referenceId}\n\nOur compliance team processes all deletion requests within 7 business days. All associated medicines, schedules, push tokens, and cloud data will be permanently wiped.\n\nThank you,\nDawaSnap AI Data Privacy Officer`,
         });
       } catch (emailErr) {
         console.warn("[DELETION EMAIL NOTICE] Could not send receipt email via Resend:", emailErr);
@@ -241,13 +258,21 @@ app.post("/api/account/deletion-request", async (req, res) => {
 // 5. PROTECTED USER API ROUTES (REQUIRE FIREBASE ID TOKEN)
 // ============================================================
 
-// Mail Sending Route using Resend API (Protected)
+// Mail Sending Route using Resend API (Protected & Input Validated)
 app.post("/api/send-email", requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { to, subject, text, html } = req.body;
-    if (!to || !subject) {
-      return res.status(400).json({ error: "Missing required fields 'to' or 'subject'" });
+    if (!to || !isValidEmailInput(to)) {
+      return res.status(400).json({ error: "Invalid or malformed recipient email address 'to'." });
     }
+    if (!subject || typeof subject !== 'string' || subject.trim().length === 0) {
+      return res.status(400).json({ error: "Subject is required and must be a non-empty string." });
+    }
+
+    const sanitizedTo = String(to).trim().toLowerCase();
+    const sanitizedSubject = subject.replace(/[\r\n\t]/g, ' ').slice(0, 200).trim();
+    const sanitizedText = typeof text === 'string' ? text.slice(0, 50000) : "";
+    const sanitizedHtml = typeof html === 'string' ? html.slice(0, 100000) : undefined;
 
     let apiKey = process.env.RESEND_API_KEY;
     if (apiKey) {
@@ -268,10 +293,10 @@ app.post("/api/send-email", requireFirebaseAuth, async (req: AuthenticatedReques
     const resend = new Resend(apiKey);
     const { data, error } = await resend.emails.send({
       from: "DawaSnap AI <alerts@noorpos.in>",
-      to: [to],
-      subject: subject,
-      text: text || "",
-      html: html || undefined,
+      to: [sanitizedTo],
+      subject: sanitizedSubject,
+      text: sanitizedText,
+      html: sanitizedHtml,
     });
 
     if (error) {
@@ -343,6 +368,12 @@ app.post("/api/ai/interactions-save-cache", requireFirebaseAuth, async (req: Aut
 app.post("/api/ai/extract", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { base64Image, ocrText, hints, cnnFeatures } = req.body;
+    if (base64Image && (typeof base64Image !== 'string' || base64Image.length > 20 * 1024 * 1024)) {
+      return res.status(400).json({ success: false, errorMessage: "Invalid image format or image exceeds 20MB limit." });
+    }
+    if (ocrText && (typeof ocrText !== 'string' || ocrText.length > 50000)) {
+      return res.status(400).json({ success: false, errorMessage: "OCR text exceeds 50,000 characters." });
+    }
     const result = await extractMedicineDataServer(base64Image, ocrText, hints, cnnFeatures);
     res.json(result);
   } catch (error: any) {
@@ -353,6 +384,9 @@ app.post("/api/ai/extract", aiRateLimiter, requireFirebaseAuth, async (req: Auth
 app.post("/api/ai/interactions", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { medicines } = req.body;
+    if (!Array.isArray(medicines) || medicines.length > 100) {
+      return res.status(400).json({ error: "Medicines must be an array of at most 100 items." });
+    }
     const result = await checkDrugInteractionsServer(medicines);
     res.json(result);
   } catch (error: any) {
@@ -363,6 +397,9 @@ app.post("/api/ai/interactions", aiRateLimiter, requireFirebaseAuth, async (req:
 app.post("/api/ai/categorize", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { medicines } = req.body;
+    if (!Array.isArray(medicines) || medicines.length > 100) {
+      return res.status(400).json({ error: "Medicines must be an array of at most 100 items." });
+    }
     const result = await categorizeMedicinesServer(medicines || []);
     res.json(result);
   } catch (error: any) {
@@ -374,8 +411,13 @@ app.post("/api/ai/categorize", aiRateLimiter, requireFirebaseAuth, async (req: A
 app.post("/api/ai/report", aiRateLimiter, async (req, res) => {
   try {
     const { category, comment, responseSnippet, provider } = req.body;
+    const cleanCategory = typeof category === 'string' ? category.slice(0, 100) : 'General';
+    const cleanComment = typeof comment === 'string' ? comment.slice(0, 2000) : '';
+    const cleanSnippet = typeof responseSnippet === 'string' ? responseSnippet.slice(0, 2000) : '';
+    const cleanProvider = provider === 'slm' ? 'slm' : 'gemini';
+
     const reportId = `REP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    console.log(`[AI RESPONSE REPORT] Report ID: ${reportId}, Category: ${category}, Provider: ${provider}`);
+    console.log(`[AI RESPONSE REPORT] Report ID: ${reportId}, Category: ${cleanCategory}, Provider: ${cleanProvider}`);
     res.json({ 
       success: true, 
       reportId, 
@@ -386,7 +428,7 @@ app.post("/api/ai/report", aiRateLimiter, async (req, res) => {
   }
 });
 
-app.get("/api/ai/key-status", (req, res) => {
+app.get("/api/ai/key-status", aiRateLimiter, (req, res) => {
   try {
     const keys = getAvailableKeys();
     if (keys.length > 0) {
@@ -422,6 +464,12 @@ app.get("/api/ai/chat-count", requireFirebaseAuth, async (req: AuthenticatedRequ
 app.post("/api/ai/chat", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { messages, medicines } = req.body;
+    if (!Array.isArray(messages) || messages.length === 0 || messages.length > 100) {
+      return res.status(400).json({ error: "Messages must be a non-empty array with at most 100 items." });
+    }
+    if (medicines && (!Array.isArray(medicines) || medicines.length > 500)) {
+      return res.status(400).json({ error: "Medicines context must be an array with at most 500 items." });
+    }
     const userId = req.userId!; // Derived securely from verified ID token
     
     const responseText = await chatWithGeminiServer(messages, userId, medicines);
@@ -504,13 +552,13 @@ app.post("/api/notifications/send-test", requireFirebaseAuth, async (req: Authen
   }
 });
 
-// Endpoint to trigger a background expiry check (Protected by CRON_SECRET)
+// Endpoint to trigger a background expiry check (Strictly protected by CRON_SECRET)
 app.post("/api/cron/check-expiry", async (req, res) => {
   const cronSecret = process.env.CRON_SECRET?.trim();
   const providedHeader = req.headers['x-cron-secret'];
   
-  if (cronSecret && providedHeader !== cronSecret) {
-    return res.status(401).json({ error: "Unauthorized: Invalid or missing x-cron-secret header." });
+  if (!cronSecret || typeof providedHeader !== 'string' || providedHeader !== cronSecret) {
+    return res.status(401).json({ error: "Unauthorized: A valid x-cron-secret header matching CRON_SECRET is required." });
   }
 
   try {

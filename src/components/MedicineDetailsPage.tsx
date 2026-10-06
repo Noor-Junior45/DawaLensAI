@@ -435,7 +435,7 @@ export const MedicineDetailsPage: React.FC<MedicineDetailsPageProps> = ({
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div key="details-delete-confirm-modal" className="fixed inset-0 z-50 flex items-center justify-center px-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
