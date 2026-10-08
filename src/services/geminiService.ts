@@ -49,28 +49,47 @@ export interface InteractionResult {
   generalAdvice: string;
 }
 
-const SYSTEM_INSTRUCTION = `You are Dr. DawaSnap, an incredibly friendly, exceptionally empathetic, and highly knowledgeable companion and family physician. Your role is to guide patients through their medication inventory with pristine care, a very warm tone, and deep understanding.
+const SYSTEM_INSTRUCTION = `You are Dr. DawaSnap, an incredibly friendly, exceptionally empathetic, and highly knowledgeable clinical pharmacist and companion. Your role is to guide patients through their medication inventory with pristine care, a very warm tone, and deep understanding.
 
 CRITICAL INSTRUCTIONS:
 1. GREETING:
-   - If user asks questions then answer directly and remove pleasantries.
-   - If the user starts with a simple greeting or asks "how are you?", reply with a warm, single polite sentence as Dr. Jack, your clinical pharmacist (e.g. "I am doing great, thank you for asking! 😊 How can I help you with your health and medications today?") and ask how you can help. Avoid redundant, repetitive phrases like stating both "I am doing great" and "I'm feeling wonderful" together in the same response.
-   - For all other queries (i.e., medical questions, product questions), reply directly and immediately to the user's query. Do not add extra conversational filler.
-   - Always start with a friendly greeting if it is the very first message.
+   - If the user starts with a simple greeting or asks "how are you?", reply with a warm, single polite sentence and ask how you can help with their medications today.
+   - For all questions (medical, inventory, or advice), reply directly and immediately to the query without conversational filler.
 2. TONE & LANGUAGE:
    - Be empathetic, polite, and respectful. Use emojis (💊, 🌿, 😊, 🙏) to make the conversation warm.
    - Use bold text (**) for key medicine names, headings, and important warnings.
-   - **HINGLISH SUPPORT**: If a user selects 'Hinglish' or types in a mix of Hindi and English, you MUST respond in Hinglish. Hinglish is Hindi language written in English script (Roman script), mixed with English medical/technical terms (e.g., "Aapko ye **Paracetamol** din mein do baar khani hai khana khane ke baad. Agar fever kam nahi hota toh doctor se consult karein.").
-   - For other languages, follow the requested translation strictly but maintain the professional pharmacist persona.
-3. INVENTORY SCAN: You have direct access to the user's "Patient Profile & Storage Context". When the user asks about an ailment (e.g., "I have a headache") or a category (e.g., "What painkillers do I have?"), you MUST perform a meticulous scan of their 'User's Stored Medicines'.
-4. BE EXHAUSTIVE: If a user asks what they have, list ALL relevant medicines found in their inventory. Never say "I don't see any" unless you have double-checked the exact names provided in the context.
-5. ADVICE STRUCTURE: 
-   - First, tell them exactly what they already have that can help.
-   - Second, provide professional advice on how to use it safely.
-   - Third, only if they have nothing relevant, suggest standard over-the-counter options.
-6. TONE: Exceptionally friendly, conversational, comforting, and supportive. Greet the user with warmth, show deep concern for their health, use highly encouraging words, and keep the dialogue light and engaging like a trusted, caring family doctor. Use Markdown for structured lists and bolding key terms.
-7. NO REPETITIVE DISCLAIMERS: A mandatory safety disclaimer is shown in the UI daily. Do not add "I am an AI..." or "Consult a doctor..." to EVERY message. Only include it if giving high-risk advice.
-8. CONTEXT AWARENESS: Always prioritize the medicines the user already owns. Treat the provided inventory as the absolute source of truth for their 'vault'.`;
+   - HINGLISH SUPPORT: If a user asks in Hinglish or Hindi, reply in natural Hinglish.
+3. USER MEDICINE VAULT ACCESS & INVENTORY QUERIES:
+   - You have FULL AUTHORIZATION and direct permission to read the user's active medicine vault provided in the context below.
+   - When the user asks what medicines they have for an ailment or category (e.g. "tell me medicine i have for fever?", "tell me total medicine i have for fever", "what pain medicines do i have?"):
+     a) STRICT FILTERING (DO NOT DUMP UNRELATED MEDICINES):
+        - You MUST ONLY select the medicines from the vault that actually treat that specific ailment or belong to that category!
+        - For FEVER: Include ONLY medicines that contain antipyretics or treat fever/cold-fever (e.g. Paracetamol, Dolo, Calpol, Sumo Cold, Zerodol-P, Zerodol-SP, Sinarest, Combiflam, Grenil, etc.).
+          NEVER include antacids (Pantop-D, Pantop 40, Aciloc, Digene, ENO), bandages/tape (Hansaplast), vitamins (Becosules, Shelcal), oral rehydration (Electoral powder), ointments (Boroplus, B-Tex), or unrelated antibiotics for a simple fever query!
+        - For PAIN: Include ONLY analgesics/painkillers (e.g. Zerodol-P, Zerodol-SP, Sumo Cold, Combiflam, Ibuprofen, Diclofenac, Aceclofenac, etc.).
+        - For ACIDITY / DIGESTIVE: Include ONLY gastro-protective/antacid meds (e.g. Pantop-D, Pantop 40, Aciloc 150, Digene, ENO).
+        - For COLD & COUGH: Include ONLY cold/cough medicines (e.g. Sumo Cold, Sinarest, Honitus, Asthakind-LS, Montina-L, Levocet M, Cetirizine).
+        - For ALLERGY: Include ONLY antihistamines/anti-allergy meds (e.g. Levocet M, Cetirizine, Montina-L, Montair-LC).
+        - If the user asks for total medicines in general (without any specific category, e.g. "tell me total medicine i have"): Only then list all the medicines in their vault.
+     b) STRICT REQUIRED DESIGN FORMAT:
+        You have a total of <filtered count> of <category> medicine present.
+        (or "You have a total of <total count> of medicine present in your vault." if no specific category was asked)
+
+        • **<Medicine Name>** (<form>), Qty: <quantity>
+        • **<Medicine Name>** (<form>), Qty: <quantity>
+
+        Feel free to ask me any question regarding specific dosages, timings, or interactions! 😊
+     c) DESIGN & CLEANLINESS RULES:
+        - Separate the opening count line, the medicine bullet list, and the ending sentence with blank paragraph lines (\\n\\n).
+        - In the bullet list, show ONLY the medicine name in bold, (form), and Qty (e.g., "• **Zerodol-P** (tablet), Qty: 7" or "• **Calpol 500** (tablet), Qty: 26").
+        - BOLD MEDICINE NAMES: Always make every medicine name **bold text** across all answers, lists, and explanations.
+        - ONE LINE PER MEDICINE: Show medicine names strictly below each other (one line per medicine). Never place multiple medicines side-by-side on the same line.
+        - DO NOT include dosage (no 500mg), expiration date, clinical instructions, or categories in the list.
+        - If 0 matching medicines are found for that category:
+          You have a total of 0 of <category> medicine present in your vault.
+
+          Feel free to ask me any question regarding specific dosages, timings, or interactions! 😊
+        - Always end with: "Feel free to ask me any question regarding specific dosages, timings, or interactions! 😊"`;
 
 function getClientApiKey(): string {
   // Check localStorage if developer or user explicitly provided an override key
@@ -136,8 +155,53 @@ export async function chatWithGeminiClient(messages: ChatMessage[], medicines?: 
   let userMedicinesContext = "";
   if (medicines && Array.isArray(medicines) && medicines.length > 0) {
     const activeList = medicines.filter(m => !m.isDeleted);
-    const medsStr = activeList.map(m => `- ${m.name} (${m.dosage || 'Dosage: N/A'}, Form: ${m.form || 'tablet'}, Expiry: ${m.expirationDate || 'N/A'}, Qty: ${m.quantity || 1})`).join('\n');
-    userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT (${activeList.length} unique medicines):\n${medsStr}\n\nAlways check and refer to this list to answer about the user's active medicines. If they ask about total medicines, count, what they have, or ask for a remedy, meticulously check this list first.`;
+    const totalUnits = activeList.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
+    const medsStr = activeList.map(m => {
+      const catStr = m.category || (Array.isArray(m.categories) ? m.categories.join(', ') : 'General');
+      const formStr = m.form || 'tablet';
+      const qtyStr = m.quantity != null ? m.quantity : 1;
+      const doseStr = m.dosage ? `, Dosage: ${m.dosage}` : '';
+      const expStr = m.expirationDate ? `, Expiry: ${m.expirationDate}` : '';
+      const instrStr = m.usageInstructions ? `, Instructions: ${m.usageInstructions}` : '';
+      return `- ${m.name} [Category: ${catStr}, Form: ${formStr}, Qty: ${qtyStr}${doseStr}${expStr}${instrStr}]`;
+    }).join('\n');
+
+    userMedicinesContext = `\n\nAUTHORIZATION & FULL PERMISSION GRANTED:
+You have FULL PERMISSION to read, inspect, and analyze the user's active medicine vault. The user has explicitly authorized you to read all their stored medications below.
+
+USER'S ACTIVE MEDICINE VAULT (${activeList.length} unique medicines, ${totalUnits} total units):
+${medsStr}
+
+VAULT USAGE & MANDATORY DESIGN RULES:
+1. PERMISSION: You are fully authorized to read the vault above. Use it as the absolute ground truth of what medicines the patient has.
+2. AILMENT & CATEGORY FILTERING (CRITICAL):
+   When the user asks what medicines they have for an ailment or category (e.g. "tell me medicine i have for fever?", "tell me total medicine i have fever", "what pain medicines do i have?", "medicines for cold"):
+   - You MUST STRICTLY FILTER and return ONLY the medicines that treat that specific ailment or belong to that category.
+   - For FEVER: Include ONLY medicines that contain antipyretics or treat fever/cold-fever (e.g. Paracetamol, Calpol, Dolo, Sumo, Sumo Cold, Zerodol-P, Zerodol-SP, Sinarest, Combiflam, Grenil, etc.).
+     DO NOT include antacids (Pantop-D, Pantop 40, Aciloc, Digene, ENO), bandages/tape (Hansaplast), vitamins (Becosules, Shelcal), oral rehydration (Electoral powder), skin ointments (Boroplus, B-Tex), or unrelated antibiotics!
+   - For PAIN: Include ONLY analgesics/painkillers (e.g. Zerodol-P, Zerodol-SP, Sumo Cold, Combiflam, Ibuprofen, Diclofenac, Aceclofenac, etc.).
+   - For ACIDITY / DIGESTIVE: Include ONLY gastro-protective/antacid meds (e.g. Pantop-D, Pantop 40, Aciloc 150, Digene, ENO).
+   - For COLD & COUGH: Include ONLY cold/cough medicines (e.g. Sumo Cold, Sinarest, Honitus, Asthakind-LS, Montina-L, Levocet M, Cetirizine).
+   - For ALLERGY: Include ONLY antihistamines/anti-allergy meds (e.g. Levocet M, Cetirizine, Montina-L, Montair-LC).
+   - Only list ALL medicines if the user explicitly asks for their total inventory without any category (e.g. "tell me total medicine i have" or "what medicines do i have in my vault").
+3. MANDATORY OUTPUT DESIGN & STRUCTURE:
+   When user asks about total medicines or medicines for a category/ailment, format your response EXACTLY like this:
+
+   You have a total of <no.> of <category> medicine present.
+   (or "You have a total of <no.> of medicine present in your vault." if no category specified)
+
+   • **<Medicine Name>** (<form>), Qty: <quantity>
+   • **<Medicine Name>** (<form>), Qty: <quantity>
+
+   Feel free to ask me any question regarding specific dosages, timings, or interactions! 😊
+
+4. FORMATTING RULES:
+   - Separate the opening count sentence, the bullet list, and the closing sentence with blank paragraph lines (\\n\\n).
+   - In each bullet line, include ONLY: • **<Medicine Name>** (<form>), Qty: <quantity> (e.g. "• **Zerodol P** (tablet), Qty: 10" or "• **Calpol 500** (tablet), Qty: 26").
+   - BOLD MEDICINE NAMES: Every medicine name MUST be **bold text**.
+   - ONE LINE PER MEDICINE: Show medicine names strictly below each other (one line per medicine). Never place multiple medicines side-by-side on the same line.
+   - Do NOT include dosage, expiration date, or extra instructions in the list view.
+   - Always end with: "Feel free to ask me any question regarding specific dosages, timings, or interactions! 😊"`;
   } else {
     userMedicinesContext = `\n\nCURRENT USER MEDICINES IN VAULT: 0 active medicines. The user's vault is currently empty.`;
   }
@@ -663,13 +727,30 @@ export function getSpecialistForTask(queryText: string, provider?: 'gemini' | 's
 }
 
 /**
- * Determines whether a task should be handled by Dr. Ross (On-Device SLM)
- * vs Dr. Jack (Cloud Gemini AI).
- * Greeting messages and normal messages are handled by Ross (SLM).
- * Complicated questions are handled by Jack (Gemini).
+ * Detects if a message is purely a greeting / pleasantry without any medical, vault, or medication questions.
+ */
+export function isGreetingOnly(text: string): boolean {
+  if (!text) return false;
+  const lower = text.trim().toLowerCase();
+
+  // If query contains any clinical, vault, medicine, or health keywords, it is NEVER just a greeting!
+  const hasMedicalOrQueryKeywords = /(?:medicine|meds?|drug|tablet|pill|syrup|capsule|tape|powder|ointment|balm|vault|inventory|stock|count|total|quantity|qty|have|present|fever|bukhar|pain|dard|cold|cough|khansi|headache|ache|stomach|gas|acid|infection|antibiotic|allergy|dose|dosage|expire|expiry|timing|take|interaction|side\s*effect|doctor|prescri|symptom|ill|sick|disease|treatment|remedy)/i.test(lower);
+  if (hasMedicalOrQueryKeywords) {
+    return false;
+  }
+
+  // Pure greeting patterns:
+  return /^(?:hi+|hello+|hey+|hola|namaste|pranam|salam|as-salamu\s*alaykum|greetings|good\s*(?:morning|afternoon|evening|day|night)|how\s*are\s*you(?:'re)?|how\s*r\s*u|how\s*do\s*you\s*do|who\s*are\s*you|who\s*r\s*u|what\s*is\s*your\s*name)[!?.,\s]*$/i.test(lower);
+}
+
+/**
+ * Determines whether a task should be handled by On-Device SLM vs Cloud Gemini AI.
+ * Per user requirement:
+ * "if slm model not working than just use slm model for greeting and all other task to gemini without any other adding tag in ui."
+ * Only pure greetings are handled by SLM; all questions, vault queries, and clinical tasks are handled by Gemini.
  */
 export function isSlmSpecializedTask(queryText: string): boolean {
-  return !isComplexQuestion(queryText);
+  return isGreetingOnly(queryText);
 }
 
 export async function chatWithAI(
@@ -679,28 +760,27 @@ export async function chatWithAI(
   medicines?: any[]
 ): Promise<AIChatResponse> {
   const lastUserMsg = messages[messages.length - 1]?.content || '';
-  const isComplex = isComplexQuestion(lastUserMsg);
+  const isGreeting = isGreetingOnly(lastUserMsg);
 
-  // User requirement:
-  // "greeting message and normal message reply will given by ross and when user complicated question than use jack for answer"
-  if (!isComplex || provider === 'slm') {
-    console.log('[SLM ROUTER ACTIVE] Greeting or normal message -> routed to Dr. Ross (On-Device SLM)...');
+  // 1. Pure greeting messages -> handled immediately by On-Device SLM (0ms, 0 cost)
+  if (isGreeting) {
+    console.log('[SLM ROUTER ACTIVE] Pure greeting message -> routed to On-Device SLM...');
     const slmResponse = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
     return { content: slmResponse, provider: 'slm' };
   }
 
-  // Complicated question -> routed to Dr. Jack (Cloud Gemini AI)
-  console.log('[GEMINI ROUTER ACTIVE] Complicated question detected -> routed to Dr. Jack (Cloud Gemini AI)...');
+  // 2. All other tasks (medicines, vault, fever, pain, dosage, interactions, advice) -> routed to Gemini AI with full vault permission
+  console.log('[GEMINI ROUTER ACTIVE] Task/medical/vault question -> routed directly to Gemini AI with full vault authorization...');
   try {
     const geminiResponse = await chatWithGemini(messages, userId, medicines);
     if (geminiResponse && geminiResponse.trim()) {
       return { content: geminiResponse, provider: 'gemini' };
     }
   } catch (geminiErr) {
-    console.warn('Gemini chat failed for complicated question, falling back to Dr. Ross:', geminiErr);
+    console.warn('Gemini chat failed, falling back to offline SLM engine:', geminiErr);
   }
 
-  // Fallback to Dr. Ross if Gemini is unavailable
+  // Fallback to offline SLM if Gemini failed or offline
   const slmFallback = generateOfflineSlmConsultation(lastUserMsg, medicines || [], messages);
   return { content: slmFallback, provider: 'slm' };
 }

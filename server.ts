@@ -165,6 +165,16 @@ app.get("/google:id.html", (req, res) => {
   res.send(`google-site-verification: google${id}.html`);
 });
 
+app.get(["/sitemap.xml", "/sitemap"], (req, res) => {
+  const sitemapPath = path.join(process.cwd(), "public", "sitemap.xml");
+  if (fs.existsSync(sitemapPath)) {
+    res.setHeader("Content-Type", "application/xml");
+    res.sendFile(sitemapPath);
+  } else {
+    res.status(404).send("Sitemap not found");
+  }
+});
+
 app.get(["/privacy", "/privacy.html"], (req, res) => {
   const privacyPath = path.join(process.cwd(), "public", "privacy.html");
   if (fs.existsSync(privacyPath)) {

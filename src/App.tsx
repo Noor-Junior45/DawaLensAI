@@ -3302,7 +3302,7 @@ export default function App() {
                       <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                         <div>
                           <h5 className="font-extrabold text-slate-800 text-xs uppercase tracking-wider">Contact &amp; Data Protection</h5>
-                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">mdhassan1738@gmail.com</span></p>
+                          <p className="text-slate-500 text-xs">Email: <span className="font-bold text-slate-800">newluckypharmacy@gmail.com</span></p>
                         </div>
                         <button
                           type="button"
@@ -3359,7 +3359,7 @@ export default function App() {
                           Operator: <strong>Noor Technologies (MD Hassan)</strong>
                         </p>
                         <p className="font-bold text-slate-800 mt-1 select-all">
-                          Contact Email: mdhassan1738@gmail.com
+                          Contact Email: newluckypharmacy@gmail.com
                         </p>
                       </div>
                     </div>

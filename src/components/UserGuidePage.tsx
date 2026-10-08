@@ -383,10 +383,10 @@ export const UserGuidePage: React.FC<UserGuidePageProps> = ({ onBack }) => {
           <p className="text-sm text-[#44403c] leading-relaxed">
             Need help or have a feature recommendation? Contact Operating Developer <strong>MD NOOR HASSAN</strong> directly at{' '}
             <a 
-              href="mailto:mdnoor4860@gmail.com?subject=DawaSnap%20AI%20Support%20Request" 
+              href="mailto:newluckypharmacy@gmail.com?subject=DawaSnap%20AI%20Support%20Request" 
               className="text-[#0f9d58] font-bold underline"
             >
-              mdnoor4860@gmail.com
+              newluckypharmacy@gmail.com
             </a>.
           </p>
         </section>

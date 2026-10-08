@@ -682,8 +682,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignIn, navigateToPu
                 </div>
                 <div>
                   <span className="font-bold text-slate-800">Support / Privacy Email:</span>{' '}
-                  <a href="mailto:mdnoor4860@gmail.com" className="text-[#0f9d58] hover:underline font-medium">
-                    mdnoor4860@gmail.com
+                  <a href="mailto:newluckypharmacy@gmail.com" className="text-[#0f9d58] hover:underline font-medium">
+                    newluckypharmacy@gmail.com
                   </a>
                 </div>
                 <div>
@@ -806,7 +806,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignIn, navigateToPu
                 Delete Account
               </button>
               <a
-                href="mailto:mdnoor4860@gmail.com"
+                href="mailto:newluckypharmacy@gmail.com"
                 className="text-[#5f6368] hover:text-[#1f1f1f] underline"
               >
                 Contact Developer

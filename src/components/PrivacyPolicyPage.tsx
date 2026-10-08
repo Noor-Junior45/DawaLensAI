@@ -458,8 +458,8 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
               <h4 className="font-bold text-[#1c1917] text-base sm:text-lg">6.3 Email Deletion Request:</h4>
               <p className="text-[#44403c] leading-relaxed">
                 You may also send an email request directly to our developer at{' '}
-                <a href="mailto:mdhassan1738@gmail.com?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
-                  mdhassan1738@gmail.com
+                <a href="mailto:newluckypharmacy@gmail.com?subject=Account%20and%20Data%20Deletion%20Request" className="text-rose-600 font-bold underline break-all">
+                  newluckypharmacy@gmail.com
                 </a>{' '}
                 with the subject line <em>&ldquo;Account Deletion Request&rdquo;</em> from your registered account email. All associated records will be purged within 48 to 72 hours of verification.
               </p>
@@ -602,7 +602,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
                       <span className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
-                        mdhassan1738@gmail.com
+                        newluckypharmacy@gmail.com
                       </span>
                     </td>
                   </tr>
@@ -712,7 +712,7 @@ export const PrivacyPolicyPage: React.FC<PrivacyPolicyPageProps> = ({ onBack }) 
           </p>
           <div className="text-sm sm:text-base text-[#44403c] space-y-1.5 pt-1 bg-[#f5efe4] border border-[#e2d9c8] p-4 rounded-xl shadow-2xs">
             <p><strong>Entity / Operator:</strong> Noor Technologies (MD Hassan)</p>
-            <p><strong>Official Contact Email:</strong> mdhassan1738@gmail.com</p>
+            <p><strong>Official Contact Email:</strong> newluckypharmacy@gmail.com</p>
             <p><strong>Official Web Domain:</strong> <a href="https://dawasnap.vercel.app" target="_blank" rel="noopener noreferrer" className="text-[#0f9d58] font-bold underline break-all">https://dawasnap.vercel.app</a></p>
             <p><strong>Account Deletion Portal:</strong> <a href="https://dawasnap.vercel.app/delete-account" target="_blank" rel="noopener noreferrer" className="text-rose-600 font-bold underline break-all">https://dawasnap.vercel.app/delete-account</a></p>
           </div>

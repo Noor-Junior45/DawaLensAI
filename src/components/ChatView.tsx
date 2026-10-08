@@ -62,6 +62,91 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
   const [chatCount, setChatCount] = useState<number>(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Mobile Resizing & Sheet Drag State (Phone)
+  const [sheetMode, setSheetMode] = useState<'half' | 'fullscreen'>('half');
+  const [dragTop, setDragTop] = useState<number | null>(null);
+  const dragStartYRef = useRef<number | null>(null);
+  const initialTopRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+
+  const getHalfTopPx = () => {
+    if (typeof window === 'undefined') return 100;
+    return Math.round(window.innerHeight * 0.14); // 14vh default position
+  };
+
+  const handleDragStart = (clientY: number) => {
+    if (!isMobile) return;
+    dragStartYRef.current = clientY;
+    initialTopRef.current = sheetMode === 'fullscreen' ? 0 : getHalfTopPx();
+    isDraggingRef.current = true;
+    setDragTop(initialTopRef.current);
+  };
+
+  const handleDragMove = (clientY: number) => {
+    if (!isDraggingRef.current || dragStartYRef.current === null) return;
+    const dy = clientY - dragStartYRef.current;
+    const newTop = Math.max(0, initialTopRef.current + dy);
+    setDragTop(newTop);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDraggingRef.current || dragTop === null) {
+      dragStartYRef.current = null;
+      isDraggingRef.current = false;
+      setDragTop(null);
+      return;
+    }
+    isDraggingRef.current = false;
+    const halfTop = getHalfTopPx();
+
+    // If dragged down past half position + 80px: close chat!
+    if (dragTop > halfTop + 80) {
+      onClose();
+      return;
+    }
+
+    // If dragged up towards top of screen (less than 50% of half top): open full screen!
+    if (dragTop < halfTop * 0.5) {
+      setSheetMode('fullscreen');
+    } else {
+      setSheetMode('half');
+    }
+
+    setDragTop(null);
+    dragStartYRef.current = null;
+  };
+
+  const onTouchStartHandle = (e: React.TouchEvent) => {
+    handleDragStart(e.touches[0].clientY);
+  };
+
+  const onTouchMoveHandle = (e: React.TouchEvent) => {
+    handleDragMove(e.touches[0].clientY);
+  };
+
+  const onTouchEndHandle = () => {
+    handleDragEnd();
+  };
+
+  const onMouseDownHandle = (e: React.MouseEvent) => {
+    handleDragStart(e.clientY);
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      handleDragMove(moveEvent.clientY);
+    };
+    const onMouseUp = () => {
+      handleDragEnd();
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleHandleClick = () => {
+    if (!isMobile) return;
+    setSheetMode(prev => prev === 'half' ? 'fullscreen' : 'half');
+  };
+
   // Safety & Guardrails: Reporting AI Response State (Stored anonymously without PII)
   const [reportingMessage, setReportingMessage] = useState<ChatMessage | null>(null);
   const [reportCategory, setReportCategory] = useState<string>('Inaccurate medical information');
@@ -225,8 +310,18 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Removed auto-disclaimer popup for clean layout as requested
@@ -510,11 +605,21 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
   const cleanMessageDisplay = (text: string) => {
     if (!text) return '';
-    const cleaned = text
+    let cleaned = text
       .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*Your\s*On-Device\s*SLM\s*Pharmacist\s*[🧠🌿🩺💊]*/gi, '')
       .replace(/\s*—\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens)[^\n`]*/gi, '')
       .replace(/\s*Dr\.?\s*(?:Ross|Rose|DawaSnap|DawaLens),?\s*your\s*on-device\s*slm\s*pharmacist[^\n`]*/gi, '')
       .trim();
+
+    // Ensure every medicine bullet point starts on its own line and forces a line break
+    cleaned = cleaned.replace(/([^\n])\s*(•\s*)/g, '$1\n$2');
+    cleaned = cleaned.replace(/(•[^\n]+)(?:\n(?!\n)|$)/g, '$1  \n');
+
+    // Ensure medicine name in bullet items is bold (• **Medicine Name** (form), Qty: N)
+    cleaned = cleaned.replace(/•\s*(?!\*\*)([^\n(]+?)(?=\s*\([a-zA-Z0-9\s_-]+\)[,\s]*Qty:)/gi, (_, medName) => {
+      return `• **${medName.trim()}**`;
+    });
+
     return cleaned || text;
   };
 
@@ -533,13 +638,28 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
         animate={isMobile ? { y: 0 } : { opacity: 1, y: 0, scale: 1 }}
         exit={isMobile ? { y: '100%' } : { opacity: 0, y: 40, scale: 0.98 }}
         transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-        className="fixed z-[100] flex flex-col overflow-hidden font-sans bg-[#fdfbf7] border border-slate-200/80 shadow-[0_24px_64px_rgba(0,0,0,0.18)]
-          top-[14vh] bottom-0 left-0 right-0 rounded-t-[32px] 
-          md:top-auto md:bottom-6 md:right-6 md:left-auto md:w-[460px] md:h-[680px] md:max-h-[82vh] md:rounded-[30px]"
+        className={`fixed z-[100] flex flex-col overflow-hidden font-sans bg-[#fdfbf7] border border-slate-200/80 shadow-[0_24px_64px_rgba(0,0,0,0.18)]
+          ${sheetMode === 'fullscreen' && isMobile ? 'top-0 rounded-t-none' : 'top-[14vh] rounded-t-[32px]'} bottom-0 left-0 right-0 
+          md:top-auto md:bottom-6 md:right-6 md:left-auto md:w-[460px] md:h-[680px] md:max-h-[82vh] md:rounded-[30px]`}
+        style={isMobile ? (
+          dragTop !== null 
+            ? { top: `${dragTop}px`, transition: 'none' } 
+            : sheetMode === 'fullscreen'
+              ? { top: '0px', transition: 'top 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)' }
+              : { top: '14vh', transition: 'top 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)' }
+        ) : {}}
       >
         {/* Drag handle for mobile to represent bottom sheet */}
-        <div className="md:hidden flex justify-center py-2 shrink-0 bg-[#0f9d58]">
-          <div className="w-12 h-1.5 rounded-full bg-white/30" />
+        <div 
+          className="md:hidden flex justify-center py-2.5 shrink-0 bg-[#0f9d58] cursor-grab active:cursor-grabbing touch-none select-none"
+          onTouchStart={onTouchStartHandle}
+          onTouchMove={onTouchMoveHandle}
+          onTouchEnd={onTouchEndHandle}
+          onMouseDown={onMouseDownHandle}
+          onClick={handleHandleClick}
+          title={sheetMode === 'fullscreen' ? "Drag down to resize or close" : "Drag up for full screen, drag down to close"}
+        >
+          <div className="w-14 h-1.5 rounded-full bg-white/40 active:bg-white/60 transition-colors" />
         </div>
 
         {/* Main Bar / Header */}
@@ -554,17 +674,15 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
               <span className="font-extrabold text-white text-base tracking-tight leading-tight">AI Pharmacist</span>
               <div 
                 className="flex items-center gap-1.5 mt-0.5"
-                title={`${activeSpecialist.name} - AI Pharmacist`}
+                title={isOnline ? "Gemini Online" : "Gemini Offline"}
               >
-                <span 
-                  className={`inline-block w-2 h-2 rounded-full transition-all duration-300 ${
-                    activeSpecialist.name === 'Dr. Jack'
-                      ? 'bg-[#60a5fa] shadow-[0_0_8px_rgba(96,165,250,0.8)]'
-                      : 'bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]'
-                  }`} 
-                />
-                <span className="text-[12px] text-[#e0e1f9] font-black tracking-wide leading-none">
-                  {activeSpecialist.name}
+                <span className={`inline-block w-2 h-2 rounded-full ${
+                  isOnline 
+                    ? "bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.8)]" 
+                    : "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                }`} />
+                <span className="text-[12px] text-[#e0e1f9] font-bold tracking-wide leading-none capitalize">
+                  {isOnline ? "Online" : "Offline"}
                 </span>
               </div>
             </div>
@@ -710,20 +828,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
 
                       {/* Flex column for Chat Bubble and action buttons below */}
                       <div className="flex flex-col max-w-[80%] md:max-w-[72%]">
-                        {/* Multi-Model Specialist Badge for Assistant Message */}
-                        {msg.role === 'assistant' && msgSpecialist && (
-                          <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
-                            <span className={`text-[10.5px] font-extrabold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1.5 shadow-3xs ${
-                              msgSpecialist.name === 'Dr. Jack'
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200/90'
-                                : 'bg-emerald-50 text-emerald-800 border-emerald-200/90'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                msgSpecialist.name === 'Dr. Jack' ? 'bg-indigo-500' : 'bg-emerald-500'
-                              }`} />
-                              <span>{msgSpecialist.name}</span>
-                            </span>
-                          </div>
+                        {/* AI Name - only name no tag */}
+                        {msg.role === 'assistant' && (
+                          <span className="text-[11px] font-bold text-slate-500 mb-1 px-1 select-none">
+                            {msg.provider === 'slm' ? 'Dr. Ross' : 'Dr. Jack'}
+                          </span>
                         )}
 
                         {/* Chat Bubble */}
@@ -732,7 +841,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                             ? 'bg-[#e2f7cb] text-[#1f1f1f] rounded-[18px] rounded-tr-none' 
                             : 'bg-white text-[#1f1f1f] rounded-[18px] rounded-tl-none border border-slate-100'
                         }`}>
-                          <div className="prose prose-sm max-w-none text-[14.5px] leading-relaxed break-words text-[#1f1f1f] [&_a]:text-[#0f9d58] [&_a]:underline [&_a]:font-bold hover:[&_a]:text-[#0d854a]">
+                          <div className="prose prose-sm max-w-none text-[14.5px] leading-relaxed break-words text-[#1f1f1f] [&_p]:whitespace-pre-line [&_a]:text-[#0f9d58] [&_a]:underline [&_a]:font-bold hover:[&_a]:text-[#0d854a]">
                             <ReactMarkdown
                               components={{
                                 a: ({ node, ...props }) => (
@@ -741,6 +850,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                                     target="_blank" 
                                     rel="noopener noreferrer" 
                                   />
+                                ),
+                                p: ({ node, ...props }) => (
+                                  <p className="whitespace-pre-line my-1.5 leading-relaxed" {...props} />
                                 )
                               }}
                             >
@@ -812,15 +924,9 @@ export const ChatView: React.FC<ChatViewProps> = ({ onClose, medicines, user, us
                     <DoctorLogo className="w-6 h-6 text-[#0f9d58]" />
                   </div>
                   <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
-                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 shadow-3xs ${
-                        activeSpecialist.name === 'Dr. Jack'
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80'
-                          : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
-                      }`}>
-                        <span>{activeSpecialist.name}</span>
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-bold text-slate-500 mb-1 px-1 select-none">
+                      {activeAiName === 'Ross' ? 'Dr. Ross' : 'Dr. Jack'}
+                    </span>
                     <div className="bg-white px-4 py-3 rounded-[18px] rounded-tl-none shadow-3xs border border-slate-100">
                       <div className="flex gap-1.5 py-1">
                         <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2 }} className="w-2 h-2 bg-[#0f9d58] rounded-full" />

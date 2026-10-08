@@ -396,7 +396,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                 8.2 Mandatory 30-Day Informal Negotiation:
               </div>
               <p className="text-[#44403c]">
-                Before filing any formal legal claim, you agree to submit a written notice to <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">mdhassan1738@gmail.com</code> and negotiate in good faith for thirty (30) days to reach an amicable resolution.
+                Before filing any formal legal claim, you agree to submit a written notice to <code className="font-mono text-xs bg-[#ede5d6] px-1 py-0.5 rounded text-[#1c1917]">newluckypharmacy@gmail.com</code> and negotiate in good faith for thirty (30) days to reach an amicable resolution.
               </p>
             </div>
 
@@ -454,7 +454,7 @@ export const TermsOfServicePage: React.FC<TermsOfServicePageProps> = ({ onBack }
                     </th>
                     <td className="py-3 px-3.5 sm:px-4 align-middle">
                       <span className="text-[#0f9d58] font-bold underline break-all inline-flex items-center gap-1">
-                        mdhassan1738@gmail.com
+                        newluckypharmacy@gmail.com
                       </span>
                     </td>
                   </tr>

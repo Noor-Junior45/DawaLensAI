@@ -2,7 +2,7 @@
 **Document Reference:** `DAWASNAP-GUIDE-2026-V2.5`  
 **Application Identity:** DawaSnap AI (Android Package: `in.dawasnap.app`)  
 **Web Application:** `https://dawasnap.vercel.app` & `https://dawasnapai.onrender.com`  
-**Support Desk:** `mdnoor4860@gmail.com`  
+**Support Desk:** `newluckypharmacy@gmail.com`  
 **Account Deletion Portal:** `https://dawasnap.vercel.app/delete-account`  
 
 ---
@@ -220,5 +220,5 @@ In accordance with Google Play Store Policies and the India DPDP Act 2023, you c
 ### Support & Grievance Contact
 For technical support, feedback, or legal inquiries:
 - **Service Provider & Developer:** MD NOOR HASSAN
-- **Official Support Email:** `mdnoor4860@gmail.com`
+- **Official Support Email:** `newluckypharmacy@gmail.com`
 - **Application Portal:** `https://dawasnap.vercel.app`

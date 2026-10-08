@@ -30,7 +30,7 @@ export const AccountDeletionPage: React.FC<AccountDeletionPageProps> = ({
   onExecuteAccountDeletion
 }) => {
   useEdgeSwipeBack({ onBack });
-  const supportEmail = 'mdhassan1738@gmail.com';
+  const supportEmail = 'newluckypharmacy@gmail.com';
 
   // State for logged-in deletion confirmation
   const [showConfirmModal, setShowConfirmModal] = useState(false);

@@ -3,7 +3,7 @@
 **Effective Date:** October 3, 2026  
 **Last Revised:** October 3, 2026  
 **Operating Developer & Service Provider:** MD NOOR HASSAN  
-**Contact Email:** `mdnoor4860@gmail.com`  
+**Contact Email:** `newluckypharmacy@gmail.com`  
 **Service Domains:** `https://dawasnap.vercel.app` & `https://dawasnapai.onrender.com`  
 **Android Application Package:** `in.dawasnap.app`  
 **Statutory Deletion Portal:** `https://dawasnap.vercel.app/delete-account`  
@@ -89,7 +89,7 @@ DawaSnap AI utilizes standard local and push notifications to deliver scheduled 
 - Children under thirteen (13) years of age are strictly prohibited from using the application, creating an account, or submitting any personal or health data.
 
 ### 4.2 Account Security
-You are solely responsible for maintaining the confidentiality of your authentication credentials (including email/password combinations and Google OAuth sessions). You agree to immediately notify us at `mdnoor4860@gmail.com` of any suspected breach of security or unauthorized access. DawaSnap AI shall not be liable for any losses arising from unauthorized account access resulting from your failure to safeguard your credentials.
+You are solely responsible for maintaining the confidentiality of your authentication credentials (including email/password combinations and Google OAuth sessions). You agree to immediately notify us at `newluckypharmacy@gmail.com` of any suspected breach of security or unauthorized access. DawaSnap AI shall not be liable for any losses arising from unauthorized account access resulting from your failure to safeguard your credentials.
 
 ### 4.3 Prohibited Conduct & Usage Restrictions
 You agree that you shall NOT, directly or indirectly:
@@ -160,7 +160,7 @@ You agree to defend, indemnify, and hold harmless MD NOOR HASSAN, DawaSnap AI, a
 
 ### 8.1 Mandatory 30-Day Informal Dispute Resolution
 Prior to initiating any formal legal claim, arbitration, or judicial proceeding against DawaSnap AI or MD NOOR HASSAN, you agree to first send a detailed written notice of dispute by certified mail or email to:
-`mdnoor4860@gmail.com` with the subject line *"Formal Dispute Notice: DawaSnap AI"*.
+`newluckypharmacy@gmail.com` with the subject line *"Formal Dispute Notice: DawaSnap AI"*.
 The notice must set forth your full name, registered account email, a comprehensive description of the factual and legal nature of the claim, and the specific monetary or injunctive relief sought. Both parties agree to negotiate in good faith for a mandatory period of thirty (30) calendar days from receipt of the notice. Formal legal proceedings may only be commenced if the dispute remains unresolved upon expiration of the thirty-day informal period.
 
 ### 8.2 Governing Law & Statutory Framework
@@ -204,7 +204,7 @@ In compliance with the **Information Technology (Intermediary Guidelines and Dig
 | :--- | :--- |
 | **Operating Developer & Service Provider** | **MD NOOR HASSAN** |
 | **Designation** | Legal Controller & Data Protection Officer |
-| **Official Contact Email** | `mdnoor4860@gmail.com` |
+| **Official Contact Email** | `newluckypharmacy@gmail.com` |
 | **Subject Line Requirement** | *"Terms of Service / Legal Inquiry — DawaSnap AI"* |
 | **Statutory Acknowledgment Window** | Within twenty-four (24) hours of receipt |
 | **Statutory Resolution SLA** | Within thirty (30) calendar days |

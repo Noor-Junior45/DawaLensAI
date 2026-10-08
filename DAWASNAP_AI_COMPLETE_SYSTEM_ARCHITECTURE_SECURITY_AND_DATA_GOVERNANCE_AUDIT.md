@@ -3,7 +3,7 @@
 **Classification:** Public Disclosure, App Review, Due Diligence & Buyer Documentation  
 **Effective Date:** October 3, 2026  
 **Application Identity:** DawaSnap AI (Android Package: `in.dawasnap.app` & Web App: `https://dawasnap.vercel.app`)  
-**Data Controller / Operating Developer:** MD NOOR HASSAN (`mdnoor4860@gmail.com`)  
+**Data Controller / Operating Developer:** MD NOOR HASSAN (`newluckypharmacy@gmail.com`)  
 **Applicable Legal Frameworks:** Google Play Store Health & Medical Apps Policy, Google API Services User Data Policy (Limited Use), India Digital Personal Data Protection (DPDP) Act 2023, EU General Data Protection Regulation (GDPR 2016/679).
 
 ---
@@ -311,5 +311,5 @@ In direct response to the comprehensive audit, the following engineering fixes a
 - **Google Play Data Safety Declaration:** Aligned with all Google Play Store Health & Medical app guidelines and Account Deletion mandates.
 - **Contact for Technical & Legal Inquiries:**  
   **Data Protection & Grievance Officer:** MD NOOR HASSAN  
-  **Official Email:** `mdnoor4860@gmail.com`  
+  **Official Email:** `newluckypharmacy@gmail.com`  
   **Application Portal:** `https://dawasnap.vercel.app`

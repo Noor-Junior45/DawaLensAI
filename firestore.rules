@@ -8,7 +8,7 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() &&
         ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "mdhassan1738@gmail.com" && request.auth.token.email_verified == true));
+          (request.auth.token.email == "newluckypharmacy@gmail.com" && request.auth.token.email_verified == true));
     }
 
     function isValidEmail(email) {
@@ -171,33 +171,31 @@ service cloud.firestore {
     }
 
     match /server_chat_limits/{limitId} {
-      allow read, write: if isAuthenticated() && (limitId.matches('^' + request.auth.uid + '_.*') || isAdmin());
+      allow read, write: if true;
     }
 
     match /medicine_cache/{name} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() || isAdmin();
+      allow read, write: if true;
     }
 
     match /extraction_cache/{hash} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() || isAdmin();
+      allow read, write: if true;
     }
 
     match /server_expiry_schedules/{scheduleId} {
-      allow read, write: if isAuthenticated() && (request.auth.uid == scheduleId || isAdmin());
+      allow read, write: if true;
     }
 
     match /server_sent_expiry_alerts/{alertId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid || isAdmin());
+      allow read, write: if true;
     }
 
     match /user_push_tokens/{tokenId} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.resource.data.userId == request.auth.uid || isAdmin());
+      allow read, write: if true;
     }
 
     match /test/connection {
-      allow read: if isAuthenticated();
+      allow read: if true;
     }
 
     match /aiReports/{reportId} {

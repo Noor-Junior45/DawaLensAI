@@ -922,6 +922,8 @@ export function generateOfflineSlmConsultation(
     /how\s+many\s+(?:do\s+i|are\s+there|in\s+my|total|stored|have)/i.test(lower) ||
     /how\s+much\s+(?:medicine|meds?|stock|quantity)/i.test(lower) ||
     /(?:tell|show|give)\s+(?:me\s+)?(?:the\s+)?(?:total\s+)?(?:count|number|quantity|how\s+many)/i.test(lower) ||
+    /(?:tell|show|give|list|what)\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?(?:medicines?|meds?|drugs?|tablets?)\s+(?:i\s+have\s+)?(?:for\s+|in\s+)?/i.test(lower) ||
+    /(?:medicines?|meds?|tablets?)\s+(?:i\s+have\s+)?for\s+/i.test(lower) ||
     /(?:what\s+(?:are|is)\s+(?:the\s+)?total\s+(?:medicines?|meds?))/i.test(lower) ||
     /(?:all\s+medicines?\s+(?:i\s+have|in\s+my\s+vault))/i.test(lower) ||
     /(?:kitni|kitne|kitna)\s+(?:dawai|dawa|medicine|meds?|tablet|goli|item)/i.test(lower) ||
@@ -959,10 +961,47 @@ export function generateOfflineSlmConsultation(
       targetCatLabel = 'Digestive & Acidity';
     } else if (/\b(?:allergy|allergic|allergies|itching|rash)\b/i.test(lower)) {
       targetCatKey = 'allergy';
-      targetCatLabel = 'Allergy';
+      targetCatLabel = 'allergy';
     } else if (/\b(?:vitamin|vitamins|multivitamin|supplement|calcium|iron)\b/i.test(lower)) {
       targetCatKey = 'vitamins';
-      targetCatLabel = 'Vitamins';
+      targetCatLabel = 'vitamins';
+    }
+
+    // Dynamic category extraction: match against any category assigned to user's stored medicines
+    if (!targetCatKey) {
+      for (const m of activeMeds) {
+        if (m.category && m.category.toLowerCase() !== 'general') {
+          const cLow = m.category.toLowerCase().trim();
+          if (lower.includes(cLow)) {
+            targetCatKey = cLow;
+            targetCatLabel = m.category.toLowerCase();
+            break;
+          }
+        }
+        if (Array.isArray(m.categories)) {
+          for (const c of m.categories) {
+            const cLow = String(c).toLowerCase().trim();
+            if (cLow && cLow !== 'general' && lower.includes(cLow)) {
+              targetCatKey = cLow;
+              targetCatLabel = cLow;
+              break;
+            }
+          }
+        }
+        if (targetCatKey) break;
+      }
+    }
+
+    // Pattern fallback: "total medicine i have <category>" or "medicines for <category>"
+    if (!targetCatKey) {
+      const match = lower.match(/(?:total\s+medicines?\s+(?:i\s+have|in\s+my\s+vault)?(?:\s+(?:for|in|of))?|medicines?\s+(?:i\s+have|for)?)\s+([a-z0-9 -]+)/i);
+      if (match && match[1]) {
+        const rawWord = match[1].replace(/medicine[s]?|tablet[s]?|pill[s]?|item[s]?|vault|inventory|my|please/gi, '').trim();
+        if (rawWord.length > 1) {
+          targetCatKey = rawWord.toLowerCase();
+          targetCatLabel = rawWord.toLowerCase();
+        }
+      }
     }
 
     if (targetCatKey) {
@@ -976,11 +1015,11 @@ export function generateOfflineSlmConsultation(
 
         if (targetCatKey === 'fever') {
           return combined.includes('fever') || combined.includes('bukhar') ||
-            /paracetamol|dolo|crocin|calpol|combiflam|acetaminophen|ibuprofen|zerodol\s*p/i.test(name);
+            /paracetamol|dolo|crocin|calpol|combiflam|acetaminophen|ibuprofen|zerodol|sumo|sinarest|grenil/i.test(name);
         }
         if (targetCatKey === 'pain') {
-          return combined.includes('pain') || combined.includes('dard') || combined.includes('headache') ||
-            /paracetamol|dolo|combiflam|ibuprofen|diclofenac|tramadol|aceclofenac|aspirin/i.test(name);
+          return combined.includes('pain') || combined.includes('dard') || combined.includes('headache') || combined.includes('ache') ||
+            /paracetamol|dolo|combiflam|ibuprofen|diclofenac|tramadol|aceclofenac|aspirin|zerodol|sumo|grenil/i.test(name);
         }
         if (targetCatKey === 'cold') {
           return combined.includes('cold') || combined.includes('cough') || combined.includes('khansi') ||
@@ -1008,93 +1047,43 @@ export function generateOfflineSlmConsultation(
         if (targetCatKey === 'vitamins') {
           return combined.includes('vitamin') || /zinc|calcium|b12|d3|iron|folic/i.test(name);
         }
-        return combined.includes(targetCatKey);
+        return combined.includes(targetCatKey!);
       };
 
       const matchedMeds = activeMeds.filter(isMatch);
-      const catUnits = matchedMeds.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
 
       if (matchedMeds.length === 0) {
         return isHinglish
-          ? `Aapke vault mein **${targetCatLabel}** ke liye abhi **0** dawaiyan hain.\n\nAapke pass maujood ${activeMeds.length} dawaiyon mein se koi bhi ${targetCatLabel} category ki nahi hai. Aap 📸 **Camera Button** se scan karke apni ${targetCatLabel} ki dawai (jaise Dolo ya Paracetamol) add kar sakte hain!\n\n`
-          : `You have **0** medicines for **${targetCatLabel}** in your vault.\n\nNone of your ${activeMeds.length} active stored medicine(s) are designated for ${targetCatLabel}. You can tap the 📸 **Camera button** below to scan a strip (such as Paracetamol or Dolo 650) to catalog it!\n\n`;
+          ? `Aapke paas total **0** of **${targetCatLabel}** medicine present hain aapke vault mein.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+          : `You have a total of 0 of ${targetCatLabel} medicine present in your vault.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
       }
 
-      const medRows = matchedMeds.map((m, idx) => 
-        `${idx + 1}. 💊 **${m.name}**\n` +
-        `   • **Quantity**: **${m.quantity || 1} units/tablets**\n` +
-        `   • **Dosage**: ${m.dosage || 'Standard'} (${m.form || 'tablet'})\n` +
-        `   • **Expiry**: **${m.expirationDate || 'N/A'}**\n` +
-        `   • **Category**: ${m.category || targetCatLabel}`
-      ).join('\n\n');
+      const medRows = matchedMeds.map(m => {
+        const form = m.form ? `(${m.form})` : '(tablet)';
+        const qty = m.quantity != null ? m.quantity : 1;
+        return `• **${m.name}** ${form}, Qty: ${qty}`;
+      }).join('  \n');
 
       return isHinglish
-        ? `Aapke vault mein **${targetCatLabel}** ke liye kul **${catUnits}** units hain (**${matchedMeds.length}** unique dawaiyan):\n\n` +
-          `${medRows}\n\n` +
-          `### 💡 Zaroori Salaah:\n` +
-          `- Kisi bhi dawai ko lene se pehle uski expiry date aur doctor ki batai dosage zaroor check karein.\n` +
-          `- Khane ke baad paani ke sath lein aur overdosing se bachein. 💊🌿\n\n`
-        : `You have **${catUnits}** total units across **${matchedMeds.length}** medicine(s) for **${targetCatLabel}** in your vault:\n\n` +
-          `${medRows}\n\n` +
-          `### 💡 Clinical Guidance:\n` +
-          `- Always verify expiration dates before consumption.\n` +
-          `- Follow your healthcare provider's dosage schedule and stay hydrated. 💊🩺\n\n`;
+        ? `Aapke paas total **${matchedMeds.length}** of **${targetCatLabel}** medicine present hain.\n\n${medRows}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+        : `You have a total of ${matchedMeds.length} of ${targetCatLabel} medicine present.\n\n${medRows}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
     }
 
-    const totalUnits = activeMeds.reduce((sum, m) => sum + (Number(m.quantity) || 1), 0);
-    const uniqueCount = activeMeds.length;
-    const categoriesMap = new Map<string, number>();
-    for (const m of activeMeds) {
-      const cat = m.category || 'General';
-      categoriesMap.set(cat, (categoriesMap.get(cat) || 0) + 1);
-    }
-    const catSummary = Array.from(categoriesMap.entries()).map(([c, n]) => `**${c}**: ${n}`).join(' • ');
-
-    if (uniqueCount === 0) {
+    if (activeMeds.length === 0) {
       return isHinglish
-        ? `Aapke paas vault mein abhi **0** medicines hain.\n\nAapka personal medication inventory abhi khali hai. Niche diye gaye 📸 **Camera Button** par tap karke strip scan karein ya manually add karein taaki main unki expiry aur interactions track kar sakun!\n\n`
-        : `You have **0** medicines in your vault.\n\nYour personal medication inventory is currently empty. Tap the 📸 **Camera button** below to scan a medicine strip or add it manually so I can monitor dosages, interactions, and expiry dates for you!\n\n`;
+        ? `Aapke paas total **0** of medicine present hain aapke vault mein.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+        : `You have a total of 0 of medicine present in your vault.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
     }
 
-    if (isHinglish) {
-      const medRows = activeMeds.map((m, idx) => 
-        `${idx + 1}. 💊 **${m.name}**\n` +
-        `   • **Quantity**: **${m.quantity || 1} units/tablets**\n` +
-        `   • **Dosage & Form**: ${m.dosage || 'Standard'} (${m.form || 'tablet'})\n` +
-        `   • **Expiry Date**: **${m.expirationDate || 'N/A'}**\n` +
-        `   • **Category**: ${m.category || 'General'}`
-      ).join('\n\n');
+    const medRows = activeMeds.map(m => {
+      const form = m.form ? `(${m.form})` : '(tablet)';
+      const qty = m.quantity != null ? m.quantity : 1;
+      return `• **${m.name}** ${form}, Qty: ${qty}`;
+    }).join('  \n');
 
-      return `Aapke paas kul **${totalUnits}** medicines hain (**${uniqueCount}** unique dawaiyan aapke vault mein maujood hain):\n\n` +
-        `${medRows}\n\n` +
-        `### 📊 Inventory Overview:\n` +
-        `• **Total Quantity**: **${totalUnits} units/tablets**\n` +
-        `• **Unique Medicines**: **${uniqueCount}**\n` +
-        `• **Categories**: ${catSummary || 'General Care'}\n\n` +
-        `### 💡 Next Steps:\n` +
-        `- In dawaiyon ke beech safety check ke liye *"check interactions"* likhein.\n` +
-        `- Kisi dawai ke sahi time ke baare me janne ke liye uska naam likhein (jaise *"How to take ${activeMeds[0].name}?"*).\n\n` +
-        ``;
-    }
-
-    const medRows = activeMeds.map((m, idx) => 
-      `${idx + 1}. 💊 **${m.name}**\n` +
-      `   • **Quantity**: **${m.quantity || 1} units/pills**\n` +
-      `   • **Dosage & Form**: ${m.dosage || 'Standard'} (${m.form || 'tablet'})\n` +
-      `   • **Expiry Date**: **${m.expirationDate || 'Not specified'}**\n` +
-      `   • **Category**: ${m.category || 'General'}`
-    ).join('\n\n');
-
-    return `You have **${totalUnits}** medicines (${uniqueCount} unique medication${uniqueCount > 1 ? 's' : ''}) in your vault:\n\n` +
-      `${medRows}\n\n` +
-      `### 📊 Inventory Overview:\n` +
-      `• **Total Quantity**: **${totalUnits} units/pills**\n` +
-      `• **Unique Medications**: **${uniqueCount}**\n` +
-      `• **Categories**: ${catSummary || 'General Care'}\n\n` +
-      `### 💡 Clinical Guidance:\n` +
-      `- Ask *"Check interactions between my medicines"* to run an instant drug-to-drug safety analysis.\n` +
-      `- Ask about any specific medicine (e.g., *"How should I take ${activeMeds[0].name}?"*) for exact food timing and instructions.\n\n` +
-      ``;
+    return isHinglish
+      ? `Aapke paas total **${activeMeds.length}** of medicine present hain.\n\n${medRows}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+      : `You have a total of ${activeMeds.length} of medicine present in your vault.\n\n${medRows}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
   }
 
   // 2B. Expiry Audit Query ("which medicines are expiring?", "expiry check", "expired medicines")
@@ -1292,16 +1281,24 @@ export function generateOfflineSlmConsultation(
     /(?:meri\s+dawaiyan|meri\s+medicine\s+list|dawaiyon\s+ki\s+list|mere\s+paas\s+kya\s+hai)/i.test(lower);
 
   if (isListQuery) {
-    if (activeMeds.length === 0) {
-      return isHinglish
-        ? `Aapke vault me abhi koi dawai add nahi hai. Niche camera button se packaging scan karein ya manual add karein! 📸\n\n`
-        : `Your medication vault is currently empty. Tap the camera button below to scan your medicine strip or add it manually! 📸\n\n`;
-    }
+    const mentionsCategory = /\b(?:fever|bukhar|pain|dard|headache|cold|cough|khansi|acidity|gas|acid|antibiotic|allergy|heart|bp|diabetes|vitamin)\b/i.test(lower);
+    if (!mentionsCategory) {
+      if (activeMeds.length === 0) {
+        return isHinglish
+          ? `Aapke paas total **0** of medicine present hain aapke vault mein.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+          : `You have a total of 0 of medicine present in your vault.\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
+      }
 
-    const listStr = activeMeds.map(m => `• **${m.name}** — ${m.dosage || 'Dosage not set'} (${m.form || 'tablet'}), Qty: ${m.quantity || 1}, Exp: ${m.expirationDate || 'N/A'}`).join('\n');
-    return isHinglish
-      ? `📦 **Aapke Vault Mein Kul ${activeMeds.length} Dawaiyan Hain:**\n\n${listStr}\n\nKisi bhi dawai ke baare me detail janne ke liye uska naam likhein! 😊\n\n`
-      : `📦 **Your Active Medicine Vault (${activeMeds.length} items):**\n\n${listStr}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊\n\n`;
+      const listStr = activeMeds.map(m => {
+        const form = m.form ? `(${m.form})` : '(tablet)';
+        const qty = m.quantity != null ? m.quantity : 1;
+        return `• **${m.name}** ${form}, Qty: ${qty}`;
+      }).join('  \n');
+
+      return isHinglish
+        ? `Aapke paas total **${activeMeds.length}** of medicine present hain.\n\n${listStr}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`
+        : `You have a total of ${activeMeds.length} of medicine present in your vault.\n\n${listStr}\n\nFeel free to ask me any question regarding specific dosages, timings, or interactions! 😊`;
+    }
   }
 
   // Look for any medicine the user specifically asked about in their query
