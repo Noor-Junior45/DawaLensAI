@@ -175,6 +175,16 @@ app.get(["/sitemap.xml", "/sitemap"], (req, res) => {
   }
 });
 
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  const assetLinksPath = path.join(process.cwd(), "public", ".well-known", "assetlinks.json");
+  if (fs.existsSync(assetLinksPath)) {
+    res.setHeader("Content-Type", "application/json");
+    res.sendFile(assetLinksPath);
+  } else {
+    res.status(404).json({ error: "assetlinks.json not found" });
+  }
+});
+
 app.get(["/privacy", "/privacy.html"], (req, res) => {
   const privacyPath = path.join(process.cwd(), "public", "privacy.html");
   if (fs.existsSync(privacyPath)) {
