@@ -1,27 +1,39 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Camera, RefreshCw, X, Zap, AlertTriangle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Camera, RefreshCw, X, Zap, AlertTriangle, Send, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+interface CapturedPhoto {
+  dataUrl: string;
+  base64: string;
+}
+
 interface CameraCaptureProps {
-  onCapture: (base64: string) => void;
+  onCapture: (primaryBase64: string, secondaryBase64?: string) => void;
   onClose: () => void;
   isProcessing: boolean;
   extractionError?: string | null;
 }
 
-export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose, isProcessing, extractionError }) => {
+export const CameraCapture: React.FC<CameraCaptureProps> = ({ 
+  onCapture, 
+  onClose, 
+  isProcessing, 
+  extractionError 
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [hasFlash, setHasFlash] = useState(false);
-  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
   const [showShutterFlash, setShowShutterFlash] = useState(false);
+
+  // Dual-photo states: Photo 1 (Front) and optional Photo 2 (Back)
+  const [firstPhoto, setFirstPhoto] = useState<CapturedPhoto | null>(null);
+  const [secondPhoto, setSecondPhoto] = useState<CapturedPhoto | null>(null);
 
   const startCamera = useCallback(async () => {
     try {
-      // Use stable constraints
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: { ideal: 'environment' },
@@ -36,7 +48,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
         videoRef.current.srcObject = mediaStream;
       }
 
-      // Check for flash support
+      // Check for flash/torch support
       const track = mediaStream.getVideoTracks()[0];
       if (track) {
         const capabilities = track.getCapabilities?.() as any;
@@ -45,27 +57,17 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
         }
       }
     } catch (err) {
-      setError("Could not access camera. Please ensure permissions are granted.");
-      console.error(err);
+      setError("Could not access camera. Please ensure camera permissions are granted.");
+      console.error("Camera access error:", err);
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     startCamera();
-    return () => {
-      // Cleanup
-    };
   }, [startCamera]);
 
-  // If extraction completes or errors out while we have a frozen preview, reset if not processing
+  // Clean up media tracks and torch on unmount
   useEffect(() => {
-    if (!isProcessing && extractionError) {
-      // Keep photo or let user retake
-    }
-  }, [isProcessing, extractionError]);
-
-  // Handle cleanup for the stream specifically when it changes or unmounts
-  React.useEffect(() => {
     return () => {
       if (stream) {
         const tracks = stream.getTracks();
@@ -74,7 +76,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
           track.applyConstraints({ advanced: [{ torch: false }] } as any)
             .catch(() => {});
         }
-        tracks.forEach(track => track.stop());
+        tracks.forEach(t => t.stop());
       }
     };
   }, [stream, hasFlash]);
@@ -94,62 +96,82 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   };
 
   const handleRetake = () => {
-    setCapturedPhotoUrl(null);
+    setFirstPhoto(null);
+    setSecondPhoto(null);
+  };
+
+  const grabCurrentFrame = (): CapturedPhoto | null => {
+    if (!videoRef.current || !canvasRef.current) return null;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    // High resolution dimension scaling (max 1600px for crystal-clear medicine label text)
+    const MAX_DIMENSION = 1600;
+    let width = video.videoWidth || 1280;
+    let height = video.videoHeight || 720;
+    
+    if (width > height) {
+      if (width > MAX_DIMENSION) {
+        height = Math.round((height * MAX_DIMENSION) / width);
+        width = MAX_DIMENSION;
+      }
+    } else {
+      if (height > MAX_DIMENSION) {
+        width = Math.round((width * MAX_DIMENSION) / height);
+        height = MAX_DIMENSION;
+      }
+    }
+    
+    canvas.width = width;
+    canvas.height = height;
+    context.drawImage(video, 0, 0, width, height);
+    
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    const base64 = dataUrl.split(',')[1];
+    return { dataUrl, base64 };
   };
 
   const captureFrame = () => {
     if (isProcessing) return;
 
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (context) {
-        // Calculate new dimensions (max 1600px for crystal-clear medicine label text)
-        const MAX_DIMENSION = 1600;
-        let width = video.videoWidth || 1280;
-        let height = video.videoHeight || 720;
-        
-        if (width > height) {
-          if (width > MAX_DIMENSION) {
-            height = Math.round((height * MAX_DIMENSION) / width);
-            width = MAX_DIMENSION;
-          }
-        } else {
-          if (height > MAX_DIMENSION) {
-            width = Math.round((width * MAX_DIMENSION) / height);
-            height = MAX_DIMENSION;
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        context.drawImage(video, 0, 0, width, height);
-        
-        // Trigger realistic camera shutter flash animation
-        setShowShutterFlash(true);
-        setTimeout(() => setShowShutterFlash(false), 150);
+    const frame = grabCurrentFrame();
+    if (!frame) return;
 
-        // Turn off torch before callback if it was on
-        if (isFlashOn && stream) {
-          const track = stream.getVideoTracks()[0];
-          if (track) {
-            track.applyConstraints({ advanced: [{ torch: false }] } as any)
-              .catch(e => console.warn("Failed to reset torch after scan", e));
-            setIsFlashOn(false);
-          }
-        }
+    // Trigger visual shutter flash effect
+    setShowShutterFlash(true);
+    setTimeout(() => setShowShutterFlash(false), 150);
 
-        // Freeze captured still photo on screen with high clarity
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-        setCapturedPhotoUrl(dataUrl);
-
-        const base64 = dataUrl.split(',')[1];
-        onCapture(base64);
+    // Turn off torch if it was on
+    if (isFlashOn && stream) {
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        track.applyConstraints({ advanced: [{ torch: false }] } as any)
+          .catch(e => console.warn("Failed to reset torch after scan", e));
+        setIsFlashOn(false);
       }
     }
+
+    if (!firstPhoto) {
+      // Step 1: Capture Photo 1 (Front/Name side) and keep viewfinder live for Photo 2
+      setFirstPhoto(frame);
+    } else {
+      // Step 2: Capture Photo 2 (Back/Expiry side) and immediately send both to Gemini AI
+      setSecondPhoto(frame);
+      onCapture(firstPhoto.base64, frame.base64);
+    }
   };
+
+  // User chose to send only the 1st photo (for single-sided packaging)
+  const handleSendSingle = () => {
+    if (firstPhoto && !isProcessing) {
+      onCapture(firstPhoto.base64);
+    }
+  };
+
+  // Determine if viewfinder is frozen (frozen only when processing both or final freeze)
+  const isViewfinderFrozen = isProcessing && !!secondPhoto;
 
   return (
     <motion.div 
@@ -171,19 +193,19 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
           </div>
         ) : (
           <>
-            {/* Viewfinder: Live Camera or Frozen Still Image */}
+            {/* Viewfinder: Live Camera or Frozen Frame */}
             <div className="relative flex-1 w-full h-full overflow-hidden">
               <video 
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
-                className={`w-full h-full object-cover ${capturedPhotoUrl ? 'hidden' : 'block'}`}
+                className={`w-full h-full object-cover ${isViewfinderFrozen ? 'hidden' : 'block'}`}
               />
 
-              {capturedPhotoUrl && (
+              {isViewfinderFrozen && secondPhoto && (
                 <img 
-                  src={capturedPhotoUrl} 
-                  alt="Captured Medicine" 
+                  src={secondPhoto.dataUrl} 
+                  alt="Captured Medicine Back" 
                   className="w-full h-full object-cover"
                 />
               )}
@@ -202,8 +224,8 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
                 )}
               </AnimatePresence>
 
-              {/* Viewfinder Framing Guidelines (hide when frozen/processing to highlight photo) */}
-              {!capturedPhotoUrl && (
+              {/* Viewfinder Framing Guidelines */}
+              {!isViewfinderFrozen && (
                 <div className="absolute inset-0 pointer-events-none border-[16px] border-black/40">
                   <div className="w-full h-full border-2 border-white/40 rounded-2xl relative shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
                     {/* Corner Guides */}
@@ -219,24 +241,24 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
                 </div>
               )}
 
-              {/* Subtle top indicator during AI analysis - does NOT cover or dim the medicine photo */}
+              {/* Subtle top indicator during AI analysis */}
               <AnimatePresence>
-                {isProcessing && capturedPhotoUrl && (
+                {isProcessing && (
                   <motion.div 
                     key="processing-camera-banner"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-20 left-6 right-6 bg-black/60 backdrop-blur-md border border-emerald-500/40 rounded-xl px-4 py-2.5 flex items-center justify-between shadow-lg z-30"
+                    className="absolute top-20 left-6 right-6 bg-black/75 backdrop-blur-md border border-emerald-500/40 rounded-xl px-4 py-2.5 flex items-center justify-between shadow-lg z-30"
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
                       <span className="text-white text-xs font-medium tracking-wide">
-                        Gemini AI analyzing medicine...
+                        {secondPhoto ? 'Analyzing Front & Back photos...' : 'Analyzing medicine packaging...'}
                       </span>
                     </div>
                     <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-600/40">
-                      Processing
+                      {secondPhoto ? '2 Photos' : '1 Photo'}
                     </span>
                   </motion.div>
                 )}
@@ -255,7 +277,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
               </button>
               
               <div className="flex gap-2">
-                {hasFlash && !capturedPhotoUrl && (
+                {hasFlash && (
                   <button 
                     onClick={toggleFlash}
                     disabled={isProcessing}
@@ -289,64 +311,134 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
                     onClick={handleRetake}
                     className="px-4 py-1.5 bg-white text-black font-semibold text-xs rounded-full shadow hover:bg-neutral-100 active:scale-95 transition-all"
                   >
-                    Retake Photo
+                    Retake Photos
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Bottom Camera Shutter Section */}
-            <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3 z-20 pointer-events-auto">
-              {!capturedPhotoUrl && !isProcessing && (
-                <p className="text-white/80 text-xs font-medium tracking-wide px-8 text-center drop-shadow">
-                  Hold steady and tap the shutter button to take a photo
-                </p>
-              )}
-
-              {/* Shutter Button with Spinner Buffer Effect */}
-              <button 
-                onClick={captureFrame}
-                disabled={isProcessing || !!capturedPhotoUrl}
-                className={`group relative w-20 h-20 rounded-full flex items-center justify-center transition-all ${
-                  isProcessing ? 'scale-100 opacity-100 cursor-wait' : 'active:scale-90'
-                }`}
-                aria-label="Take Photo"
-              >
-                {/* Outer ring */}
-                <div className={`absolute inset-0 rounded-full border-4 transition-colors ${
-                  isProcessing 
-                    ? 'border-emerald-400/40' 
-                    : 'border-white/80 shadow-[0_0_20px_rgba(0,0,0,0.6)] group-hover:border-white'
-                }`} />
-
-                {/* Shutter Button Body */}
-                <div className="w-14 h-14 bg-white rounded-full transition-all shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-                  {isProcessing ? (
-                    <RefreshCw className="animate-spin text-emerald-600" size={26} />
+            <div className="absolute bottom-8 left-0 right-0 flex flex-col items-center gap-3 z-20 pointer-events-auto px-6">
+              {/* Guidance text above buttons */}
+              {!isProcessing && (
+                <div className="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-center max-w-xs shadow-md">
+                  {!firstPhoto ? (
+                    <p className="text-white/90 text-xs font-medium tracking-wide">
+                      Tap shutter for <span className="text-emerald-400 font-bold">Photo 1 (Front / Name)</span>
+                    </p>
                   ) : (
-                    <Camera className="text-neutral-800" size={24} />
+                    <p className="text-white/90 text-xs font-medium tracking-wide">
+                      Tap shutter for <span className="text-emerald-400 font-bold">Photo 2 (Back / Expiry)</span> or tap send sign
+                    </p>
                   )}
                 </div>
-              </button>
-
-              {/* Uploading Status text under button */}
-              {isProcessing && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-white text-xs font-medium tracking-wide">
-                    Uploading & extracting...
-                  </span>
-                </div>
               )}
 
-              {/* Retake control if user wants another photo when not processing */}
-              {capturedPhotoUrl && !isProcessing && (
-                <button
-                  onClick={handleRetake}
-                  className="px-6 py-2.5 bg-black/70 backdrop-blur-xl border border-white/20 text-white rounded-full text-xs font-semibold tracking-wide hover:bg-black/90 active:scale-95 transition-all shadow-lg"
+              {/* Shutter row with: [Left circle box (Photo 1)] [Center Capture Shutter] [Right circle box (Send sign)] */}
+              <div className="w-full max-w-xs flex items-center justify-between">
+                
+                {/* 1. Left Circle Box: Displays 1st captured photo or placeholder */}
+                <div className="w-14 h-14 flex items-center justify-center">
+                  {firstPhoto ? (
+                    <div className="relative group">
+                      <button
+                        onClick={handleRetake}
+                        disabled={isProcessing}
+                        title="Photo 1 (Front) - Tap to retake"
+                        className="w-14 h-14 rounded-full overflow-hidden border-2 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)] relative active:scale-95 transition-all bg-neutral-900 focus:outline-none"
+                      >
+                        <img 
+                          src={firstPhoto.dataUrl} 
+                          alt="Photo 1 preview" 
+                          className="w-full h-full object-cover" 
+                        />
+                        <span className="absolute bottom-0 inset-x-0 bg-black/75 text-[8px] text-emerald-300 font-bold uppercase tracking-wider py-0.5 text-center leading-none">
+                          Side 1
+                        </span>
+                      </button>
+                      {!isProcessing && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRetake();
+                          }}
+                          title="Remove and retake Photo 1"
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 border border-white text-white rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                        >
+                          <X size={12} strokeWidth={3} />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-full border-2 border-dashed border-white/25 flex flex-col items-center justify-center text-white/40">
+                      <Layers size={18} className="opacity-60 mb-0.5" />
+                      <span className="text-[9px] font-bold tracking-wider uppercase">Photo 1</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Center Capture Button */}
+                <button 
+                  onClick={captureFrame}
+                  disabled={isProcessing || (!!firstPhoto && !!secondPhoto)}
+                  className={`group relative w-20 h-20 rounded-full flex items-center justify-center transition-all ${
+                    isProcessing ? 'scale-100 opacity-100 cursor-wait' : 'active:scale-90'
+                  }`}
+                  aria-label={firstPhoto ? "Capture Photo 2 (Back side)" : "Capture Photo 1 (Front side)"}
                 >
-                  Retake Photo
+                  {/* Outer ring */}
+                  <div className={`absolute inset-0 rounded-full border-4 transition-colors ${
+                    isProcessing 
+                      ? 'border-emerald-400/40' 
+                      : firstPhoto 
+                        ? 'border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.6)] animate-pulse'
+                        : 'border-white/80 shadow-[0_0_20px_rgba(0,0,0,0.6)] group-hover:border-white'
+                  }`} />
+
+                  {/* Shutter Button Body */}
+                  <div className="w-14 h-14 bg-white rounded-full transition-all shadow-[0_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                    {isProcessing ? (
+                      <RefreshCw className="animate-spin text-emerald-600" size={26} />
+                    ) : firstPhoto ? (
+                      <Camera className="text-emerald-700" size={24} />
+                    ) : (
+                      <Camera className="text-neutral-800" size={24} />
+                    )}
+                  </div>
                 </button>
+
+                {/* 3. Right Circle Box: Send button with ONLY icon/sign, NO text, appears after Photo 1 */}
+                <div className="w-14 h-14 flex items-center justify-center">
+                  <AnimatePresence>
+                    {firstPhoto && !isProcessing && (
+                      <motion.button
+                        key="single-photo-send-circle-btn"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={handleSendSingle}
+                        title="Send single photo to Gemini AI"
+                        aria-label="Send photo"
+                        className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white shadow-[0_4px_16px_rgba(16,185,129,0.6)] border border-emerald-300/40 flex items-center justify-center transition-colors"
+                      >
+                        <Send size={22} className="translate-x-0.5" strokeWidth={2.5} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+              </div>
+
+              {/* Status text during extraction */}
+              {isProcessing && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-white/10 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-white text-xs font-medium tracking-wide">
+                    {secondPhoto ? 'Analyzing Front & Back photos...' : 'Analyzing photo with Gemini...'}
+                  </span>
+                </div>
               )}
             </div>
           </>
@@ -356,4 +448,3 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
     </motion.div>
   );
 };
-

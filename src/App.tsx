@@ -1458,16 +1458,16 @@ export default function App() {
     }
   };
 
-  const handleCapture = async (base64: string) => {
+  const handleCapture = async (base64: string, base64Back?: string) => {
     if (isProcessing) return;
     setIsProcessing(true);
     setExtractionError(null);
     setExtractionWarning(null);
-    const result = await extractMedicineData(base64);
+    const result = await extractMedicineData(base64, base64Back ? [base64Back] : undefined);
     setIsProcessing(false);
     
     if (result.success && result.medicine) {
-      trackEvent('capture_image', { success: true });
+      trackEvent('capture_image', { success: true, dual_photo: !!base64Back });
       setEditingMedicine(null);
       
       const cleanString = (val: any, fallback: string = '') => {
@@ -1496,6 +1496,7 @@ export default function App() {
         expirationDate: cleanString(result.medicine.expirationDate, fallbackExpiry),
         usageInstructions: cleanString(result.medicine.usageInstructions, ''),
         capturedImage: `data:image/jpeg;base64,${base64}`,
+        capturedImageBack: base64Back ? `data:image/jpeg;base64,${base64Back}` : undefined,
         quantity: typeof result.medicine.quantity === 'number' && result.medicine.quantity > 0 ? result.medicine.quantity : 1,
         form: cleanString(result.medicine.form, 'tablet') as any,
         categories: detectedCategories,

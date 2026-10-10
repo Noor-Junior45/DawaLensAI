@@ -7,7 +7,8 @@ import {
   signOut, 
   User as FirebaseUser,
   auth,
-  googleProvider 
+  googleProvider,
+  browserPopupRedirectResolver 
 } from '../firebase';
 
 export interface NativeAuthResult {
@@ -15,6 +16,23 @@ export interface NativeAuthResult {
   user?: FirebaseUser;
   error?: string;
   isCancelled?: boolean;
+}
+
+function formatAuthError(error: any): string {
+  if (!error) return 'Failed to sign in with Google';
+  const code = error.code || '';
+  const message = error.message || String(error);
+
+  if (code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain')) {
+    return 'Domain Unauthorized: Please add this domain to Firebase Console > Authentication > Settings > Authorized domains.';
+  }
+  if (code === 'auth/operation-not-allowed' || message.includes('operation-not-allowed') || message.includes('action is invalid')) {
+    return 'Google Sign-In not enabled: Please enable Google provider in Firebase Console > Authentication > Sign-in method and select a Project support email.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Popup blocked by browser. Please allow popups for this site and try again.';
+  }
+  return message;
 }
 
 /**
@@ -67,7 +85,7 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
 
       // Fallback: try web popup inside WebView if native fails
       try {
-        const fallbackRes = await signInWithPopup(auth, googleProvider);
+        const fallbackRes = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
         return {
           success: true,
           user: fallbackRes.user,
@@ -81,7 +99,7 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
         }
         return {
           success: false,
-          error: fallbackError?.message || errMsg || 'Native authentication failed',
+          error: formatAuthError(fallbackError),
         };
       }
     }
@@ -89,7 +107,7 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
 
   // Web / PWA flow
   try {
-    const res = await signInWithPopup(auth, googleProvider);
+    const res = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
     return {
       success: true,
       user: res.user,
@@ -103,7 +121,7 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
     }
     return {
       success: false,
-      error: error?.message || 'Failed to sign in with Google',
+      error: formatAuthError(error),
     };
   }
 }

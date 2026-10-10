@@ -372,12 +372,29 @@ export async function extractMedicineDataServer(
   base64Image?: string,
   ocrText?: string,
   hints?: { potentialExpiry?: string; potentialDosage?: string; potentialQuantity?: number },
-  cnnFeatures?: { form?: string; packagingType?: string; estimatedUnitCount?: number; hasBlisterGrid?: boolean; blisterCellCount?: number }
+  cnnFeatures?: { form?: string; packagingType?: string; estimatedUnitCount?: number; hasBlisterGrid?: boolean; blisterCellCount?: number },
+  additionalImages?: string[]
 ) {
   try {
     return await runWithRotation('extraction', async (ai) => {
+      // Gather all images (primary front image + optional back/additional image)
+      const allImages: string[] = [];
+      if (base64Image && base64Image.length > 50) {
+        allImages.push(base64Image);
+      }
+      if (Array.isArray(additionalImages)) {
+        additionalImages.forEach(img => {
+          if (typeof img === 'string' && img.length > 50) {
+            allImages.push(img);
+          }
+        });
+      }
+
       // Build a rich clinical extraction prompt
       const contextHints = [];
+      if (allImages.length > 1) {
+        contextHints.push(`DUAL-SIDED / MULTI-PHOTO SCAN: User provided ${allImages.length} images of this medicine packaging (Front and Back sides). Analyze both photos thoroughly: typically one side lists the brand name, formulation, and dosage, while the opposite side lists the Expiration Date (EXP/VALID TILL), Batch number, and composition.`);
+      }
       if (cnnFeatures) {
         contextHints.push(`On-Device CNN Visual Features: Packaging classified as ${cnnFeatures.packagingType || 'blister_strip'} (form: ${cnnFeatures.form || 'tablet'}), estimated units: ${cnnFeatures.estimatedUnitCount || 'N/A'}${cnnFeatures.hasBlisterGrid ? ', blister pocket array detected' : ''}`);
       }
@@ -396,7 +413,7 @@ export async function extractMedicineDataServer(
 
       const promptText = `You are a licensed clinical pharmacist and computer vision specialist specializing in pharmaceutical packaging recognition (blister packs, strips, bottles, boxes, ampules, syrups, ointments).
 
-Carefully examine this medicine photo and packaging text to extract high-accuracy metadata.
+Carefully examine the provided medicine photo(s) and packaging text to extract high-accuracy metadata.
 
 ${contextHints.join('\n\n')}
 
@@ -411,7 +428,7 @@ FIELD-BY-FIELD INSTRUCTIONS:
    - If not found, use the closest dosage hint provided or standard clinical dose.
 
 3. "expirationDate":
-   - Scrutinize the packaging for stamps like "EXP", "EXPIRY", "EXP DATE", "VALID TILL", "BB", "BEST BEFORE", "USE BEFORE" (often stamped along the crimped foil edge, side flap, or bottom).
+   - Scrutinize the packaging for stamps like "EXP", "EXPIRY", "EXP DATE", "VALID TILL", "BB", "BEST BEFORE", "USE BEFORE" (often stamped along the crimped foil edge, side flap, or bottom, especially on the back foil side).
    - Convert month and year into ISO format YYYY-MM-01 (e.g., "08/2026" or "Aug 26" -> "2026-08-01").
    - Do NOT confuse manufacturing date (MFG / B.No) with expiry date (EXP).
 
@@ -435,19 +452,19 @@ FIELD-BY-FIELD INSTRUCTIONS:
 9. "tags":
    - Provide 2-4 concise relevant tags (e.g. ["Pain Relief", "Fever", "OTC"] or ["Heart", "Blood Pressure", "Daily"]).`;
 
-      // Multimodal execution: Send both the image and the OCR text so Gemini Vision can see the label directly
+      // Multimodal execution: Send image(s) and prompt so Gemini Vision can inspect front and back labels directly
       const contentsPayload: any[] = [];
-      if (base64Image) {
+      allImages.forEach(img => {
         contentsPayload.push({
           inlineData: {
             mimeType: "image/jpeg",
-            data: base64Image
+            data: img
           }
         });
-      }
+      });
       contentsPayload.push({ text: promptText });
 
-      console.log(`[GEMINI EXTRACT] Performing Multimodal Vision extraction (hasImage: ${!!base64Image}, ocrChars: ${ocrText?.length || 0})`);
+      console.log(`[GEMINI EXTRACT] Performing Multimodal Vision extraction (imagesCount: ${allImages.length}, ocrChars: ${ocrText?.length || 0})`);
 
       const response = await generateContentWithModelFallback(ai, {
         preferredModel: "gemini-2.5-flash",

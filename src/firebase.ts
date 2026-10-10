@@ -1,10 +1,41 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential, reauthenticateWithPopup, reauthenticateWithCredential } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  User, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  signInWithCredential, 
+  reauthenticateWithPopup, 
+  reauthenticateWithCredential,
+  browserPopupRedirectResolver 
+} from 'firebase/auth';
 import { initializeFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocFromServer, writeBatch, deleteField, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
+// Use current hostname if running on custom domain / web domain, otherwise default to firebaseapp.com
+const resolvedAuthDomain = (() => {
+  if (typeof window !== 'undefined' && window.location) {
+    const host = window.location.hostname;
+    // If running on custom production domain (e.g. dawasnap.in, in.dawasnap.app)
+    if (host && host !== 'localhost' && !host.includes('127.0.0.1') && !host.includes('run.app')) {
+      return host;
+    }
+  }
+  return firebaseConfig.authDomain;
+})();
+
+const dynamicFirebaseConfig = {
+  ...firebaseConfig,
+  authDomain: resolvedAuthDomain,
+};
+
+const app = initializeApp(dynamicFirebaseConfig);
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
@@ -12,9 +43,11 @@ export const db = initializeFirestore(app, {
 }, firebaseConfig.firestoreDatabaseId);
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export { 
   signInWithPopup, 
+  browserPopupRedirectResolver,
   signOut, 
   onAuthStateChanged, 
   collection, 

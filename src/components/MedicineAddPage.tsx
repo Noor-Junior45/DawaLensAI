@@ -71,7 +71,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
     enableEmailExpiryAlert: initialData?.enableEmailExpiryAlert !== false,
     enableEmailLowStockAlert: initialData?.enableEmailLowStockAlert !== false,
     imageUrl: initialData?.imageUrl || '',
-    capturedImage: initialData?.capturedImage || ''
+    capturedImage: initialData?.capturedImage || '',
+    capturedImageBack: initialData?.capturedImageBack || ''
   });
 
   const [suggestions, setSuggestions] = useState<Medicine[]>([]);
@@ -152,7 +153,8 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
         enableEmailExpiryAlert: initialData.enableEmailExpiryAlert !== false,
         enableEmailLowStockAlert: initialData.enableEmailLowStockAlert !== false,
         imageUrl: initialData.imageUrl || '',
-        capturedImage: initialData.capturedImage || ''
+        capturedImage: initialData.capturedImage || '',
+        capturedImageBack: initialData.capturedImageBack || ''
       });
     }
   }, [initialData, globalLowQuantityThreshold]);
@@ -307,15 +309,31 @@ export const MedicineAddPage: React.FC<MedicineAddPageProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Scanned Image Preview if present */}
-          {formData.capturedImage && (
+          {(formData.capturedImage || formData.capturedImageBack) && (
             <div className="space-y-3">
               <div className="bg-white border border-[#e3e2e0] rounded-2xl p-3 flex items-center gap-3 shadow-xs">
-                <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                  <img src={formData.capturedImage} alt="Scanned label" className="w-full h-full object-cover" />
-                </div>
+                {formData.capturedImage && (
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 relative">
+                    <img src={formData.capturedImage} alt="Scanned front label" className="w-full h-full object-cover" />
+                    {formData.capturedImageBack && (
+                      <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] text-white font-bold uppercase text-center py-0.5 leading-none">
+                        Front
+                      </span>
+                    )}
+                  </div>
+                )}
+                {formData.capturedImageBack && (
+                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 relative">
+                    <img src={formData.capturedImageBack} alt="Scanned back label" className="w-full h-full object-cover" />
+                    <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] text-white font-bold uppercase text-center py-0.5 leading-none">
+                      Back
+                    </span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
-                    <ImageIcon size={14} className="text-[#0f9d58]" /> Scanned Packaging Label
+                    <ImageIcon size={14} className="text-[#0f9d58]" /> 
+                    {formData.capturedImageBack ? 'Scanned Front & Back Labels' : 'Scanned Packaging Label'}
                   </div>
                   <p className="text-xs text-slate-500 truncate">
                     Verify auto-filled details against physical packaging below

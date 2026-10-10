@@ -229,7 +229,8 @@ VAULT USAGE & MANDATORY DESIGN RULES:
 export async function extractMedicineDataClient(
   base64Image: string,
   ocrText?: string,
-  hints?: OcrPreExtractionHints
+  hints?: OcrPreExtractionHints,
+  additionalImages?: string[]
 ): Promise<ExtractionResult> {
   const apiKey = getClientApiKey();
   if (!apiKey) {
@@ -239,8 +240,8 @@ export async function extractMedicineDataClient(
   const ai = new GoogleGenAI({ apiKey });
   const hasMeaningfulOcr = ocrText && ocrText.trim().length > 10;
 
-  // 1. Text-Only Mode (Low token consumption)
-  if (hasMeaningfulOcr) {
+  // 1. Text-Only Mode (Only when single image and good OCR text)
+  if (hasMeaningfulOcr && (!additionalImages || additionalImages.length === 0)) {
     const textPrompt = `You are an expert clinical pharmacist and data validator.
 Analyze this raw OCR text extracted directly from a medicine packaging/strip:
 """
@@ -307,24 +308,37 @@ CRITICAL RULES:
     return { success: true, medicine: result, ocrAssisted: true };
   }
 
-  // 2. Multimodal Vision Fallback
+  // 2. Multimodal Vision Mode (Supports 1 or multiple front+back images)
+  const clientImages: any[] = [
+    { inlineData: { mimeType: "image/jpeg", data: base64Image } }
+  ];
+  if (Array.isArray(additionalImages)) {
+    additionalImages.forEach(img => {
+      if (typeof img === 'string' && img.length > 50) {
+        clientImages.push({ inlineData: { mimeType: "image/jpeg", data: img } });
+      }
+    });
+  }
+
+  const visionPrompt = `You are a medical data extraction expert specializing in pharmaceutical packaging. 
+${clientImages.length > 1 ? `You have been provided with ${clientImages.length} images of this medicine (Front and Back packaging). Cross-examine both views: the front side typically has the brand name & dosage, while the reverse side has the expiry date (EXP/VALID TILL), batch number, and full active salt formulation.` : `Perform exhaustive OCR and analysis to extract all visible text from the packaging.`}
+${ocrText ? `OCR text detected:\n${ocrText}` : ''}
+
+Extract:
+- Name: Medicine brand name and salt composition.
+- Dosage: Primary active strength (e.g. 500mg, 650mg, 40mg).
+- Expiration Date: Format YYYY-MM-01 (use the 1st day of the month, e.g. 2026-05-01). Check crimp/back foil stamps closely.
+- Usage Instructions: Daily frequency or directions.
+- Form: tablet, capsule, syrup, ampule, powder, liquid, or other.
+- Quantity: Number of units in strip or container.
+- Categories: Array of clinical categories (e.g. ["Fever", "Pain Relief"] for Zerodol-P, Dolo, Combiflam).
+- Category: Comma-separated string of categories.`;
+
   const response = await generateContentWithModelFallbackClient(ai, {
     preferredModel: "gemini-3.8-flash",
     contents: [
-      { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-      { 
-        text: `You are a medical data extraction expert. 
-        Perform exhaustive OCR to extract all visible text from the packaging.
-        Then, identify:
-        - Name: Medicine name and composition.
-        - Dosage: Strength.
-        - Expiration Date: Format YYYY-MM-01 (use the 1st day of the month, e.g. 2026-05-01 if May 2026 is given).
-        - Usage Instructions: Daily frequency/instructions.
-        - Form: tablet, capsule, syrup, ampule, powder, liquid, or other.
-        - Quantity: Number of units in the strip or pack.
-        - Categories: Array of clinical categories (e.g. ["Fever", "Pain Relief"] for Zerodol-P, Dolo, Combiflam, Paracetamol + Aceclofenac).
-        - Category: Comma-separated string of categories.` 
-      }
+      ...clientImages,
+      { text: visionPrompt }
     ],
     config: {
       responseMimeType: "application/json",
@@ -401,7 +415,10 @@ export async function checkDrugInteractionsClient(medicines: { name: string; dos
   return JSON.parse(text);
 }
 
-export async function extractMedicineData(base64Image: string): Promise<ExtractionResult> {
+export async function extractMedicineData(
+  base64Image: string,
+  additionalImages?: string[]
+): Promise<ExtractionResult> {
   let ocrResult: OcrPreExtractionHints | null = null;
   let cnnFeatures: CnnVisualFeatures | null = null;
 
@@ -419,11 +436,36 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
     console.warn("Client OCR step caught an error, proceeding with image fallback:", ocrErr);
   }
 
+  // If back image exists, also extract OCR hints from back packaging (e.g. expiry, batch)
+  if (Array.isArray(additionalImages) && additionalImages.length > 0) {
+    for (const img of additionalImages) {
+      try {
+        const backOcr = await performOnDeviceOcr(img);
+        if (backOcr) {
+          if (!ocrResult?.potentialExpiry && backOcr.potentialExpiry) {
+            if (!ocrResult) ocrResult = backOcr;
+            else ocrResult.potentialExpiry = backOcr.potentialExpiry;
+          }
+          if (backOcr.cleanedText) {
+            ocrResult = {
+              ...(ocrResult || backOcr),
+              cleanedText: `${ocrResult?.cleanedText || ''}\n${backOcr.cleanedText}`,
+              rawText: `${ocrResult?.rawText || ''}\n${backOcr.rawText}`
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("Additional image OCR warning:", e);
+      }
+    }
+  }
+
   const ocrText = ocrResult?.cleanedText || ocrResult?.rawText || '';
 
-  // Mode A: Online Gemini API Extraction (with CNN visual features & OCR hints)
+  // Mode A: Online Gemini API Extraction (with CNN visual features, OCR hints & multi-image payload)
   const extractPayload = JSON.stringify({ 
     base64Image,
+    additionalImages: additionalImages || [],
     ocrText,
     cnnFeatures: cnnFeatures ? {
       form: cnnFeatures.form,
@@ -490,7 +532,7 @@ export async function extractMedicineData(base64Image: string): Promise<Extracti
       const clientResult = await extractMedicineDataClient(base64Image, ocrText, {
         ...(ocrResult || { cleanedText: '', rawText: '', source: 'fallback' }),
         potentialQuantity: ocrResult?.potentialQuantity || cnnFeatures?.estimatedUnitCount
-      });
+      }, additionalImages);
       if (clientResult.success) {
         return clientResult;
       }

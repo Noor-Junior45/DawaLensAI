@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "in.dawasnap.app",
       "sha256_cert_fingerprints": [
-        "16:FF:AA:8F:80:BA:40:F8:C1:6E:F9:10:CC:B6:AD:0F:D1:ED:6A:68:B4:DD:C8:57:40:DE:9E:CA:A6:F9:E6:8C"
+        "16:FF:AA:8F:80:BA:40:F8:C1:6E:F9:10:CC:B6:AD:0F:D1:ED:6A:68:B4:DD:C8:57:40:DE:9E:CA:A6:F9:E6:8C",
+        "41:08:44:B2:D2:3D:16:96:FD:21:94:BE:97:BA:63:2A:19:B3:89:C5:EE:49:01:B1:64:E7:5B:C0:CE:41:D5:55"
       ]
     }
   }

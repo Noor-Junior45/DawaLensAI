@@ -387,14 +387,30 @@ app.post("/api/ai/interactions-save-cache", requireFirebaseAuth, async (req: Aut
 // AI Proxies (Protected & Rate Limited)
 app.post("/api/ai/extract", aiRateLimiter, requireFirebaseAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { base64Image, ocrText, hints, cnnFeatures } = req.body;
+    const { base64Image, base64Images, additionalImages, ocrText, hints, cnnFeatures } = req.body;
     if (base64Image && (typeof base64Image !== 'string' || base64Image.length > 20 * 1024 * 1024)) {
       return res.status(400).json({ success: false, errorMessage: "Invalid image format or image exceeds 20MB limit." });
     }
+    const extraImages: string[] = [];
+    if (Array.isArray(additionalImages)) {
+      additionalImages.forEach((img: any) => {
+        if (typeof img === 'string' && img.length > 50 && img.length < 20 * 1024 * 1024) {
+          extraImages.push(img);
+        }
+      });
+    } else if (Array.isArray(base64Images)) {
+      base64Images.slice(1).forEach((img: any) => {
+        if (typeof img === 'string' && img.length > 50 && img.length < 20 * 1024 * 1024) {
+          extraImages.push(img);
+        }
+      });
+    }
+    const primaryImage = base64Image || (Array.isArray(base64Images) && base64Images[0]) || undefined;
+
     if (ocrText && (typeof ocrText !== 'string' || ocrText.length > 50000)) {
       return res.status(400).json({ success: false, errorMessage: "OCR text exceeds 50,000 characters." });
     }
-    const result = await extractMedicineDataServer(base64Image, ocrText, hints, cnnFeatures);
+    const result = await extractMedicineDataServer(primaryImage, ocrText, hints, cnnFeatures, extraImages);
     res.json(result);
   } catch (error: any) {
     res.json({ success: false, errorMessage: error.message || "Failed to extract medicine data from image." });

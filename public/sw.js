@@ -34,7 +34,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Exclude API routes, vite dynamic chunks, or third-party database calls from stale cache
+  // Exclude API routes, vite dynamic chunks, Firebase auth handler, or third-party database calls from stale cache
   const url = event.request.url;
   if (
     url.includes('/api/') || 
@@ -42,8 +42,11 @@ self.addEventListener('fetch', (event) => {
     url.includes('/@fs/') || 
     url.includes('/src/') ||
     url.includes('/assets/') ||
+    url.includes('/__/auth') ||
+    url.includes('.well-known') ||
     url.includes('node_modules') ||
-    url.includes('firestore.googleapis.com')
+    url.includes('firestore.googleapis.com') ||
+    url.includes('identitytoolkit')
   ) {
     return;
   }
