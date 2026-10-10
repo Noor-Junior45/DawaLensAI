@@ -26,6 +26,10 @@
 # 4. Google Play Services & Firebase SDKs
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.android.gms.**
+-keep class com.google.android.libraries.identity.googleid.** { *; }
+-dontwarn com.google.android.libraries.identity.googleid.**
+-keep class androidx.credentials.** { *; }
+-dontwarn androidx.credentials.**
 
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**

@@ -748,6 +748,9 @@ export default function App() {
     try {
       const res = await signInWithGoogleAdaptive();
       if (res.success) {
+        if (res.user) {
+          setUser(res.user);
+        }
         trackEvent('login', { method: 'google' });
       } else if (!res.isCancelled) {
         setAlertMessage(res.error || 'Failed to sign in with Google. Please try again.');
@@ -1899,17 +1902,22 @@ export default function App() {
   const reauthenticateUserSession = async (targetUser: User): Promise<void> => {
     const isNative = Capacitor.isNativePlatform();
     if (isNative) {
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+      let res: any = null;
       try {
-        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-        const res = await FirebaseAuthentication.signInWithGoogle();
-        if (res.credential?.idToken) {
-          const cred = GoogleAuthProvider.credential(res.credential.idToken);
-          await reauthenticateWithCredential(targetUser, cred);
-          return;
-        }
-      } catch (nativeErr) {
-        console.warn("Native reauth error, falling back to popup:", nativeErr);
+        res = await FirebaseAuthentication.signInWithGoogle();
+      } catch {
+        res = await FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
       }
+      if (res.credential?.idToken) {
+        const cred = GoogleAuthProvider.credential(res.credential.idToken);
+        await reauthenticateWithCredential(targetUser, cred);
+        return;
+      }
+      if (auth.currentUser) {
+        return;
+      }
+      throw new Error("Unable to re-authenticate natively. Please try again.");
     }
     const provider = new GoogleAuthProvider();
     await reauthenticateWithPopup(targetUser, provider);

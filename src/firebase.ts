@@ -18,15 +18,10 @@ import { initializeFirestore, collection, doc, setDoc, addDoc, getDoc, getDocs, 
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
-// Use current hostname if running on custom domain / web domain, otherwise default to firebaseapp.com
+// Use project Firebase authDomain for native Android app / localhost / dev runners,
+// or actual custom domain if hosted on a web server
 const resolvedAuthDomain = (() => {
-  if (typeof window !== 'undefined' && window.location) {
-    const host = window.location.hostname;
-    // If running on custom production domain (e.g. dawasnap.in, in.dawasnap.app)
-    if (host && host !== 'localhost' && !host.includes('127.0.0.1') && !host.includes('run.app')) {
-      return host;
-    }
-  }
+  // Always use the official Firebase authDomain for standard authentication handshakes
   return firebaseConfig.authDomain;
 })();
 

@@ -46,13 +46,24 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
   if (isNative) {
     try {
       // 1. Invoke native Google Play Services sign-in sheet on Android
-      const result = await FirebaseAuthentication.signInWithGoogle({
-        scopes: ['email', 'profile'],
-      });
+      // Using Credential Manager without offline scopes (Google ID Token includes email, name, photo)
+      let result: any = null;
+      try {
+        result = await FirebaseAuthentication.signInWithGoogle();
+      } catch (credMgrErr: any) {
+        console.warn('Credential Manager sign-in attempt warning, falling back to legacy Play Services:', credMgrErr);
+        // If Credential Manager is unavailable or fails, fallback to legacy GoogleSignInClient
+        result = await FirebaseAuthentication.signInWithGoogle({
+          useCredentialManager: false,
+        });
+      }
 
       // 2. If native credential was returned, synchronize with Firebase Web SDK
-      if (result.credential?.idToken) {
-        const credential = GoogleAuthProvider.credential(result.credential.idToken, result.credential.accessToken);
+      if (result?.credential?.idToken) {
+        const credential = GoogleAuthProvider.credential(
+          result.credential.idToken,
+          result.credential.accessToken || undefined
+        );
         const userCredential = await signInWithCredential(auth, credential);
         return {
           success: true,
@@ -60,7 +71,24 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
         };
       }
 
-      // If user object returned natively but no token, check current Firebase user
+      // 3. If native user object was returned directly by plugin / OAuth activity
+      if (result?.user) {
+        const idTokenRes = await FirebaseAuthentication.getIdToken().catch(() => null);
+        if (idTokenRes?.token) {
+          try {
+            const credential = GoogleAuthProvider.credential(idTokenRes.token);
+            const userCredential = await signInWithCredential(auth, credential);
+            return {
+              success: true,
+              user: userCredential.user,
+            };
+          } catch (syncErr) {
+            console.warn('Native token sync warning:', syncErr);
+          }
+        }
+      }
+
+      // 4. Check if Firebase currentUser was populated
       if (auth.currentUser) {
         return {
           success: true,
@@ -73,9 +101,14 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
       };
     } catch (nativeError: any) {
       console.warn('Native Google Sign-In attempt error:', nativeError);
-      
+
       const errMsg = nativeError?.message || String(nativeError);
-      if (errMsg.includes('cancelled') || errMsg.includes('canceled') || errMsg.includes('12501')) {
+      if (
+        errMsg.includes('cancelled') ||
+        errMsg.includes('canceled') ||
+        errMsg.includes('12501') ||
+        errMsg.includes('Closed by user')
+      ) {
         return {
           success: false,
           isCancelled: true,
@@ -83,25 +116,10 @@ export async function signInWithGoogleAdaptive(): Promise<NativeAuthResult> {
         };
       }
 
-      // Fallback: try web popup inside WebView if native fails
-      try {
-        const fallbackRes = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
-        return {
-          success: true,
-          user: fallbackRes.user,
-        };
-      } catch (fallbackError: any) {
-        if (fallbackError.code === 'auth/popup-closed-by-user') {
-          return {
-            success: false,
-            isCancelled: true,
-          };
-        }
-        return {
-          success: false,
-          error: formatAuthError(fallbackError),
-        };
-      }
+      return {
+        success: false,
+        error: formatAuthError(nativeError),
+      };
     }
   }
 

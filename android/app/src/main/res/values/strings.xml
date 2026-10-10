@@ -4,4 +4,6 @@
     <string name="title_activity_main">DawaSnap AI: Medicine Tracker</string>
     <string name="package_name">in.dawasnap.app</string>
     <string name="custom_url_scheme">in.dawasnap.app</string>
+    <!-- Web Client ID for Google Identity / Credential Manager & Play Services -->
+    <string name="default_web_client_id">418374139038-2kti1nunmo9n177vpg6fp0mg1gvjlamo.apps.googleusercontent.com</string>
 </resources>
